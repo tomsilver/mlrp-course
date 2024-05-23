@@ -1,7 +1,7 @@
 """The Chase MDP described in lecture."""
 
 from collections import defaultdict
-from typing import DefaultDict, Dict, Set, Tuple, TypeAlias
+from typing import ClassVar, DefaultDict, Dict, Set, Tuple, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,33 +17,12 @@ ChaseAction: TypeAlias = str
 class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
     """The Chase MDP described in lecture."""
 
-    @property
-    def _obstacles(self) -> NDArray[np.bool_]:
-        """Defines the grid and the placement of obstacles.
-
-        By default, no obstacles exist (all entries are False).
-        """
-        return np.zeros((2, 3), dtype=np.bool_)
-
-    @property
-    def _height(self):
-        """The height of the map (number of rows)."""
-        return self._obstacles.shape[0]
-
-    @property
-    def _width(self):
-        """The width of the map (number of columns)."""
-        return self._obstacles.shape[1]
-
-    @property
-    def _goal_reward(self):
-        """The reward for achieving the goal."""
-        return 1
-
-    @property
-    def _living_reward(self):
-        """The reward for surviving one time step."""
-        return 0
+    # The map is defined based on the obstacles, which by default are empty.
+    _obstacles: ClassVar[NDArray[np.bool_]] = np.zeros((2, 3), dtype=np.bool_)
+    _height: ClassVar[int] = _obstacles.shape[0]
+    _width: ClassVar[int] = _obstacles.shape[1]
+    _goal_reward: ClassVar[float] = 1.0
+    _living_reward: ClassVar[float] = 0.0
 
     @property
     def state_space(self) -> Set[ChaseState]:
