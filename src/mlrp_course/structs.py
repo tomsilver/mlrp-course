@@ -1,15 +1,9 @@
 """Data structures."""
 
-from dataclasses import dataclass
+from typing import TypeAlias
 
+import numpy as np
+from numpy.typing import NDArray
 
-@dataclass(frozen=True)
-class Dog:
-    """An example class."""
-
-    name: str
-    breed: str
-
-    def is_good(self) -> bool:
-        """All dogs are good."""
-        return True
+# Type aliases.
+Image: TypeAlias = NDArray[np.uint8]

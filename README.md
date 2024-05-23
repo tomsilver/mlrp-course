@@ -2,7 +2,7 @@
 
 ![workflow](https://github.com/tomsilver/mlrp-course/actions/workflows/ci.yml/badge.svg)
 
-A basic starter for Python packages with GitHub continuous integration.
+Code for course on Machine Learning for Robot Planning.
 
 ## Requirements
 
