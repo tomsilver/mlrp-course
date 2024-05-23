@@ -7,21 +7,21 @@ import numpy as np
 
 from mlrp_course.structs import Image
 
-State = TypeVar("State", bound=Hashable)
-Action = TypeVar("Action")
+DiscreteState = TypeVar("DiscreteState", bound=Hashable)
+DiscreteAction = TypeVar("DiscreteAction")
 
 
-class DiscreteMDP(Generic[State, Action]):
+class DiscreteMDP(Generic[DiscreteState, DiscreteAction]):
     """A Markov Decision Process."""
 
     @property
     @abc.abstractmethod
-    def state_space(self) -> Set[State]:
+    def state_space(self) -> Set[DiscreteState]:
         """Representation of the MDP state set."""
 
     @property
     @abc.abstractmethod
-    def action_space(self) -> Set[Action]:
+    def action_space(self) -> Set[DiscreteAction]:
         """Representation of the MDP action set."""
 
     @property
@@ -35,22 +35,24 @@ class DiscreteMDP(Generic[State, Action]):
         return float("inf")
 
     @abc.abstractmethod
-    def state_is_terminal(self, state: State) -> bool:
+    def state_is_terminal(self, state: DiscreteState) -> bool:
         """Designate certain states as terminal (done) states."""
 
     @abc.abstractmethod
-    def get_reward(self, state: State, action: Action, next_state: State) -> float:
+    def get_reward(
+        self, state: DiscreteState, action: DiscreteAction, next_state: DiscreteState
+    ) -> float:
         """Return (deterministic) reward for executing action in state."""
 
     @abc.abstractmethod
     def get_transition_distribution(
-        self, state: State, action: Action
-    ) -> Dict[State, float]:
+        self, state: DiscreteState, action: DiscreteAction
+    ) -> Dict[DiscreteState, float]:
         """Return a discrete distribution over next states."""
 
     def sample_next_state(
-        self, state: State, action: Action, rng: np.random.Generator
-    ) -> State:
+        self, state: DiscreteState, action: DiscreteAction, rng: np.random.Generator
+    ) -> DiscreteState:
         """Sample a next state from the transition distribution.
 
         This function may be overwritten by subclasses when the explicit
@@ -63,5 +65,5 @@ class DiscreteMDP(Generic[State, Action]):
         return next_state
 
     @abc.abstractmethod
-    def render_state(self, state: State) -> Image:
+    def render_state(self, state: DiscreteState) -> Image:
         """Optional rendering function for visualizations."""
