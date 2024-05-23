@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Tuple
 
-import moviepy.editor as mpy
+import imageio.v2 as iio
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -48,10 +48,8 @@ def _main(outfile: str, fps: int) -> None:
     Vs: List[Dict[ChaseState, float]] = value_iteration(
         mdp, max_num_iterations=100, print_every=1
     )
-    duration = len(Vs) / fps
-    make_frame = lambda t: _render_value_function(Vs[int(t)])
-    clip = mpy.VideoClip(make_frame, duration=duration)
-    clip.write_gif(outfile, fps=fps)
+    imgs = [_render_value_function(V) for V in Vs]
+    iio.mimsave(outfile, imgs, fps=fps)
 
 
 if __name__ == "__main__":
@@ -59,6 +57,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--outfile", default="value_iteration.gif")
-    parser.add_argument("--fps", default=1)
+    parser.add_argument("--fps", default=2)
     args = parser.parse_args()
     _main(args.outfile, args.fps)
