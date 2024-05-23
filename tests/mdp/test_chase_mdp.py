@@ -17,3 +17,5 @@ def test_chase_mdp():
     assert np.isclose(dist[((1, 0), (1, 0))], 0.75)
     assert np.isclose(dist[((1, 0), (0, 0))], 0.125)
     assert np.isclose(dist[((1, 0), (1, 1))], 0.125)
+    img = mdp.render_state(((0, 0), (1, 0)))
+    assert img.sum() > 0
