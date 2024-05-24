@@ -40,4 +40,4 @@ def evaluate_policy_linear_system(
     values = solutions[0]
 
     # Construct value function.
-    return dict(zip(ordered_S, values))
+    return {s: float(v) for s, v in zip(ordered_S, values, strict=True)}

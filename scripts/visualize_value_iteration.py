@@ -14,7 +14,8 @@ from mlrp_course.utils import fig2data
 HEIGHT, WIDTH = ChaseMDP._height, ChaseMDP._width  # pylint: disable=protected-access
 
 
-def _render_value_function(value_function: Dict[ChaseState, float]) -> Image:
+def render_chase_value_function(value_function: Dict[ChaseState, float]) -> Image:
+    """Render a value function in the Chase MDP."""
     fig, axes = plt.subplots(HEIGHT, WIDTH)
     for r in range(HEIGHT):
         for c in range(WIDTH):
@@ -48,7 +49,7 @@ def _main(outfile: str, fps: int) -> None:
     Vs: List[Dict[ChaseState, float]] = value_iteration(
         mdp, max_num_iterations=100, print_every=1
     )
-    imgs = [_render_value_function(V) for V in Vs]
+    imgs = [render_chase_value_function(V) for V in Vs]
     iio.mimsave(outfile, imgs, fps=fps)
 
 
