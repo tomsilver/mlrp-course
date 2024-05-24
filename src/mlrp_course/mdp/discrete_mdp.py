@@ -1,27 +1,30 @@
 """A generic definition of an MDP with discrete states and actions."""
 
 import abc
-from typing import Dict, Generic, Hashable, Optional, Set, TypeVar
+from typing import Dict, Generic, Hashable, Optional, Set, TypeAlias, TypeVar
 
 import numpy as np
 
 from mlrp_course.structs import Image
 
-DiscreteState = TypeVar("DiscreteState", bound=Hashable)
-DiscreteAction = TypeVar("DiscreteAction")
+DiscreteState: TypeAlias = Hashable
+DiscreteAction: TypeAlias = Hashable
+
+_S = TypeVar("_S", bound=DiscreteState)
+_A = TypeVar("_A", bound=DiscreteAction)
 
 
-class DiscreteMDP(Generic[DiscreteState, DiscreteAction]):
+class DiscreteMDP(Generic[_S, _A]):
     """A Markov Decision Process."""
 
     @property
     @abc.abstractmethod
-    def state_space(self) -> Set[DiscreteState]:
+    def state_space(self) -> Set[_S]:
         """Representation of the MDP state set."""
 
     @property
     @abc.abstractmethod
-    def action_space(self) -> Set[DiscreteAction]:
+    def action_space(self) -> Set[_A]:
         """Representation of the MDP action set."""
 
     @property
@@ -35,24 +38,18 @@ class DiscreteMDP(Generic[DiscreteState, DiscreteAction]):
         return None
 
     @abc.abstractmethod
-    def state_is_terminal(self, state: DiscreteState) -> bool:
+    def state_is_terminal(self, state: _S) -> bool:
         """Designate certain states as terminal (done) states."""
 
     @abc.abstractmethod
-    def get_reward(
-        self, state: DiscreteState, action: DiscreteAction, next_state: DiscreteState
-    ) -> float:
+    def get_reward(self, state: _S, action: _A, next_state: _S) -> float:
         """Return (deterministic) reward for executing action in state."""
 
     @abc.abstractmethod
-    def get_transition_distribution(
-        self, state: DiscreteState, action: DiscreteAction
-    ) -> Dict[DiscreteState, float]:
+    def get_transition_distribution(self, state: _S, action: _A) -> Dict[_S, float]:
         """Return a discrete distribution over next states."""
 
-    def sample_next_state(
-        self, state: DiscreteState, action: DiscreteAction, rng: np.random.Generator
-    ) -> DiscreteState:
+    def sample_next_state(self, state: _S, action: _A, rng: np.random.Generator) -> _S:
         """Sample a next state from the transition distribution.
 
         This function may be overwritten by subclasses when the explicit
@@ -65,11 +62,11 @@ class DiscreteMDP(Generic[DiscreteState, DiscreteAction]):
         return next_state
 
     def get_transition_probability(
-        self, state: DiscreteState, action: DiscreteAction, next_state: DiscreteState
+        self, state: _S, action: _A, next_state: _S
     ) -> float:
         """Convenience method for some algorithms."""
         return self.get_transition_distribution(state, action).get(next_state, 0.0)
 
     @abc.abstractmethod
-    def render_state(self, state: DiscreteState) -> Image:
+    def render_state(self, state: _S) -> Image:
         """Optional rendering function for visualizations."""
