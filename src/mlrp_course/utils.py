@@ -1,5 +1,6 @@
 """Utilities."""
 
+from pathlib import Path
 from typing import Callable, Dict, List, Tuple
 
 import matplotlib.pyplot as plt
@@ -85,6 +86,13 @@ def sample_trajectory(
         actions.append(action)
         states.append(state)
     return states, actions
+
+
+def load_image_asset(filename: str) -> Image:
+    """Load an image asset."""
+    asset_dir = Path(__file__).parent / "assets"
+    image_file = asset_dir / filename
+    return plt.imread(image_file)
 
 
 def fig2data(fig: plt.Figure) -> Image:

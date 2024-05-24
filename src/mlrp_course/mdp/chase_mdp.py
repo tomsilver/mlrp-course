@@ -1,13 +1,16 @@
 """The Chase MDP described in lecture."""
 
 from collections import defaultdict
+from functools import lru_cache
 from typing import ClassVar, DefaultDict, Dict, Set, Tuple, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
+from skimage.transform import resize  # pylint: disable=no-name-in-module
 
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP
 from mlrp_course.structs import Image
+from mlrp_course.utils import load_image_asset
 
 # Define the state and action types.
 ChaseState: TypeAlias = Tuple[Tuple[int, int], Tuple[int, int]]
@@ -105,13 +108,38 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
             return self._goal_reward
         return self._living_reward
 
+    @lru_cache(maxsize=None)
+    def _get_token_image(self, cell_type: str) -> Image:
+        if cell_type == "robot":
+            return load_image_asset("robot.png")
+        if cell_type == "bunny":
+            return load_image_asset("bunny.png")
+        if cell_type == "obstacle":
+            return load_image_asset("obstacle.png")
+        raise ValueError(f"No asset for {cell_type} known")
+
     def render_state(self, state: ChaseState) -> Image:
-        image = np.ones((self.get_height(), self.get_width(), 4))
-        (agent_r, agent_c), (goal_r, goal_c) = state
-        image[agent_r, agent_c] = (0.0, 0.0, 0.9, 1.0)
-        image[goal_r, goal_c] = (0.0, 0.9, 0.0, 1.0)
-        image[np.argwhere(self._obstacles), :3] = 0
-        return (255 * image).astype(np.uint8)
+        tilesize = 64
+        height, width = self.get_height(), self.get_width()
+        canvas = np.zeros((height * tilesize, width * tilesize, 3))
+
+        for r in range(height):
+            for c in range(width):
+                if (r, c) == state[0]:
+                    cell_type = "robot"
+                elif (r, c) == state[1]:
+                    cell_type = "bunny"
+                elif self._obstacles[(r, c)]:
+                    cell_type = "obstacle"
+                else:
+                    continue
+                im = self._get_token_image(cell_type)
+                canvas[
+                    r * tilesize : (r + 1) * tilesize,
+                    c * tilesize : (c + 1) * tilesize,
+                ] = resize(im[:, :, :3], (tilesize, tilesize, 3), preserve_range=True)
+
+        return (255 * canvas).astype(np.uint8)
 
 
 class ChaseWithRoomsMDP(ChaseMDP):
@@ -140,6 +168,38 @@ class ChaseWithRoomsMDP(ChaseMDP):
             [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
             [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        ],
+        dtype=np.bool_,
+    )
+
+
+class ChaseWithLargeRoomsMDP(ChaseMDP):
+    """A variation with many large "rooms" that are disconnected."""
+
+    _obstacles: ClassVar[NDArray[np.bool_]] = np.array(
+        [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         ],
         dtype=np.bool_,
     )

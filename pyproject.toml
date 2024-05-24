@@ -13,6 +13,7 @@ dependencies = [
    "numpy",
    "imageio",
    "sympy",
+   "scikit-image",
 ]
 
 [project.optional-dependencies]
