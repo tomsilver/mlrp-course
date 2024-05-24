@@ -180,8 +180,8 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
         raise ValueError(f"No asset for {cell_type} known")
 
     def render_state(self, state: ChaseState) -> Image:
-        tilesize = 64
         height, width = self.get_height(), self.get_width()
+        tilesize = 32
         canvas = np.zeros((height * tilesize, width * tilesize, 3))
 
         for r in range(height):
@@ -286,7 +286,8 @@ class ChaseWithLargeRoomsMDP(ChaseMDP):
 class LargeChaseMDP(ChaseMDP):
     """A variation with arbitrarily many bunnies in a large free space."""
 
-    _obstacles: ClassVar[NDArray[np.bool_]] = np.zeros((32, 32), dtype=np.bool_)
+    _obstacles: ClassVar[NDArray[np.bool_]] = np.zeros((16, 16), dtype=np.bool_)
+    _capture_reward: ClassVar[float] = 1.0
 
     @property
     def state_space(self) -> Set[ChaseState]:
