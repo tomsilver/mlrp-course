@@ -11,7 +11,12 @@ from mlrp_course.algorithms.finite_horizon_dp import finite_horizon_dp
 from mlrp_course.algorithms.policy_iteration import policy_iteration
 from mlrp_course.algorithms.rtdp import rtdp
 from mlrp_course.algorithms.value_iteration import value_iteration
-from mlrp_course.mdp.chase_mdp import ChaseMDP, ChaseState, ChaseWithRoomsMDP
+from mlrp_course.mdp.chase_mdp import (
+    ChaseMDP,
+    ChaseState,
+    ChaseWithLargeRoomsMDP,
+    ChaseWithRoomsMDP,
+)
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.utils import sample_trajectory, value_function_to_greedy_policy
 
@@ -53,6 +58,11 @@ def _create_mdp_and_initial_state(
 
     if name == "chase-with-rooms":
         mdp = ChaseWithRoomsMDP()
+        initial_state = _sample_chase_initial_state(mdp, rng)
+        return mdp, initial_state
+
+    if name == "chase-with-large-rooms":
+        mdp = ChaseWithLargeRoomsMDP()
         initial_state = _sample_chase_initial_state(mdp, rng)
         return mdp, initial_state
 
