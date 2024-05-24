@@ -45,6 +45,7 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
     # The map is defined based on the obstacles, which by default are empty.
     _obstacles: ClassVar[NDArray[np.bool_]] = np.zeros((2, 3), dtype=np.bool_)
     _goal_reward: ClassVar[float] = 1.0
+    _capture_reward: ClassVar[float] = 0.0
     _living_reward: ClassVar[float] = 0.0
 
     @classmethod
@@ -147,9 +148,16 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
     def get_reward(
         self, state: ChaseState, action: ChaseAction, next_state: ChaseState
     ) -> float:
+        rew = 0.0
+        num_bunnies_before = sum(l is None for l in state.bunny_positions)
+        num_bunnies_after = sum(l is None for l in next_state.bunny_positions)
+        num_capture = num_bunnies_before - num_bunnies_after
+        rew += num_capture * self._capture_reward
         if self.state_is_terminal(next_state):
-            return self._goal_reward
-        return self._living_reward
+            rew += self._goal_reward
+        else:
+            rew += self._living_reward
+        return rew
 
     @lru_cache(maxsize=None)
     def _get_token_image(self, cell_type: str) -> Image:
