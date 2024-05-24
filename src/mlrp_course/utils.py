@@ -13,7 +13,7 @@ def bellman_backup(
     s: DiscreteState, V: Dict[DiscreteState, float], mdp: DiscreteMDP
 ) -> float:
     """Look ahead one step and propose an update for the value of s."""
-    assert mdp.horizon == float("inf")
+    assert mdp.horizon is None
     vs = -float("inf")
     for a in mdp.action_space:
         qsa = 0.0

@@ -1,7 +1,7 @@
 """A generic definition of an MDP with discrete states and actions."""
 
 import abc
-from typing import Dict, Generic, Hashable, Set, TypeVar
+from typing import Dict, Generic, Hashable, Optional, Set, TypeVar
 
 import numpy as np
 
@@ -30,9 +30,9 @@ class DiscreteMDP(Generic[DiscreteState, DiscreteAction]):
         return 1.0
 
     @property
-    def horizon(self) -> float:
-        """H, defaults to inf."""
-        return float("inf")
+    def horizon(self) -> Optional[int]:
+        """H, defaults to None (inf)."""
+        return None
 
     @abc.abstractmethod
     def state_is_terminal(self, state: DiscreteState) -> bool:
@@ -63,6 +63,12 @@ class DiscreteMDP(Generic[DiscreteState, DiscreteAction]):
         next_state_index = rng.choice(len(next_states), p=probs)
         next_state = next_states[next_state_index]
         return next_state
+
+    def get_transition_probability(
+        self, state: DiscreteState, action: DiscreteAction, next_state: DiscreteState
+    ) -> float:
+        """Convenience method for some algorithms."""
+        return self.get_transition_distribution(state, action).get(next_state, 0.0)
 
     @abc.abstractmethod
     def render_state(self, state: DiscreteState) -> Image:

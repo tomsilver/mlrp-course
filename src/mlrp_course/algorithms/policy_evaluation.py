@@ -11,18 +11,14 @@ def evaluate_policy_linear_system(
     pi: Callable[[DiscreteState], DiscreteAction], mdp: DiscreteMDP
 ) -> Dict[DiscreteState, float]:
     """Computes a value function by solving a system of linear equations."""
-    # Get states, actions, Tr, and R
-    states = mdp.state_space
+    # Get states, P, and R.
+    S = mdp.state_space
     gamma = mdp.temporal_discount_factor
-
-    def Tr(s: DiscreteState, a: DiscreteAction, ns: DiscreteState) -> float:
-        """Shorthand for transition probability."""
-        return mdp.get_transition_distribution(s, a).get(ns, 0.0)
-
+    P = mdp.get_transition_probability
     R = mdp.get_reward
 
     # Create symbolic variables for values.
-    V = {s: Symbol(f"s{s}") for s in states}
+    V = {s: Symbol(f"s{s}") for s in S}
 
     # Create equations.
     equations = []
@@ -32,17 +28,16 @@ def evaluate_policy_linear_system(
             rhs = 0
         # Main equation.
         else:
-            rhs = sum(
-                Tr(s, pi(s), ns) * (R(s, pi(s), ns) + gamma * V[ns]) for ns in states
-            )
+            rhs = sum(P(s, pi(s), ns) * (R(s, pi(s), ns) + gamma * V[ns]) for ns in S)
         equation = Eq(v_s, rhs)
         equations.append(equation)
 
     # Solve equations.
-    solutions = linsolve(equations, [V[s] for s in states])
+    ordered_S = sorted(S)
+    solutions = linsolve(equations, [V[s] for s in ordered_S])
     solutions = list(solutions)
     assert len(solutions) == 1
     values = solutions[0]
 
     # Construct value function.
-    return dict(zip(states, values))
+    return dict(zip(ordered_S, values))
