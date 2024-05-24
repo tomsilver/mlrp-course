@@ -38,6 +38,7 @@ def _sample_chase_initial_state(mdp: ChaseMDP, rng: np.random.Generator) -> Chas
                 reachable_locs.add((nr, nc))
                 queue.append((nr, nc))
     ordered_reachable_locs = sorted(reachable_locs)
+    ordered_reachable_locs.remove(robot_loc)
     rabbit_loc = ordered_reachable_locs[rng.choice(len(ordered_reachable_locs))]
     return (robot_loc, rabbit_loc)
 
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("mdp", type=str)
     parser.add_argument("approach", type=str)
-    parser.add_argument("--seed", default=0)
+    parser.add_argument("--seed", default=0, type=int)
     parser.add_argument("--max_horizon", default=100)
     parser.add_argument("--outdir", default=Path("."), type=Path)
     parser.add_argument("--fps", default=2)
