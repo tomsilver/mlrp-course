@@ -14,6 +14,8 @@ dependencies = [
    "imageio",
    "sympy",
    "scikit-image",
+   "tqdm",
+   "types-tqdm",
 ]
 
 [project.optional-dependencies]

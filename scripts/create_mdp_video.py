@@ -1,10 +1,11 @@
 """Create videos of various MDP planning approaches running in various MDPs."""
 
 from pathlib import Path
-from typing import Callable, Tuple
+from typing import Callable, List, Tuple
 
 import imageio.v2 as iio
 import numpy as np
+from tqdm import tqdm
 
 from mlrp_course.algorithms.expectimax_search import expectimax_search
 from mlrp_course.algorithms.finite_horizon_dp import finite_horizon_dp
@@ -16,12 +17,17 @@ from mlrp_course.mdp.chase_mdp import (
     ChaseState,
     ChaseWithLargeRoomsMDP,
     ChaseWithRoomsMDP,
+    LargeChaseMDP,
+    TwoBunnyChaseMDP,
 )
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.structs import Image
 from mlrp_course.utils import sample_trajectory, value_function_to_greedy_policy
 
 
-def _sample_chase_initial_state(mdp: ChaseMDP, rng: np.random.Generator) -> ChaseState:
+def _sample_chase_initial_state(
+    mdp: ChaseMDP, rng: np.random.Generator, num_bunnies: int = 1
+) -> ChaseState:
     obstacles = mdp._obstacles  # pylint: disable=protected-access
     free_spaces = [tuple(loc) for loc in np.argwhere(~obstacles)]
     # Sample a random starting location for the robot.
@@ -44,8 +50,9 @@ def _sample_chase_initial_state(mdp: ChaseMDP, rng: np.random.Generator) -> Chas
                 queue.append((nr, nc))
     ordered_reachable_locs = sorted(reachable_locs)
     ordered_reachable_locs.remove(robot_loc)
-    rabbit_loc = ordered_reachable_locs[rng.choice(len(ordered_reachable_locs))]
-    return (robot_loc, rabbit_loc)
+    idxs = rng.choice(len(ordered_reachable_locs), size=num_bunnies)
+    rabbit_locs = tuple(ordered_reachable_locs[i] for i in idxs)
+    return ChaseState(robot_loc, rabbit_locs)
 
 
 def _create_mdp_and_initial_state(
@@ -56,6 +63,11 @@ def _create_mdp_and_initial_state(
         initial_state = _sample_chase_initial_state(mdp, rng)
         return mdp, initial_state
 
+    if name == "chase-two-bunnies":
+        mdp = TwoBunnyChaseMDP()
+        initial_state = _sample_chase_initial_state(mdp, rng, num_bunnies=2)
+        return mdp, initial_state
+
     if name == "chase-with-rooms":
         mdp = ChaseWithRoomsMDP()
         initial_state = _sample_chase_initial_state(mdp, rng)
@@ -64,6 +76,11 @@ def _create_mdp_and_initial_state(
     if name == "chase-with-large-rooms":
         mdp = ChaseWithLargeRoomsMDP()
         initial_state = _sample_chase_initial_state(mdp, rng)
+        return mdp, initial_state
+
+    if name == "chase-large":
+        mdp = LargeChaseMDP()
+        initial_state = _sample_chase_initial_state(mdp, rng, num_bunnies=5)
         return mdp, initial_state
 
     raise NotImplementedError("MDP not supported")
@@ -116,6 +133,18 @@ def _create_approach(
 
         return rtdp_pi
 
+    if name == "random":
+
+        # Sort for determinism.
+        sorted_actions = sorted(mdp.action_space)
+
+        def random_pi(s: DiscreteState) -> DiscreteAction:
+            """Sample a random action."""
+            del s  # not used
+            return sorted_actions[rng.choice(len(sorted_actions))]
+
+        return random_pi
+
     raise NotImplementedError("Approach not found.")
 
 
@@ -133,8 +162,14 @@ def _main(
     outfile = outdir / f"{mdp_name}_{approach_name}_{seed}.gif"
     if mdp.horizon is not None:
         max_horizon = min(max_horizon, mdp.horizon)
+    print("Sampling trajectory...")
     states, _ = sample_trajectory(initial_state, policy, mdp, max_horizon, rng)
-    imgs = [mdp.render_state(s) for s in states]
+    print("Done.")
+    print("Rendering...")
+    imgs: List[Image] = []
+    for s in tqdm(states):
+        img = mdp.render_state(s)
+        imgs.append(img)
     iio.mimsave(outfile, imgs, fps=fps)
     print(f"Wrote out to {outfile}.")
 
@@ -146,8 +181,8 @@ if __name__ == "__main__":
     parser.add_argument("mdp", type=str)
     parser.add_argument("approach", type=str)
     parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--max_horizon", default=100)
+    parser.add_argument("--max_horizon", default=100, type=int)
     parser.add_argument("--outdir", default=Path("."), type=Path)
-    parser.add_argument("--fps", default=2)
+    parser.add_argument("--fps", default=2, type=int)
     args = parser.parse_args()
     _main(args.mdp, args.approach, args.seed, args.max_horizon, args.outdir, args.fps)
