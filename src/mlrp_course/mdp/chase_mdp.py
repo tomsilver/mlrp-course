@@ -170,18 +170,20 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
         return rew
 
     @lru_cache(maxsize=None)
-    def _get_token_image(self, cell_type: str) -> Image:
+    def _get_token_image(self, cell_type: str, tilesize: int) -> Image:
         if cell_type == "robot":
-            return load_image_asset("robot.png")
-        if cell_type == "bunny":
-            return load_image_asset("bunny.png")
-        if cell_type == "obstacle":
-            return load_image_asset("obstacle.png")
-        raise ValueError(f"No asset for {cell_type} known")
+            im = load_image_asset("robot.png")
+        elif cell_type == "bunny":
+            im = load_image_asset("bunny.png")
+        elif cell_type == "obstacle":
+            im = load_image_asset("obstacle.png")
+        else:
+            raise ValueError(f"No asset for {cell_type} known")
+        return resize(im[:, :, :3], (tilesize, tilesize, 3), preserve_range=True)
 
     def render_state(self, state: ChaseState) -> Image:
         height, width = self.get_height(), self.get_width()
-        tilesize = 32
+        tilesize = 64
         canvas = np.zeros((height * tilesize, width * tilesize, 3))
 
         for r in range(height):
@@ -194,11 +196,11 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
                     cell_type = "obstacle"
                 else:
                     continue
-                im = self._get_token_image(cell_type)
+                im = self._get_token_image(cell_type, tilesize)
                 canvas[
                     r * tilesize : (r + 1) * tilesize,
                     c * tilesize : (c + 1) * tilesize,
-                ] = resize(im[:, :, :3], (tilesize, tilesize, 3), preserve_range=True)
+                ] = im
 
         return (255 * canvas).astype(np.uint8)
 
