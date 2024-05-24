@@ -1,20 +1,21 @@
 """Create a visualization of value iteration running in Chase."""
 
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 import imageio.v2 as iio
 import numpy as np
 from matplotlib import pyplot as plt
 
 from mlrp_course.algorithms.value_iteration import value_iteration
-from mlrp_course.mdp.chase_mdp import ChaseMDP, ChaseState
+from mlrp_course.mdp.chase_mdp import ChaseMDP
+from mlrp_course.mdp.discrete_mdp import DiscreteState
 from mlrp_course.structs import Image
 from mlrp_course.utils import fig2data
 
-HEIGHT, WIDTH = ChaseMDP._height, ChaseMDP._width  # pylint: disable=protected-access
+HEIGHT, WIDTH = ChaseMDP.get_height(), ChaseMDP.get_width()
 
 
-def render_chase_value_function(value_function: Dict[ChaseState, float]) -> Image:
+def render_chase_value_function(value_function: Dict[DiscreteState, float]) -> Image:
     """Render a value function in the Chase MDP."""
     fig, axes = plt.subplots(HEIGHT, WIDTH)
     for r in range(HEIGHT):
@@ -26,7 +27,9 @@ def render_chase_value_function(value_function: Dict[ChaseState, float]) -> Imag
 
 
 def _render_value_function_rabbit_pos(
-    ax: plt.Axes, value_function: Dict[ChaseState, float], rabbit_pos: Tuple[int, int]
+    ax: plt.Axes,
+    value_function: Dict[DiscreteState, float],
+    rabbit_pos: Tuple[int, int],
 ) -> None:
     value_grid = np.zeros((HEIGHT, WIDTH))
     for r in range(HEIGHT):
@@ -46,9 +49,7 @@ def _render_value_function_rabbit_pos(
 
 def _main(outfile: str, fps: int) -> None:
     mdp = ChaseMDP()
-    Vs: List[Dict[ChaseState, float]] = value_iteration(
-        mdp, max_num_iterations=100, print_every=1
-    )
+    Vs = value_iteration(mdp, max_num_iterations=100, print_every=1)
     imgs = [render_chase_value_function(V) for V in Vs]
     iio.mimsave(outfile, imgs, fps=fps)
 
