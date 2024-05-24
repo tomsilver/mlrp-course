@@ -1,6 +1,6 @@
 """The Marshmallow MDP described in lecture."""
 
-from typing import Dict, Set, Tuple, TypeAlias
+from typing import Dict, Optional, Set, Tuple, TypeAlias
 
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP
 from mlrp_course.structs import Image
@@ -23,7 +23,7 @@ class MarshmallowMDP(DiscreteMDP[MarshmellowState, MarshmellowAction]):
         return {"eat", "wait"}
 
     @property
-    def horizon(self) -> float:
+    def horizon(self) -> Optional[int]:
         return 4
 
     def state_is_terminal(self, state: MarshmellowState) -> bool:
