@@ -3,13 +3,13 @@
 import numpy as np
 
 from mlrp_course.algorithms.rtdp import rtdp
-from mlrp_course.mdp.chase_mdp import ChaseWithRoomsMDP
+from mlrp_course.mdp.chase_mdp import ChaseState, ChaseWithRoomsMDP
 
 
 def test_rtdp():
     """Tests for rtdp.py."""
     mdp = ChaseWithRoomsMDP()
-    state = ((1, 1), (3, 3))
+    state = ChaseState((1, 1), ((3, 3),))
     rng = np.random.default_rng(123)
     search_horizon = 10
     for _ in range(10):

@@ -1,8 +1,19 @@
 """The Chase MDP described in lecture."""
 
+import itertools
 from collections import defaultdict
+from dataclasses import dataclass
 from functools import lru_cache
-from typing import ClassVar, DefaultDict, Dict, Set, Tuple, TypeAlias
+from typing import (
+    Any,
+    ClassVar,
+    DefaultDict,
+    Dict,
+    Optional,
+    Set,
+    Tuple,
+    TypeAlias,
+)
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,8 +24,19 @@ from mlrp_course.structs import Image
 from mlrp_course.utils import load_image_asset
 
 # Define the state and action types.
-ChaseState: TypeAlias = Tuple[Tuple[int, int], Tuple[int, int]]
 ChaseAction: TypeAlias = str
+
+
+@dataclass(frozen=True)
+class ChaseState:
+    """The state consists of the robot position and the bunny positions."""
+
+    robot_pos: Tuple[int, int]
+    bunny_positions: Tuple[Optional[Tuple[int, int]], ...]  # location or gone
+
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, ChaseState)
+        return str(self) < str(other)
 
 
 class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
@@ -37,10 +59,11 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
 
     @property
     def state_space(self) -> Set[ChaseState]:
+        # Subclasses may have multiple bunnies, but by default there is just one.
         pos = [
             (r, c) for r in range(self.get_height()) for c in range(self.get_width())
         ]
-        return {(p1, p2) for p1 in pos for p2 in pos}
+        return {ChaseState(p1, (p2,)) for p1 in pos for p2 in pos + [None]}
 
     @property
     def action_space(self) -> Set[ChaseAction]:
@@ -51,8 +74,7 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
         return 0.9
 
     def state_is_terminal(self, state: ChaseState) -> bool:
-        agent_pos, goal_pos = state
-        return agent_pos == goal_pos
+        return all(p is None for p in state.bunny_positions)
 
     def _action_to_delta(self, action: ChaseAction) -> Tuple[int, int]:
         """Helper for transition distribution construction."""
@@ -68,12 +90,10 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
     ) -> Dict[ChaseState, float]:
         # Discrete distributions, represented with a dict
         # mapping next states to probs.
-        next_state_dist: DefaultDict[ChaseState, float] = defaultdict(float)
-
-        agent_pos, goal_pos = state
+        next_state_dist: Dict[ChaseState, float] = {}
 
         # Get next agent state.
-        row, col = agent_pos
+        row, col = state.robot_pos
         dr, dc = self._action_to_delta(action)
         r, c = row + dr, col + dc
         # Stay in place if out of bounds or obstacle
@@ -81,30 +101,53 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
             r, c = row, col
         elif self._obstacles[r, c]:
             r, c = row, col
-        next_agent_pos = (r, c)
+        next_robot_pos = (r, c)
 
-        # Get next bunny state.
-        # Stay in same place with probability 0.5.
-        next_state_dist[(next_agent_pos, goal_pos)] += 0.5
-        # Otherwise move.
-        row, col = goal_pos
-        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            r, c = row + dr, col + dc
-            # Stay in place if out of bounds or obstacle.
-            if not (0 <= r < self.get_height() and 0 <= c < self.get_width()):
-                r, c = row, col
-            elif self._obstacles[r, c]:
-                r, c = row, col
-            next_goal_pos = (r, c)
-            next_state_dist[(next_agent_pos, next_goal_pos)] += 0.5 * 0.25
+        # Get next bunny state distributions.
+        next_bunny_pos_dists = []
+        for bunny_pos in state.bunny_positions:
+            dist: DefaultDict[Optional[Tuple[int, int]], float] = defaultdict(float)
+            # If the bunny is already gone, it will definitely be gone.
+            if bunny_pos is None:
+                dist[None] = 1.0
+            else:
+                # Stay in same place with probability 0.5.
+                if bunny_pos == next_robot_pos:
+                    dist[None] += 0.5
+                else:
+                    dist[bunny_pos] += 0.5
+                # Otherwise move.
+                row, col = bunny_pos
+                for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    r, c = row + dr, col + dc
+                    # Stay in place if out of bounds or obstacle.
+                    if not (0 <= r < self.get_height() and 0 <= c < self.get_width()):
+                        r, c = row, col
+                    elif self._obstacles[r, c]:
+                        r, c = row, col
+                    next_bunny_pos = (r, c)
+                    if next_bunny_pos == next_robot_pos:
+                        dist[None] += 0.5 * 0.25
+                    else:
+                        dist[next_bunny_pos] += 0.5 * 0.25
+            next_bunny_pos_dists.append(dist)
 
-        return dict(next_state_dist)
+        # Combine bunny distributions together.
+        for outcome in itertools.product(*[d.items() for d in next_bunny_pos_dists]):
+            bunny_positions = []
+            prob = 1.0
+            for pos, p in outcome:
+                bunny_positions.append(pos)
+                prob *= p
+            state = ChaseState(next_robot_pos, tuple(bunny_positions))
+            next_state_dist[state] = prob
+
+        return next_state_dist
 
     def get_reward(
         self, state: ChaseState, action: ChaseAction, next_state: ChaseState
     ) -> float:
-        agent_pos, goal_pos = next_state
-        if agent_pos == goal_pos:
+        if self.state_is_terminal(next_state):
             return self._goal_reward
         return self._living_reward
 
@@ -125,9 +168,9 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
 
         for r in range(height):
             for c in range(width):
-                if (r, c) == state[0]:
+                if (r, c) == state.robot_pos:
                     cell_type = "robot"
-                elif (r, c) == state[1]:
+                elif (r, c) in state.bunny_positions:
                     cell_type = "bunny"
                 elif self._obstacles[(r, c)]:
                     cell_type = "obstacle"
@@ -140,6 +183,23 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
                 ] = resize(im[:, :, :3], (tilesize, tilesize, 3), preserve_range=True)
 
         return (255 * canvas).astype(np.uint8)
+
+
+class TwoBunnyChaseMDP(ChaseMDP):
+    """A small chase MDP with two bunnies in it."""
+
+    @property
+    def state_space(self) -> Set[ChaseState]:
+        # Subclasses may have multiple bunnies, but by default there is just one.
+        pos = [
+            (r, c) for r in range(self.get_height()) for c in range(self.get_width())
+        ]
+        return {
+            ChaseState(p1, (p2, p3))
+            for p1 in pos
+            for p2 in pos + [None]
+            for p3 in pos + [None]
+        }
 
 
 class ChaseWithRoomsMDP(ChaseMDP):

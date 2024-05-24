@@ -16,12 +16,15 @@ from mlrp_course.mdp.chase_mdp import (
     ChaseState,
     ChaseWithLargeRoomsMDP,
     ChaseWithRoomsMDP,
+    TwoBunnyChaseMDP,
 )
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.utils import sample_trajectory, value_function_to_greedy_policy
 
 
-def _sample_chase_initial_state(mdp: ChaseMDP, rng: np.random.Generator) -> ChaseState:
+def _sample_chase_initial_state(
+    mdp: ChaseMDP, rng: np.random.Generator, num_bunnies: int = 1
+) -> ChaseState:
     obstacles = mdp._obstacles  # pylint: disable=protected-access
     free_spaces = [tuple(loc) for loc in np.argwhere(~obstacles)]
     # Sample a random starting location for the robot.
@@ -44,8 +47,9 @@ def _sample_chase_initial_state(mdp: ChaseMDP, rng: np.random.Generator) -> Chas
                 queue.append((nr, nc))
     ordered_reachable_locs = sorted(reachable_locs)
     ordered_reachable_locs.remove(robot_loc)
-    rabbit_loc = ordered_reachable_locs[rng.choice(len(ordered_reachable_locs))]
-    return (robot_loc, rabbit_loc)
+    idxs = rng.choice(len(ordered_reachable_locs), size=num_bunnies)
+    rabbit_locs = tuple(ordered_reachable_locs[i] for i in idxs)
+    return ChaseState(robot_loc, rabbit_locs)
 
 
 def _create_mdp_and_initial_state(
@@ -54,6 +58,11 @@ def _create_mdp_and_initial_state(
     if name == "chase":
         mdp = ChaseMDP()
         initial_state = _sample_chase_initial_state(mdp, rng)
+        return mdp, initial_state
+
+    if name == "chase-two-bunnies":
+        mdp = TwoBunnyChaseMDP()
+        initial_state = _sample_chase_initial_state(mdp, rng, num_bunnies=2)
         return mdp, initial_state
 
     if name == "chase-with-rooms":
