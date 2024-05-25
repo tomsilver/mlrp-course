@@ -16,6 +16,7 @@ dependencies = [
    "scikit-image",
    "tqdm",
    "types-tqdm",
+   "gymnasium",
 ]
 
 [project.optional-dependencies]
