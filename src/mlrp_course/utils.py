@@ -1,8 +1,9 @@
 """Utilities."""
 
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
+import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -99,3 +100,44 @@ def fig2data(fig: plt.Figure) -> Image:
     """Convert matplotlib figure into Image."""
     fig.canvas.draw()
     return np.array(fig.canvas.renderer.buffer_rgba())
+
+
+class DiscreteMDPGymEnv(gym.Env):
+    """Convert an MDP into a gym environment to force RL-access only."""
+
+    metadata = {"render_modes": ["rgb_array"]}
+
+    def __init__(
+        self,
+        mdp: DiscreteMDP,
+        sample_initial_state: Callable[[Optional[int]], DiscreteState],
+    ) -> None:
+        self._mdp = mdp
+        self._sample_initial_state = sample_initial_state
+        self._current_state: Optional[DiscreteState] = None  # set in reset()
+        super().__init__()
+
+    def reset(
+        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
+    ) -> Tuple[DiscreteState, Dict]:
+        super().reset(seed=seed)
+        self._current_state = self._sample_initial_state(seed)
+        info: Dict = {}
+        return self._current_state, info
+
+    def step(
+        self, action: DiscreteAction
+    ) -> Tuple[DiscreteState, float, bool, bool, Dict]:
+        next_state = self._mdp.sample_next_state(
+            self._current_state, action, self._np_random
+        )
+        reward = self._mdp.get_reward(self._current_state, action, next_state)
+        self._current_state = next_state
+        terminated = self._mdp.state_is_terminal(self._current_state)
+        truncated = False
+        info: Dict = {}
+        return self._current_state, reward, terminated, truncated, info
+
+    def render(self) -> Image:
+        assert self.render_mode == "rgb_array"
+        return self._mdp.render_state(self._current_state)
