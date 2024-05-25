@@ -159,8 +159,8 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
         self, state: ChaseState, action: ChaseAction, next_state: ChaseState
     ) -> float:
         rew = 0.0
-        num_bunnies_before = sum(l is None for l in state.bunny_positions)
-        num_bunnies_after = sum(l is None for l in next_state.bunny_positions)
+        num_bunnies_before = sum(l is not None for l in state.bunny_positions)
+        num_bunnies_after = sum(l is not None for l in next_state.bunny_positions)
         num_capture = num_bunnies_before - num_bunnies_after
         rew += num_capture * self._capture_reward
         if self.state_is_terminal(next_state):
