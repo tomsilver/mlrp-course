@@ -114,6 +114,7 @@ class DiscreteMDPGymEnv(gym.Env):
     ) -> None:
         self._mdp = mdp
         self._sample_initial_state = sample_initial_state
+        self._remaining_horizon = self._mdp.horizon or float("inf")
         self._current_state: Optional[DiscreteState] = None  # set in reset()
         super().__init__()
 
@@ -122,6 +123,7 @@ class DiscreteMDPGymEnv(gym.Env):
     ) -> Tuple[DiscreteState, Dict]:
         super().reset(seed=seed)
         self._current_state = self._sample_initial_state(seed)
+        self._remaining_horizon = self._mdp.horizon or float("inf")
         info: Dict = {}
         return self._current_state, info
 
@@ -129,12 +131,13 @@ class DiscreteMDPGymEnv(gym.Env):
         self, action: DiscreteAction
     ) -> Tuple[DiscreteState, float, bool, bool, Dict]:
         next_state = self._mdp.sample_next_state(
-            self._current_state, action, self._np_random
+            self._current_state, action, self.np_random
         )
         reward = self._mdp.get_reward(self._current_state, action, next_state)
         self._current_state = next_state
         terminated = self._mdp.state_is_terminal(self._current_state)
-        truncated = False
+        self._remaining_horizon -= 1
+        truncated = self._remaining_horizon <= 0
         info: Dict = {}
         return self._current_state, reward, terminated, truncated, info
 
