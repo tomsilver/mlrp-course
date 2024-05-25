@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from mlrp_course.algorithms.expectimax_search import expectimax_search
 from mlrp_course.algorithms.finite_horizon_dp import finite_horizon_dp
+from mlrp_course.algorithms.mcts import mcts
 from mlrp_course.algorithms.policy_iteration import policy_iteration
 from mlrp_course.algorithms.rtdp import rtdp
 from mlrp_course.algorithms.value_iteration import value_iteration
@@ -132,6 +133,14 @@ def _create_approach(
             return rtdp(s, mdp, search_horizon=10, rng=rng)
 
         return rtdp_pi
+
+    if name == "mcts":
+
+        def mcts_pi(s: DiscreteState) -> DiscreteAction:
+            """Run MCTS on every step."""
+            return mcts(s, mdp, search_horizon=100, rng=rng)
+
+        return mcts_pi
 
     if name == "random":
 
