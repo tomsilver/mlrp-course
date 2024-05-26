@@ -26,6 +26,10 @@ from mlrp_course.algorithms.policy_iteration import (
     get_policy_policy_iteration,
 )
 from mlrp_course.algorithms.rtdp import RTDPConfig, get_policy_rtdp
+from mlrp_course.algorithms.sparse_sampling import (
+    SparseSamplingConfig,
+    get_policy_sparse_sampling,
+)
 from mlrp_course.algorithms.value_iteration import (
     ValueIterationConfig,
     get_policy_value_iteration,
@@ -129,7 +133,10 @@ def _create_agent(
             get_policy_expectimax_search, ExpectimaxSearchConfig(), mdp, seed
         )
 
-    # TODO add sparse sampling
+    if name == "sparse_sampling":
+        return OnlinePlanningDiscreteMDPAgent(
+            get_policy_sparse_sampling, SparseSamplingConfig(), mdp, seed
+        )
 
     if name == "rtdp":
         return OnlinePlanningDiscreteMDPAgent(get_policy_rtdp, RTDPConfig(), mdp, seed)
