@@ -3,16 +3,17 @@
 import imageio.v2 as iio
 from visualize_value_iteration import render_chase_value_function
 
-from mlrp_course.algorithms.policy_iteration import policy_iteration
+from mlrp_course.algorithms.policy_iteration import (
+    PolicyIterationConfig,
+    policy_iteration,
+)
 from mlrp_course.mdp.chase_mdp import ChaseMDP
 
 
 def _main(outfile: str, fps: int) -> None:
     mdp = ChaseMDP()
-    Vs = policy_iteration(
-        mdp,
-        max_num_iterations=100,
-    )
+    config = PolicyIterationConfig(max_num_iterations=100)
+    Vs = policy_iteration(mdp, config)
     imgs = [render_chase_value_function(V) for V in Vs]
     iio.mimsave(outfile, imgs, fps=fps)
 

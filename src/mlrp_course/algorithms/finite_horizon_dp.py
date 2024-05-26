@@ -1,14 +1,26 @@
 """Solve finite-horizon MDPs by dynamic programming."""
 
-from typing import Dict
+from dataclasses import dataclass
+from typing import Callable, Dict
 
-from mlrp_course.mdp.discrete_mdp import DiscreteMDP, DiscreteState
+import numpy as np
+
+from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.utils import value_function_to_greedy_policy
+
+
+@dataclass(frozen=True)
+class FiniteHorizonDPConfig(AlgorithmConfig):
+    """Hyperparameters for finite-horizon DP."""
 
 
 def finite_horizon_dp(
     mdp: DiscreteMDP,
+    config: FiniteHorizonDPConfig,
 ) -> Dict[int, Dict[DiscreteState, float]]:
     """Solve finite-horizon MDPs by dynamic programming."""
+    del config  # no hyperparameters used
     assert mdp.horizon is not None
 
     # Get states, actions, P, and R.
@@ -32,3 +44,23 @@ def finite_horizon_dp(
             )
 
     return V
+
+
+def get_policy_finite_horizon_dp(
+    mdp: DiscreteMDP, rng: np.random.Generator, config: AlgorithmConfig
+) -> Callable[[DiscreteState], DiscreteAction]:
+    """Run finite-horizon DP and produce a policy."""
+    assert isinstance(config, FiniteHorizonDPConfig)
+    print("Running finite-horizon DP...")
+    V_timed = finite_horizon_dp(mdp, config)
+    print("Done.")
+    t = 0
+
+    def pi(s: DiscreteState) -> DiscreteAction:
+        """Assume that the policy is called once per time step."""
+        nonlocal t
+        V = V_timed[t]
+        t += 1
+        return value_function_to_greedy_policy(V, mdp, rng)(s)
+
+    return pi

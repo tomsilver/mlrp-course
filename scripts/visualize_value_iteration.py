@@ -6,7 +6,7 @@ import imageio.v2 as iio
 import numpy as np
 from matplotlib import pyplot as plt
 
-from mlrp_course.algorithms.value_iteration import value_iteration
+from mlrp_course.algorithms.value_iteration import ValueIterationConfig, value_iteration
 from mlrp_course.mdp.chase_mdp import ChaseMDP
 from mlrp_course.mdp.discrete_mdp import DiscreteState
 from mlrp_course.structs import Image
@@ -49,7 +49,8 @@ def _render_value_function_rabbit_pos(
 
 def _main(outfile: str, fps: int) -> None:
     mdp = ChaseMDP()
-    Vs = value_iteration(mdp, max_num_iterations=100, print_every=1)
+    config = ValueIterationConfig(max_num_iterations=100, print_every=1)
+    Vs = value_iteration(mdp, config)
     imgs = [render_chase_value_function(V) for V in Vs]
     iio.mimsave(outfile, imgs, fps=fps)
 

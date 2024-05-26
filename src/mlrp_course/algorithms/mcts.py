@@ -1,21 +1,32 @@
 """Monte Carlo Tree Search."""
 
-from typing import Dict
+from dataclasses import dataclass
+from typing import Callable, Dict
 
 import numpy as np
 
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.structs import AlgorithmConfig
 from mlrp_course.utils import sample_trajectory
+
+
+@dataclass(frozen=True)
+class MCTSConfig(AlgorithmConfig):
+    """Hyperparameters for MCTS."""
+
+    search_horizon: int = 10
+    num_simulations: int = 100
+    explore_strategy: str = "ucb"
+    max_rollout_length: int = 100
+    num_rollouts: int = 3
+    exploration_bonus: float = 5.0
 
 
 def mcts(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
-    search_horizon: int,
     rng: np.random.Generator,
-    num_simulations: int = 100,
-    explore_strategy: str = "ucb",
-    max_rollout_length: int = 100,
+    config: MCTSConfig,
 ) -> DiscreteAction:
     """Monte Carlo Tree Search."""
 
@@ -24,16 +35,18 @@ def mcts(
     Q: Dict[DiscreteState, Dict[DiscreteAction, float]] = {}
     N: Dict[DiscreteState, Dict[DiscreteAction, int]] = {}
 
-    for _ in range(num_simulations):
+    for _ in range(config.num_simulations):
         _simulate(
             initial_state,
             mdp,
-            search_horizon,
+            config.search_horizon,
             Q,
             N,
             rng,
-            explore_strategy,
-            max_rollout_length,
+            config.explore_strategy,
+            config.max_rollout_length,
+            config.num_rollouts,
+            config.exploration_bonus,
         )
 
     return max(mdp.action_space, key=lambda a: Q[initial_state].get(a, -float("inf")))
@@ -49,6 +62,7 @@ def _simulate(
     explore_strategy: str = "ucb",
     max_rollout_length: int = 100,
     num_rollouts: int = 3,
+    exploration_bonus: float = 5.0,
 ) -> float:
     """Return an estimate of V(s) and update Q and N in-place."""
     A = sorted(mdp.action_space)  # sort for determinism
@@ -67,7 +81,7 @@ def _simulate(
         return _estimate_heuristic(s, mdp, rng, max_rollout_length, num_rollouts)
 
     # Get an action to try in this state, towards finding a leaf.
-    a = _explore(s, mdp, Q, N, explore_strategy)
+    a = _explore(s, mdp, Q, N, explore_strategy, exploration_bonus)
     ns = P(s, a, rng)
 
     # Recurse to find a leaf.
@@ -81,6 +95,7 @@ def _simulate(
         explore_strategy,
         max_rollout_length,
         num_rollouts,
+        exploration_bonus,
     )
 
     # Update the running averages.
@@ -133,3 +148,20 @@ def _explore(
 
     # Break ties lexicographically.
     return max(mdp.action_space, key=lambda a: (_score_action(a), a))
+
+
+def get_policy_mcts(
+    state: DiscreteState,
+    mdp: DiscreteMDP,
+    rng: np.random.Generator,
+    config: AlgorithmConfig,
+) -> Callable[[DiscreteState], DiscreteAction]:
+    """Create a policy that runs MCTS internally."""
+    assert isinstance(config, MCTSConfig)
+    del state  # Instead of planning once, re-plan at every state
+
+    def pi(s: DiscreteState) -> DiscreteAction:
+        """Run MCTS on every step."""
+        return mcts(s, mdp, rng, config)
+
+    return pi
