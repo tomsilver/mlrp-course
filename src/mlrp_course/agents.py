@@ -6,6 +6,7 @@ from typing import Callable, Generic, TypeVar
 import numpy as np
 
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.structs import AlgorithmConfig
 
 _ObsType = TypeVar("_ObsType")
 _ActType = TypeVar("_ActType")
@@ -69,13 +70,15 @@ class OfflinePlanningDiscreteMDPAgent(DiscreteMDPAgent):
     def __init__(
         self,
         planning_alg: Callable[
-            [DiscreteMDP], Callable[[DiscreteState], DiscreteAction]
+            [DiscreteMDP, np.random.Generator, AlgorithmConfig],
+            Callable[[DiscreteState], DiscreteAction],
         ],
+        config: AlgorithmConfig,
         *args,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self._pi = planning_alg(self._mdp)
+        self._pi = planning_alg(self._mdp, self._rng, config)
 
     def _get_action(self) -> DiscreteAction:
         return self._pi(self._last_observation)
@@ -87,12 +90,15 @@ class OnlinePlanningDiscreteMDPAgent(DiscreteMDPAgent):
     def __init__(
         self,
         planning_alg: Callable[
-            [DiscreteState, DiscreteMDP], Callable[[DiscreteState], DiscreteAction]
+            [DiscreteState, DiscreteMDP, np.random.Generator, AlgorithmConfig],
+            Callable[[DiscreteState], DiscreteAction],
         ],
+        config: AlgorithmConfig,
         *args,
         **kwargs,
     ) -> None:
         self._planning_alg = planning_alg
+        self._planning_alg_config = config
         super().__init__(*args, **kwargs)
         self._pi: Callable[[DiscreteState], DiscreteAction] | None = None
 
@@ -104,5 +110,7 @@ class OnlinePlanningDiscreteMDPAgent(DiscreteMDPAgent):
         self,
         obs: DiscreteState,
     ) -> DiscreteAction:
-        self._pi = self._planning_alg(obs, self._mdp)
+        self._pi = self._planning_alg(
+            obs, self._mdp, self._rng, self._planning_alg_config
+        )
         return super().reset(obs)

@@ -1,18 +1,35 @@
 """Create videos of various MDP planning approaches running in various MDPs."""
 
 from pathlib import Path
-from typing import Callable, List, Tuple
+from typing import List, Tuple
 
 import imageio.v2 as iio
 import numpy as np
 from tqdm import tqdm
 
-from mlrp_course.algorithms.expectimax_search import expectimax_search
-from mlrp_course.algorithms.finite_horizon_dp import finite_horizon_dp
-from mlrp_course.algorithms.mcts import mcts
-from mlrp_course.algorithms.policy_iteration import policy_iteration
-from mlrp_course.algorithms.rtdp import rtdp
-from mlrp_course.algorithms.value_iteration import value_iteration
+from mlrp_course.agents import (
+    Agent,
+    OfflinePlanningDiscreteMDPAgent,
+    OnlinePlanningDiscreteMDPAgent,
+)
+from mlrp_course.algorithms.expectimax_search import (
+    ExpectimaxSearchConfig,
+    get_policy_expectimax_search,
+)
+from mlrp_course.algorithms.finite_horizon_dp import (
+    FiniteHorizonDPConfig,
+    get_policy_finite_horizon_dp,
+)
+from mlrp_course.algorithms.mcts import MCTSConfig, get_policy_mcts
+from mlrp_course.algorithms.policy_iteration import (
+    PolicyIterationConfig,
+    get_policy_policy_iteration,
+)
+from mlrp_course.algorithms.rtdp import RTDPConfig, get_policy_rtdp
+from mlrp_course.algorithms.value_iteration import (
+    ValueIterationConfig,
+    get_policy_value_iteration,
+)
 from mlrp_course.mdp.chase_mdp import (
     ChaseMDP,
     ChaseState,
@@ -21,9 +38,8 @@ from mlrp_course.mdp.chase_mdp import (
     LargeChaseMDP,
     TwoBunnyChaseMDP,
 )
-from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.mdp.discrete_mdp import DiscreteMDP, DiscreteState
 from mlrp_course.structs import Image
-from mlrp_course.utils import sample_trajectory, value_function_to_greedy_policy
 
 
 def _sample_chase_initial_state(
@@ -87,72 +103,39 @@ def _create_mdp_and_initial_state(
     raise NotImplementedError("MDP not supported")
 
 
-def _create_approach(
-    name: str, mdp: DiscreteMDP, rng: np.random.Generator
-) -> Callable[[DiscreteState], DiscreteAction]:
+def _create_agent(
+    name: str,
+    mdp: DiscreteMDP,
+    seed: int,
+) -> Agent:
 
     if name == "finite_horizon_dp":
-        print("Running finite-horizon DP...")
-        V_timed = finite_horizon_dp(mdp)
-        print("Done.")
-        t = 0
-
-        def dp_pi(s: DiscreteState) -> DiscreteAction:
-            """Assume that the policy is called once per time step."""
-            nonlocal t
-            V = V_timed[t]
-            t += 1
-            return value_function_to_greedy_policy(V, mdp, rng)(s)
-
-        return dp_pi
+        return OfflinePlanningDiscreteMDPAgent(
+            get_policy_finite_horizon_dp, FiniteHorizonDPConfig(), mdp, seed
+        )
 
     if name == "value_iteration":
-        print("Running value iteration...")
-        Vs = value_iteration(mdp)
-        print("Done.")
-        return value_function_to_greedy_policy(Vs[-1], mdp, rng)
+        return OfflinePlanningDiscreteMDPAgent(
+            get_policy_value_iteration, ValueIterationConfig(), mdp, seed
+        )
 
     if name == "policy_iteration":
-        print("Running policy iteration...")
-        Vs = policy_iteration(mdp)
-        print("Done.")
-        return value_function_to_greedy_policy(Vs[-1], mdp, rng)
+        return OfflinePlanningDiscreteMDPAgent(
+            get_policy_policy_iteration, PolicyIterationConfig(), mdp, seed
+        )
 
     if name == "expectimax_search":
+        return OnlinePlanningDiscreteMDPAgent(
+            get_policy_expectimax_search, ExpectimaxSearchConfig(), mdp, seed
+        )
 
-        def expectimax_pi(s: DiscreteState) -> DiscreteAction:
-            """Run expectimax search on every step."""
-            return expectimax_search(s, mdp, search_horizon=10)
-
-        return expectimax_pi
+    # TODO add sparse sampling
 
     if name == "rtdp":
-
-        def rtdp_pi(s: DiscreteState) -> DiscreteAction:
-            """Run RTDP on every step."""
-            return rtdp(s, mdp, search_horizon=10, rng=rng)
-
-        return rtdp_pi
+        return OnlinePlanningDiscreteMDPAgent(get_policy_rtdp, RTDPConfig(), mdp, seed)
 
     if name == "mcts":
-
-        def mcts_pi(s: DiscreteState) -> DiscreteAction:
-            """Run MCTS on every step."""
-            return mcts(s, mdp, search_horizon=100, rng=rng)
-
-        return mcts_pi
-
-    if name == "random":
-
-        # Sort for determinism.
-        sorted_actions = sorted(mdp.action_space)
-
-        def random_pi(s: DiscreteState) -> DiscreteAction:
-            """Sample a random action."""
-            del s  # not used
-            return sorted_actions[rng.choice(len(sorted_actions))]
-
-        return random_pi
+        return OnlinePlanningDiscreteMDPAgent(get_policy_mcts, MCTSConfig(), mdp, seed)
 
     raise NotImplementedError("Approach not found.")
 
@@ -167,12 +150,23 @@ def _main(
 ) -> None:
     rng = np.random.default_rng(seed)
     mdp, initial_state = _create_mdp_and_initial_state(mdp_name, rng)
-    policy = _create_approach(approach_name, mdp, rng)
+    agent = _create_agent(approach_name, mdp, seed)
     outfile = outdir / f"{mdp_name}_{approach_name}_{seed}.gif"
     if mdp.horizon is not None:
         max_horizon = min(max_horizon, mdp.horizon)
+    agent.reset(initial_state)
+    states: List[DiscreteState] = [initial_state]
+    state = initial_state
     print("Sampling trajectory...")
-    states, _ = sample_trajectory(initial_state, policy, mdp, max_horizon, rng)
+    for _ in range(max_horizon):
+        if mdp.state_is_terminal(state):
+            break
+        action = agent.step()
+        next_state = mdp.sample_next_state(state, action, rng)
+        reward = mdp.get_reward(state, action, next_state)
+        agent.update(next_state, reward)
+        state = next_state
+        states.append(state)
     print("Done.")
     print("Rendering...")
     imgs: List[Image] = []

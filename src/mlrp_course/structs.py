@@ -7,3 +7,7 @@ from numpy.typing import NDArray
 
 # Type aliases.
 Image: TypeAlias = NDArray[np.uint8]
+
+
+class AlgorithmConfig:
+    """General configuration for algorithms."""
