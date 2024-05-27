@@ -7,32 +7,28 @@ import imageio.v2 as iio
 import numpy as np
 from tqdm import tqdm
 
-from mlrp_course.agents import (
-    Agent,
-    OfflinePlanningDiscreteMDPAgent,
-    OnlinePlanningDiscreteMDPAgent,
-)
+from mlrp_course.agents import Agent
 from mlrp_course.algorithms.expectimax_search import (
+    ExpectimaxSearchAgent,
     ExpectimaxSearchConfig,
-    get_policy_expectimax_search,
 )
 from mlrp_course.algorithms.finite_horizon_dp import (
+    FiniteHorizonDPAgent,
     FiniteHorizonDPConfig,
-    get_policy_finite_horizon_dp,
 )
-from mlrp_course.algorithms.mcts import MCTSConfig, get_policy_mcts
+from mlrp_course.algorithms.mcts import MCTSConfig, MCTSPAgent
 from mlrp_course.algorithms.policy_iteration import (
+    PolicyIterationAgent,
     PolicyIterationConfig,
-    get_policy_policy_iteration,
 )
-from mlrp_course.algorithms.rtdp import RTDPConfig, get_policy_rtdp
+from mlrp_course.algorithms.rtdp import RTDPAgent, RTDPConfig
 from mlrp_course.algorithms.sparse_sampling import (
+    SparseSamplingAgent,
     SparseSamplingConfig,
-    get_policy_sparse_sampling,
 )
 from mlrp_course.algorithms.value_iteration import (
+    ValueIterationAgent,
     ValueIterationConfig,
-    get_policy_value_iteration,
 )
 from mlrp_course.mdp.chase_mdp import (
     ChaseMDP,
@@ -114,35 +110,25 @@ def _create_agent(
 ) -> Agent:
 
     if name == "finite_horizon_dp":
-        return OfflinePlanningDiscreteMDPAgent(
-            get_policy_finite_horizon_dp, FiniteHorizonDPConfig(), mdp, seed
-        )
+        return FiniteHorizonDPAgent(FiniteHorizonDPConfig(), mdp, seed)
 
     if name == "value_iteration":
-        return OfflinePlanningDiscreteMDPAgent(
-            get_policy_value_iteration, ValueIterationConfig(), mdp, seed
-        )
+        return ValueIterationAgent(ValueIterationConfig(), mdp, seed)
 
     if name == "policy_iteration":
-        return OfflinePlanningDiscreteMDPAgent(
-            get_policy_policy_iteration, PolicyIterationConfig(), mdp, seed
-        )
+        return PolicyIterationAgent(PolicyIterationConfig(), mdp, seed)
 
     if name == "expectimax_search":
-        return OnlinePlanningDiscreteMDPAgent(
-            get_policy_expectimax_search, ExpectimaxSearchConfig(), mdp, seed
-        )
+        return ExpectimaxSearchAgent(ExpectimaxSearchConfig(), mdp, seed)
 
     if name == "sparse_sampling":
-        return OnlinePlanningDiscreteMDPAgent(
-            get_policy_sparse_sampling, SparseSamplingConfig(), mdp, seed
-        )
+        return SparseSamplingAgent(SparseSamplingConfig(), mdp, seed)
 
     if name == "rtdp":
-        return OnlinePlanningDiscreteMDPAgent(get_policy_rtdp, RTDPConfig(), mdp, seed)
+        return RTDPAgent(RTDPConfig(), mdp, seed)
 
     if name == "mcts":
-        return OnlinePlanningDiscreteMDPAgent(get_policy_mcts, MCTSConfig(), mdp, seed)
+        return MCTSPAgent(MCTSConfig(), mdp, seed)
 
     raise NotImplementedError("Approach not found.")
 

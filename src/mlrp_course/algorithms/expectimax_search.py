@@ -2,10 +2,8 @@
 
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Callable
 
-import numpy as np
-
+from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 
@@ -44,19 +42,15 @@ def expectimax_search(
     return max(A, key=lambda a: Q(initial_state, a, 0))
 
 
-def get_policy_expectimax_search(
-    state: DiscreteState,
-    mdp: DiscreteMDP,
-    rng: np.random.Generator,
-    config: AlgorithmConfig,
-) -> Callable[[DiscreteState], DiscreteAction]:
-    """Create a policy that runs expectimax search internally."""
-    del rng  # not used
-    del state  # Instead of planning once, re-plan at every state
-    assert isinstance(config, ExpectimaxSearchConfig)
+class ExpectimaxSearchAgent(DiscreteMDPAgent):
+    """An agent that runs expectimax search at every timestep."""
 
-    def pi(s: DiscreteState) -> DiscreteAction:
-        """Run expectimax search on every step."""
-        return expectimax_search(s, mdp, config)
+    def __init__(self, planner_config: ExpectimaxSearchConfig, *args, **kwargs) -> None:
+        self._planner_config = planner_config
+        super().__init__(*args, **kwargs)
 
-    return pi
+    def _get_action(self) -> DiscreteAction:
+        assert self._last_observation is not None
+        return expectimax_search(
+            self._last_observation, self._mdp, self._planner_config
+        )

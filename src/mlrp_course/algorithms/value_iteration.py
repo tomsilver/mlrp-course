@@ -3,8 +3,7 @@
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional
 
-import numpy as np
-
+from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 from mlrp_course.utils import bellman_backup, value_function_to_greedy_policy
@@ -56,12 +55,23 @@ def value_iteration(
     return all_estimates
 
 
-def get_policy_value_iteration(
-    mdp: DiscreteMDP, rng: np.random.Generator, config: AlgorithmConfig
-) -> Callable[[DiscreteState], DiscreteAction]:
-    """Run value iteration and produce a policy."""
-    assert isinstance(config, ValueIterationConfig)
-    print("Running policy iteration...")
-    Vs = value_iteration(mdp, config)
-    print("Done.")
-    return value_function_to_greedy_policy(Vs[-1], mdp, rng)
+class ValueIterationAgent(DiscreteMDPAgent):
+    """An agent that plans offline with value iteration."""
+
+    def __init__(self, planner_config: ValueIterationConfig, *args, **kwargs) -> None:
+        self._planner_config = planner_config
+        self._pi: Callable[[DiscreteState], DiscreteAction] | None = None
+        super().__init__(*args, **kwargs)
+
+    def reset(
+        self,
+        obs: DiscreteState,
+    ) -> DiscreteAction:
+        Vs = value_iteration(self._mdp, self._planner_config)
+        self._pi = value_function_to_greedy_policy(Vs[-1], self._mdp, self._rng)
+        return super().reset(obs)
+
+    def _get_action(self) -> DiscreteAction:
+        assert self._last_observation is not None
+        assert self._pi is not None
+        return self._pi(self._last_observation)

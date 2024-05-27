@@ -1,12 +1,11 @@
 """Base classes for sequential decision-making agents."""
 
 import abc
-from typing import Callable, Generic, TypeVar
+from typing import Generic, TypeVar
 
 import numpy as np
 
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import AlgorithmConfig
 
 _ObsType = TypeVar("_ObsType")
 _ActType = TypeVar("_ActType")
@@ -19,6 +18,7 @@ class Agent(Generic[_ObsType, _ActType]):
         self._rng = np.random.default_rng(seed)
         self._last_observation: _ObsType | None = None
         self._last_action: _ActType | None = None
+        self._timestep: int = 0
 
     @abc.abstractmethod
     def _get_action(self) -> _ActType:
@@ -35,11 +35,13 @@ class Agent(Generic[_ObsType, _ActType]):
     ) -> _ActType:
         """Start a new episode."""
         self._last_observation = obs
+        self._timestep = 0
         return self.step()
 
     def step(self) -> _ActType:
         """Get the next action to take."""
         self._last_action = self._get_action()
+        self._timestep += 1
         return self._last_action
 
     def update(self, obs: _ObsType, reward: float) -> None:
@@ -62,55 +64,3 @@ class DiscreteMDPAgent(Agent[DiscreteState, DiscreteAction], abc.ABC):
     def __init__(self, mdp: DiscreteMDP, *args, **kwargs) -> None:
         self._mdp = mdp
         super().__init__(*args, **kwargs)
-
-
-class OfflinePlanningDiscreteMDPAgent(DiscreteMDPAgent):
-    """An agent that runs an offline planner to produce a policy."""
-
-    def __init__(
-        self,
-        planning_alg: Callable[
-            [DiscreteMDP, np.random.Generator, AlgorithmConfig],
-            Callable[[DiscreteState], DiscreteAction],
-        ],
-        config: AlgorithmConfig,
-        *args,
-        **kwargs,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self._pi = planning_alg(self._mdp, self._rng, config)
-
-    def _get_action(self) -> DiscreteAction:
-        return self._pi(self._last_observation)
-
-
-class OnlinePlanningDiscreteMDPAgent(DiscreteMDPAgent):
-    """An agent that runs an online planner to produce a policy."""
-
-    def __init__(
-        self,
-        planning_alg: Callable[
-            [DiscreteState, DiscreteMDP, np.random.Generator, AlgorithmConfig],
-            Callable[[DiscreteState], DiscreteAction],
-        ],
-        config: AlgorithmConfig,
-        *args,
-        **kwargs,
-    ) -> None:
-        self._planning_alg = planning_alg
-        self._planning_alg_config = config
-        super().__init__(*args, **kwargs)
-        self._pi: Callable[[DiscreteState], DiscreteAction] | None = None
-
-    def _get_action(self) -> DiscreteAction:
-        assert self._pi is not None
-        return self._pi(self._last_observation)
-
-    def reset(
-        self,
-        obs: DiscreteState,
-    ) -> DiscreteAction:
-        self._pi = self._planning_alg(
-            obs, self._mdp, self._rng, self._planning_alg_config
-        )
-        return super().reset(obs)
