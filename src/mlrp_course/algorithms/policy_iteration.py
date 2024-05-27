@@ -1,7 +1,7 @@
 """Policy iteration."""
 
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.algorithms.policy_evaluation import evaluate_policy_linear_system
@@ -78,19 +78,10 @@ class PolicyIterationAgent(DiscreteMDPAgent):
     """An agent that plans offline with policy iteration."""
 
     def __init__(self, planner_config: PolicyIterationConfig, *args, **kwargs) -> None:
-        self._planner_config = planner_config
-        self._pi: Callable[[DiscreteState], DiscreteAction] | None = None
         super().__init__(*args, **kwargs)
-
-    def reset(
-        self,
-        obs: DiscreteState,
-    ) -> DiscreteAction:
-        Vs = policy_iteration(self._mdp, self._planner_config)
+        Vs = policy_iteration(self._mdp, planner_config)
         self._pi = value_function_to_greedy_policy(Vs[-1], self._mdp, self._rng)
-        return super().reset(obs)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
-        assert self._pi is not None
         return self._pi(self._last_observation)

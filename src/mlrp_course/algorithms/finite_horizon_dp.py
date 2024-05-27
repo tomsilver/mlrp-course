@@ -49,20 +49,11 @@ class FiniteHorizonDPAgent(DiscreteMDPAgent):
     """An agent that plans offline with finite-horizon dynamic programming."""
 
     def __init__(self, planner_config: FiniteHorizonDPConfig, *args, **kwargs) -> None:
-        self._planner_config = planner_config
-        self._value_fn: Dict[int, Dict[DiscreteState, float]] | None = None
         super().__init__(*args, **kwargs)
-
-    def reset(
-        self,
-        obs: DiscreteState,
-    ) -> DiscreteAction:
-        self._value_fn = finite_horizon_dp(self._mdp, self._planner_config)
-        return super().reset(obs)
+        self._value_fn = finite_horizon_dp(self._mdp, planner_config)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
-        assert self._value_fn is not None
         V = self._value_fn[self._timestep]
         pi = value_function_to_greedy_policy(V, self._mdp, self._rng)
         return pi(self._last_observation)
