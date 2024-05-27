@@ -1,14 +1,14 @@
 """A generic definition of an MDP with discrete states and actions."""
 
 import abc
-from typing import Dict, Generic, Hashable, Optional, Set, TypeAlias, TypeVar
+from typing import Dict, Generic, Optional, Set, TypeAlias, TypeVar
 
 import numpy as np
 
-from mlrp_course.structs import Image
+from mlrp_course.structs import HashableComparable, Image
 
-DiscreteState: TypeAlias = Hashable
-DiscreteAction: TypeAlias = Hashable
+DiscreteState: TypeAlias = HashableComparable
+DiscreteAction: TypeAlias = HashableComparable
 
 _S = TypeVar("_S", bound=DiscreteState)
 _A = TypeVar("_A", bound=DiscreteAction)

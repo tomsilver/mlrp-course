@@ -42,7 +42,8 @@ def policy_iteration(
 
     for _ in range(config.max_num_iterations):
         # Compute the value function for the given policy.
-        V = evaluate_policy_linear_system(pi.get, mdp)
+        pi_fn = lambda s: pi[s]
+        V = evaluate_policy_linear_system(pi_fn, mdp)
         all_estimates.append(V)
         # Convert to action-value function.
         Q = value_to_action_value_function(V, mdp)  # type: ignore

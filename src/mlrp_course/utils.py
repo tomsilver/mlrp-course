@@ -7,6 +7,7 @@ import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 
+from mlrp_course.agents import Agent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import Image
 
@@ -89,6 +90,36 @@ def sample_trajectory(
     return states, actions
 
 
+def run_episodes(
+    agent: Agent, env: gym.Env, seed: int, num_episodes: int, max_episode_length: int
+) -> List[Tuple[List[DiscreteState], List[DiscreteAction], List[float]]]:
+    """Run episodic interactions between an environment and agent."""
+    traces: List[Tuple[List[DiscreteState], List[DiscreteAction], List[float]]] = []
+    for episode in range(num_episodes):
+        observations: List[DiscreteState] = []
+        actions: List[DiscreteAction] = []
+        rewards: List[float] = []
+        if episode == 0:
+            obs, _ = env.reset(seed=seed)
+        else:
+            obs, _ = env.reset()
+        agent.reset(obs)
+        observations.append(obs)
+        for _ in range(max_episode_length):
+            action = agent.step()
+            actions.append(action)
+            next_obs, reward, terminated, truncated, _ = env.step(action)
+            rewards.append(reward)
+            done = terminated or truncated
+            agent.update(next_obs, reward, done)
+            obs = next_obs
+            observations.append(obs)
+            if done:
+                break
+        traces.append((observations, actions, rewards))
+    return traces
+
+
 def load_image_asset(filename: str) -> Image:
     """Load an image asset."""
     asset_dir = Path(__file__).parent / "assets"
@@ -139,7 +170,7 @@ class DiscreteMDPGymEnv(gym.Env):
         self._remaining_horizon -= 1
         truncated = self._remaining_horizon <= 0
         info: Dict = {}
-        return self._current_state, reward, terminated, truncated, info
+        return next_state, reward, terminated, truncated, info
 
     def render(self) -> Image:
         assert self.render_mode == "rgb_array"
