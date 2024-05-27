@@ -49,6 +49,7 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
     _goal_reward: ClassVar[float] = 1.0
     _capture_reward: ClassVar[float] = 0.0
     _living_reward: ClassVar[float] = 0.0
+    _bunnies_move: ClassVar[bool] = True
 
     @classmethod
     def get_height(cls) -> int:
@@ -112,11 +113,12 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
             if bunny_pos is None:
                 dist[None] = 1.0
             else:
+                stick_prob = 0.5 if self._bunnies_move else 1.0
                 # Stay in same place with probability 0.5.
                 if bunny_pos == next_robot_pos:
-                    dist[None] += 0.5
+                    dist[None] += stick_prob
                 else:
-                    dist[bunny_pos] += 0.5
+                    dist[bunny_pos] += stick_prob
                 # Otherwise move.
                 row, col = bunny_pos
                 for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
@@ -128,9 +130,9 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
                         r, c = row, col
                     next_bunny_pos = (r, c)
                     if next_bunny_pos == next_robot_pos:
-                        dist[None] += 0.5 * 0.25
+                        dist[None] += (1.0 - stick_prob) * 0.25
                     else:
-                        dist[next_bunny_pos] += 0.5 * 0.25
+                        dist[next_bunny_pos] += (1.0 - stick_prob) * 0.25
             next_bunny_pos_dists.append(dist)
         return next_bunny_pos_dists
 
@@ -203,6 +205,12 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
                 ] = im
 
         return (255 * canvas).astype(np.uint8)
+
+
+class StaticBunnyChaseMDP(ChaseMDP):
+    """Variation where the bunnies don't move."""
+
+    _bunnies_move: ClassVar[bool] = False
 
 
 class TwoBunnyChaseMDP(ChaseMDP):
