@@ -54,9 +54,10 @@ class Agent(Generic[_ObsType, _ActType]):
         """Record the reward and next observation following an action."""
         assert self._last_observation is not None
         assert self._last_action is not None
-        self._learn_from_transition(
-            self._last_observation, self._last_action, obs, reward, done
-        )
+        if self._train_or_eval == "train":
+            self._learn_from_transition(
+                self._last_observation, self._last_action, obs, reward, done
+            )
         self._last_observation = obs
 
     def seed(self, seed: int) -> None:
