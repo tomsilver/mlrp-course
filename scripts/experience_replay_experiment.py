@@ -25,13 +25,19 @@ def _main(
     num_episodes: int,
     eval_interval: int,
     num_evals: int,
+    num_replays_per_update: int,
     outdir: Path,
 ) -> None:
     columns = ["Seed", "Agent", "Episode", "Returns"]
     results: List[Tuple[int, str, int, float]] = []
     for seed in range(start_seed, start_seed + num_seeds):
         seed_results = _run_single_seed(
-            seed, max_horizon, num_episodes, eval_interval, num_evals
+            seed,
+            max_horizon,
+            num_episodes,
+            eval_interval,
+            num_evals,
+            num_replays_per_update,
         )
         for agent, agent_results in seed_results.items():
             for episode, returns in agent_results.items():
@@ -70,6 +76,7 @@ def _run_single_seed(
     num_episodes: int,
     eval_interval: int,
     num_evals: int,
+    num_replays_per_update: int,
 ) -> Dict[str, Dict[int, float]]:
     # Set up environment.
     mdp = TwoBunnyChaseMDP()
@@ -77,7 +84,9 @@ def _run_single_seed(
     env = DiscreteMDPGymEnv(mdp, sample_initial_state)
     # Set up agents.
     q_learning_config = QLearningConfig()
-    experience_replay_config = ExperienceReplayConfig()
+    experience_replay_config = ExperienceReplayConfig(
+        num_replays_per_update=num_replays_per_update
+    )
     no_replay_agent = QLearningAgent(
         mdp.action_space, mdp.temporal_discount_factor, q_learning_config, seed
     )
@@ -101,7 +110,6 @@ def _run_single_seed(
         with tqdm(total=num_episodes) as pbar:
             while True:
                 # Run eval episodes.
-                # TODO: why do lines not start at the same place when x=0?
                 agent.eval()
                 eval_results = run_episodes(
                     agent, env, num_evals, max_episode_length=max_horizon
@@ -118,7 +126,10 @@ def _run_single_seed(
                 episode += num_train_episodes
                 pbar.update(num_train_episodes)
                 run_episodes(
-                    agent, env, num_train_episodes, max_episode_length=max_horizon
+                    agent,
+                    env,
+                    num_train_episodes,
+                    max_episode_length=max_horizon,
                 )
     return results
 
@@ -133,6 +144,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_episodes", default=2500, type=int)
     parser.add_argument("--eval_interval", default=100, type=int)
     parser.add_argument("--num_evals", default=10, type=int)
+    parser.add_argument("--num_replays_per_update", default=50, type=int)
     parser.add_argument("--outdir", default=Path("."), type=Path)
     args = parser.parse_args()
     _main(
@@ -142,5 +154,6 @@ if __name__ == "__main__":
         args.num_episodes,
         args.eval_interval,
         args.num_evals,
+        args.num_replays_per_update,
         args.outdir,
     )
