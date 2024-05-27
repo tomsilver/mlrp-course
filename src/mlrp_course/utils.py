@@ -91,18 +91,18 @@ def sample_trajectory(
 
 
 def run_episodes(
-    agent: Agent, env: gym.Env, seed: int, num_episodes: int, max_episode_length: int
+    agent: Agent,
+    env: gym.Env,
+    num_episodes: int,
+    max_episode_length: int,
 ) -> List[Tuple[List[DiscreteState], List[DiscreteAction], List[float]]]:
     """Run episodic interactions between an environment and agent."""
     traces: List[Tuple[List[DiscreteState], List[DiscreteAction], List[float]]] = []
-    for episode in range(num_episodes):
+    for _ in range(num_episodes):
         observations: List[DiscreteState] = []
         actions: List[DiscreteAction] = []
         rewards: List[float] = []
-        if episode == 0:
-            obs, _ = env.reset(seed=seed)
-        else:
-            obs, _ = env.reset()
+        obs, _ = env.reset()
         agent.reset(obs)
         observations.append(obs)
         for _ in range(max_episode_length):

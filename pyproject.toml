@@ -17,6 +17,8 @@ dependencies = [
    "tqdm",
    "types-tqdm",
    "gymnasium",
+   "pandas",
+   "pandas-stubs",
 ]
 
 [project.optional-dependencies]

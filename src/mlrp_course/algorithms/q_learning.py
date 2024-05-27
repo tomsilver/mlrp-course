@@ -4,6 +4,10 @@ from dataclasses import dataclass
 from typing import Collection, Dict
 
 from mlrp_course.agents import Agent
+from mlrp_course.algorithms.experience_replay import (
+    ExperienceReplayAgent,
+    ExperienceReplayConfig,
+)
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 
@@ -71,3 +75,18 @@ class QLearningAgent(Agent):
 
     def _get_random_action(self) -> DiscreteAction:
         return self._actions[self._rng.choice(len(self._actions))]
+
+
+class QLearningExperienceReplayAgent(ExperienceReplayAgent, QLearningAgent):
+    """Q learning with experience replay."""
+
+    def __init__(
+        self,
+        actions: Collection[DiscreteAction],
+        gamma: float,
+        q_learning_config: QLearningConfig,
+        experience_replay_config: ExperienceReplayConfig,
+        seed: int,
+    ) -> None:
+        ExperienceReplayAgent.__init__(self, experience_replay_config, seed)
+        QLearningAgent.__init__(self, actions, gamma, q_learning_config, seed)
