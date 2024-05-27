@@ -139,7 +139,7 @@ class DiscreteMDPGymEnv(gym.Env):
         self._remaining_horizon -= 1
         truncated = self._remaining_horizon <= 0
         info: Dict = {}
-        return self._current_state, reward, terminated, truncated, info
+        return next_state, reward, terminated, truncated, info
 
     def render(self) -> Image:
         assert self.render_mode == "rgb_array"
