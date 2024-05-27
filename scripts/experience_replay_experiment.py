@@ -50,7 +50,8 @@ def _main(
             for episode, returns in agent_results.items():
                 results.append((seed, agent, episode, returns))
     df = pd.DataFrame(results, columns=columns)
-    return df.to_csv(csv_file)
+    df.to_csv(csv_file)
+    return _df_to_plot(df, outdir)
 
 
 def _df_to_plot(df: pd.DataFrame, outdir: Path) -> None:
