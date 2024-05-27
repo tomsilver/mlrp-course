@@ -1,10 +1,9 @@
 """Solve finite-horizon MDPs by dynamic programming."""
 
 from dataclasses import dataclass
-from typing import Callable, Dict
+from typing import Dict
 
-import numpy as np
-
+from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 from mlrp_course.utils import value_function_to_greedy_policy
@@ -46,21 +45,24 @@ def finite_horizon_dp(
     return V
 
 
-def get_policy_finite_horizon_dp(
-    mdp: DiscreteMDP, rng: np.random.Generator, config: AlgorithmConfig
-) -> Callable[[DiscreteState], DiscreteAction]:
-    """Run finite-horizon DP and produce a policy."""
-    assert isinstance(config, FiniteHorizonDPConfig)
-    print("Running finite-horizon DP...")
-    V_timed = finite_horizon_dp(mdp, config)
-    print("Done.")
-    t = 0
+class FiniteHorizonDPAgent(DiscreteMDPAgent):
+    """An agent that plans offline with finite-horizon dynamic programming."""
 
-    def pi(s: DiscreteState) -> DiscreteAction:
-        """Assume that the policy is called once per time step."""
-        nonlocal t
-        V = V_timed[t]
-        t += 1
-        return value_function_to_greedy_policy(V, mdp, rng)(s)
+    def __init__(self, planner_config: FiniteHorizonDPConfig, *args, **kwargs) -> None:
+        self._planner_config = planner_config
+        self._value_fn: Dict[int, Dict[DiscreteState, float]] | None = None
+        super().__init__(*args, **kwargs)
 
-    return pi
+    def reset(
+        self,
+        obs: DiscreteState,
+    ) -> DiscreteAction:
+        self._value_fn = finite_horizon_dp(self._mdp, self._planner_config)
+        return super().reset(obs)
+
+    def _get_action(self) -> DiscreteAction:
+        assert self._last_observation is not None
+        assert self._value_fn is not None
+        V = self._value_fn[self._timestep]
+        pi = value_function_to_greedy_policy(V, self._mdp, self._rng)
+        return pi(self._last_observation)

@@ -2,10 +2,11 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Callable, Dict
+from typing import Dict
 
 import numpy as np
 
+from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 from mlrp_course.utils import (
@@ -50,18 +51,13 @@ def rtdp(
     return pi(initial_state)
 
 
-def get_policy_rtdp(
-    state: DiscreteState,
-    mdp: DiscreteMDP,
-    rng: np.random.Generator,
-    config: AlgorithmConfig,
-) -> Callable[[DiscreteState], DiscreteAction]:
-    """Create a policy that runs RTDP internally."""
-    assert isinstance(config, RTDPConfig)
-    del state  # Instead of planning once, re-plan at every state
+class RTDPAgent(DiscreteMDPAgent):
+    """An agent that runs RTDP at every timestep."""
 
-    def pi(s: DiscreteState) -> DiscreteAction:
-        """Run RTDP on every step."""
-        return rtdp(s, mdp, rng, config)
+    def __init__(self, planner_config: RTDPConfig, *args, **kwargs) -> None:
+        self._planner_config = planner_config
+        super().__init__(*args, **kwargs)
 
-    return pi
+    def _get_action(self) -> DiscreteAction:
+        assert self._last_observation is not None
+        return rtdp(self._last_observation, self._mdp, self._rng, self._planner_config)

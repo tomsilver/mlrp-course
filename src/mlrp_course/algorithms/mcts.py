@@ -1,10 +1,11 @@
 """Monte Carlo Tree Search."""
 
 from dataclasses import dataclass
-from typing import Callable, Dict
+from typing import Dict
 
 import numpy as np
 
+from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 from mlrp_course.utils import sample_trajectory
@@ -150,18 +151,13 @@ def _explore(
     return max(mdp.action_space, key=lambda a: (_score_action(a), a))
 
 
-def get_policy_mcts(
-    state: DiscreteState,
-    mdp: DiscreteMDP,
-    rng: np.random.Generator,
-    config: AlgorithmConfig,
-) -> Callable[[DiscreteState], DiscreteAction]:
-    """Create a policy that runs MCTS internally."""
-    assert isinstance(config, MCTSConfig)
-    del state  # Instead of planning once, re-plan at every state
+class MCTSPAgent(DiscreteMDPAgent):
+    """An agent that runs MCTS on every timestep."""
 
-    def pi(s: DiscreteState) -> DiscreteAction:
-        """Run MCTS on every step."""
-        return mcts(s, mdp, rng, config)
+    def __init__(self, planner_config: MCTSConfig, *args, **kwargs) -> None:
+        self._planner_config = planner_config
+        super().__init__(*args, **kwargs)
 
-    return pi
+    def _get_action(self) -> DiscreteAction:
+        assert self._last_observation is not None
+        return mcts(self._last_observation, self._mdp, self._rng, self._planner_config)

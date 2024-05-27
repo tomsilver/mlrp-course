@@ -2,10 +2,10 @@
 
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Callable
 
 import numpy as np
 
+from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 
@@ -49,18 +49,15 @@ def sparse_sampling(
     return max(A, key=lambda a: Q(initial_state, a, 0))
 
 
-def get_policy_sparse_sampling(
-    state: DiscreteState,
-    mdp: DiscreteMDP,
-    rng: np.random.Generator,
-    config: AlgorithmConfig,
-) -> Callable[[DiscreteState], DiscreteAction]:
-    """Create a policy that runs sparse sampling internally."""
-    del state  # Instead of planning once, re-plan at every state
-    assert isinstance(config, SparseSamplingConfig)
+class SparseSamplingAgent(DiscreteMDPAgent):
+    """An agent that runs RTDP at every timestep."""
 
-    def pi(s: DiscreteState) -> DiscreteAction:
-        """Run sparse sampling on every step."""
-        return sparse_sampling(s, mdp, rng, config)
+    def __init__(self, planner_config: SparseSamplingConfig, *args, **kwargs) -> None:
+        self._planner_config = planner_config
+        super().__init__(*args, **kwargs)
 
-    return pi
+    def _get_action(self) -> DiscreteAction:
+        assert self._last_observation is not None
+        return sparse_sampling(
+            self._last_observation, self._mdp, self._rng, self._planner_config
+        )
