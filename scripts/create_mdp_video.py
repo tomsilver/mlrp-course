@@ -150,16 +150,18 @@ def _main(
     agent.reset(initial_state)
     states: List[DiscreteState] = [initial_state]
     state = initial_state
+    assert not mdp.state_is_terminal(state)
     print("Sampling trajectory...")
     for _ in range(max_horizon):
-        if mdp.state_is_terminal(state):
-            break
         action = agent.step()
         next_state = mdp.sample_next_state(state, action, rng)
         reward = mdp.get_reward(state, action, next_state)
-        agent.update(next_state, reward)
+        done = mdp.state_is_terminal(next_state)
+        agent.update(next_state, reward, done)
         state = next_state
         states.append(state)
+        if done:
+            break
     print("Done.")
     print("Rendering...")
     imgs: List[Image] = []

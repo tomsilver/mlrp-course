@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Collection, Dict
 
-from mlrp_course.agents import DiscreteMDPAgent
+from mlrp_course.agents import Agent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 
@@ -17,22 +17,28 @@ class QLearningConfig(AlgorithmConfig):
     learning_rate: float = 0.1
 
 
-class QLearningAgent(DiscreteMDPAgent):
+class QLearningAgent(Agent):
     """An agent that learns with Q-learning."""
 
     def __init__(
         self,
         actions: Collection[DiscreteAction],
         gamma: float,
-        planner_config: QLearningConfig,
+        config: QLearningConfig,
         *args,
         **kwargs,
     ) -> None:
         self._actions = sorted(actions)  # sorting for determinism
         self._gamma = gamma  # temporal discount factor from the env
-        self._Q: Dict[DiscreteState, Dict[DiscreteAction, float]] = {}
-        self._planner_config = planner_config
+        self._Q_dict: Dict[DiscreteState, Dict[DiscreteAction, float]] = {}
+        self._config = config
         super().__init__(*args, **kwargs)
+
+    def _Q(self, s: DiscreteState, a: DiscreteAction) -> float:
+        if s not in self._Q_dict:
+            # Randomly initialize to break ties.
+            self._Q_dict[s] = {a: self._rng.uniform(-1e-3, 1e-3) for a in self._actions}
+        return self._Q_dict[s][a]
 
     def _learn_from_transition(
         self,
@@ -40,28 +46,28 @@ class QLearningAgent(DiscreteMDPAgent):
         act: DiscreteAction,
         next_obs: DiscreteAction,
         reward: float,
+        done: bool,
     ) -> None:
         # TD learning.
-        q_sa = self._Q[obs].get(act, 0.0)
-        v_ns = max(self._Q[next_obs].values())
-        alpha = self._planner_config.learning_rate
-        self._Q[obs][act] = q_sa + alpha * (reward + self._gamma * v_ns - q_sa)
-        return super()._learn_from_transition(obs, act, next_obs, reward)
+        v_ns = 0.0 if done else max(self._Q(next_obs, a) for a in self._actions)
+        target = reward + self._gamma * v_ns
+        prediction = self._Q(obs, act)
+        # Update in the direction of the target.
+        alpha = self._config.learning_rate
+        self._Q_dict[obs][act] = prediction + alpha * (target - prediction)
+        return super()._learn_from_transition(obs, act, next_obs, reward, done)
 
     def _get_action(self) -> DiscreteAction:
-        # TODO: explore vs. exploit
-        assert self._planner_config.explore_strategy == "epsilon-greedy"
-        if self._rng.uniform() < self._planner_config.epsilon:
-            # Choose a random action.
-            return self._get_random_action()
-        # If this is the first time we're in the state, take a random action.
-        assert self._last_observation is not None
-        if self._last_observation not in self._Q:
-            return self._get_random_action()
+        # Explore or exploit.
+        if self._train_or_eval == "train":
+            assert self._config.explore_strategy == "epsilon-greedy"
+            if self._rng.uniform() < self._config.epsilon:
+                # Choose a random action.
+                return self._get_random_action()
         # Choose the best action.
-        q_s = self._Q[self._last_observation]
-        candidates = set(q_s)
-        return max(candidates, key=lambda a: q_s[a])
+        s = self._last_observation
+        assert isinstance(s, DiscreteState)
+        return max(self._actions, key=lambda a: self._Q(s, a))
 
     def _get_random_action(self) -> DiscreteAction:
         return self._actions[self._rng.choice(len(self._actions))]
