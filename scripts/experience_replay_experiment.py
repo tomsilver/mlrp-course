@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
@@ -27,7 +28,13 @@ def _main(
     num_evals: int,
     num_replays_per_update: int,
     outdir: Path,
+    load: bool,
 ) -> None:
+    csv_file = outdir / "experience_replay_experiments.csv"
+    if load:
+        assert csv_file.exists()
+        df = pd.read_csv(csv_file)
+        return _df_to_plot(df, outdir)
     columns = ["Seed", "Agent", "Episode", "Returns"]
     results: List[Tuple[int, str, int, float]] = []
     for seed in range(start_seed, start_seed + num_seeds):
@@ -43,7 +50,13 @@ def _main(
             for episode, returns in agent_results.items():
                 results.append((seed, agent, episode, returns))
     df = pd.DataFrame(results, columns=columns)
-    df.to_csv(outdir / "experience_replay_experiments.csv")
+    return df.to_csv(csv_file)
+
+
+def _df_to_plot(df: pd.DataFrame, outdir: Path) -> None:
+    matplotlib.rcParams.update({"font.size": 20})
+    fig_file = outdir / "experience_replay_experiments.png"
+
     grouped = df.groupby(["Agent", "Episode"]).agg({"Returns": ["mean", "sem"]})
     grouped.columns = grouped.columns.droplevel(0)
     grouped = grouped.rename(columns={"mean": "Returns_mean", "sem": "Returns_sem"})
@@ -62,11 +75,11 @@ def _main(
 
     plt.xlabel("Episode")
     plt.ylabel("Returns")
-    plt.title("Agent Performance over Episodes")
-    plt.legend(title="Agent")
+    plt.title("Two Bunny Chase")
+    plt.legend(loc="lower right")
     plt.grid(True)
-    fig_file = outdir / "experience_replay_experiments.png"
-    plt.savefig(fig_file)
+    plt.tight_layout()
+    plt.savefig(fig_file, dpi=150)
     print(f"Wrote out to {fig_file}")
 
 
@@ -146,6 +159,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_evals", default=10, type=int)
     parser.add_argument("--num_replays_per_update", default=50, type=int)
     parser.add_argument("--outdir", default=Path("."), type=Path)
+    parser.add_argument("--load", action="store_true")
     args = parser.parse_args()
     _main(
         args.seed,
@@ -156,4 +170,5 @@ if __name__ == "__main__":
         args.num_evals,
         args.num_replays_per_update,
         args.outdir,
+        args.load,
     )
