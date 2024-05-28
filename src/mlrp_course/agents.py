@@ -76,6 +76,6 @@ class Agent(Generic[_ObsType, _ActType]):
 class DiscreteMDPAgent(Agent[DiscreteState, DiscreteAction], abc.ABC):
     """An agent acting in a DiscreteMDP."""
 
-    def __init__(self, mdp: DiscreteMDP, *args, **kwargs) -> None:
+    def __init__(self, mdp: DiscreteMDP, seed: int) -> None:
         self._mdp = mdp
-        super().__init__(*args, **kwargs)
+        super().__init__(seed)

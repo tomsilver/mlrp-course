@@ -28,15 +28,16 @@ class QLearningAgent(Agent):
         self,
         actions: Collection[DiscreteAction],
         gamma: float,
-        config: QLearningHyperparameters,
-        *args,
-        **kwargs,
+        seed: int,
+        q_learning_hyperparameters: QLearningHyperparameters | None = None,
     ) -> None:
         self._actions = sorted(actions)  # sorting for determinism
         self._gamma = gamma  # temporal discount factor from the env
         self._Q_dict: Dict[DiscreteState, Dict[DiscreteAction, float]] = {}
-        self._config = config
-        super().__init__(*args, **kwargs)
+        self._q_learning_hyperparameters = (
+            q_learning_hyperparameters or QLearningHyperparameters()
+        )
+        super().__init__(seed)
 
     def _Q(self, s: DiscreteState, a: DiscreteAction) -> float:
         if s not in self._Q_dict:
@@ -57,15 +58,15 @@ class QLearningAgent(Agent):
         target = reward + self._gamma * v_ns
         prediction = self._Q(obs, act)
         # Update in the direction of the target.
-        alpha = self._config.learning_rate
+        alpha = self._q_learning_hyperparameters.learning_rate
         self._Q_dict[obs][act] = prediction + alpha * (target - prediction)
         return super()._learn_from_transition(obs, act, next_obs, reward, done)
 
     def _get_action(self) -> DiscreteAction:
         # Explore or exploit.
         if self._train_or_eval == "train":
-            assert self._config.explore_strategy == "epsilon-greedy"
-            if self._rng.uniform() < self._config.epsilon:
+            assert self._q_learning_hyperparameters.explore_strategy == "epsilon-greedy"
+            if self._rng.uniform() < self._q_learning_hyperparameters.epsilon:
                 # Choose a random action.
                 return self._get_random_action()
         # Choose the best action.
@@ -84,9 +85,11 @@ class QLearningExperienceReplayAgent(ExperienceReplayAgent, QLearningAgent):
         self,
         actions: Collection[DiscreteAction],
         gamma: float,
-        q_learning_config: QLearningHyperparameters,
-        experience_replay_config: ExperienceReplayHyperparameters,
         seed: int,
+        q_learning_hyperparameters: QLearningHyperparameters | None = None,
+        experience_replay_hyperparameters: (
+            ExperienceReplayHyperparameters | None
+        ) = None,
     ) -> None:
-        ExperienceReplayAgent.__init__(self, experience_replay_config, seed)
-        QLearningAgent.__init__(self, actions, gamma, q_learning_config, seed)
+        ExperienceReplayAgent.__init__(self, seed, experience_replay_hyperparameters)
+        QLearningAgent.__init__(self, actions, gamma, seed, q_learning_hyperparameters)

@@ -46,13 +46,22 @@ class ExpectimaxSearchAgent(DiscreteMDPAgent):
     """An agent that runs expectimax search at every timestep."""
 
     def __init__(
-        self, planner_config: ExpectimaxSearchHyperparameters, *args, **kwargs
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        expectimax_search_hyperparameters: (
+            ExpectimaxSearchHyperparameters | None
+        ) = None,
     ) -> None:
-        self._planner_config = planner_config
-        super().__init__(*args, **kwargs)
+        self._expectimax_search_hyperparameters = (
+            expectimax_search_hyperparameters or ExpectimaxSearchHyperparameters()
+        )
+        super().__init__(mdp, seed)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
         return expectimax_search(
-            self._last_observation, self._mdp, self._planner_config
+            self._last_observation,
+            self._mdp,
+            self._expectimax_search_hyperparameters,
         )

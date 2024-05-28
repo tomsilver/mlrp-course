@@ -79,10 +79,16 @@ class PolicyIterationAgent(DiscreteMDPAgent):
     """An agent that plans offline with policy iteration."""
 
     def __init__(
-        self, planner_config: PolicyIterationHyperparameters, *args, **kwargs
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        policy_iteration_hyperparameters: PolicyIterationHyperparameters | None = None,
     ) -> None:
-        super().__init__(*args, **kwargs)
-        Vs = policy_iteration(self._mdp, planner_config)
+        self._policy_iteration_hyperparameters = (
+            policy_iteration_hyperparameters or PolicyIterationHyperparameters()
+        )
+        super().__init__(mdp, seed)
+        Vs = policy_iteration(self._mdp, self._policy_iteration_hyperparameters)
         self._pi = value_function_to_greedy_policy(Vs[-1], self._mdp, self._rng)
 
     def _get_action(self) -> DiscreteAction:

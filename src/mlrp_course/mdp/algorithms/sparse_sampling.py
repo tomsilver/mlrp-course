@@ -53,13 +53,21 @@ class SparseSamplingAgent(DiscreteMDPAgent):
     """An agent that runs RTDP at every timestep."""
 
     def __init__(
-        self, planner_config: SparseSamplingHyperparameters, *args, **kwargs
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        sparse_sampling_hyperparameters: SparseSamplingHyperparameters | None = None,
     ) -> None:
-        self._planner_config = planner_config
-        super().__init__(*args, **kwargs)
+        self._sparse_sampling_hyperparameters = (
+            sparse_sampling_hyperparameters or SparseSamplingHyperparameters()
+        )
+        super().__init__(mdp, seed)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
         return sparse_sampling(
-            self._last_observation, self._mdp, self._rng, self._planner_config
+            self._last_observation,
+            self._mdp,
+            self._rng,
+            self._sparse_sampling_hyperparameters,
         )

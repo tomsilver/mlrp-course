@@ -49,10 +49,18 @@ class FiniteHorizonDPAgent(DiscreteMDPAgent):
     """An agent that plans offline with finite-horizon dynamic programming."""
 
     def __init__(
-        self, planner_config: FiniteHorizonDPHyperparameters, *args, **kwargs
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        finite_horizon_dp_hyperparameters: FiniteHorizonDPHyperparameters | None = None,
     ) -> None:
-        super().__init__(*args, **kwargs)
-        self._value_fn = finite_horizon_dp(self._mdp, planner_config)
+        self._finite_horizon_dp_hyperparameters = (
+            finite_horizon_dp_hyperparameters or FiniteHorizonDPHyperparameters()
+        )
+        super().__init__(mdp, seed)
+        self._value_fn = finite_horizon_dp(
+            self._mdp, self._finite_horizon_dp_hyperparameters
+        )
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None

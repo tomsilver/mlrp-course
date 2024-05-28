@@ -59,10 +59,16 @@ class ValueIterationAgent(DiscreteMDPAgent):
     """An agent that plans offline with value iteration."""
 
     def __init__(
-        self, planner_config: ValueIterationHyperparameters, *args, **kwargs
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        value_iteration_hyperparameters: ValueIterationHyperparameters | None = None,
     ) -> None:
-        super().__init__(*args, **kwargs)
-        Vs = value_iteration(self._mdp, planner_config)
+        self._value_iteration_hyperparameters = (
+            value_iteration_hyperparameters or ValueIterationHyperparameters()
+        )
+        super().__init__(mdp, seed)
+        Vs = value_iteration(self._mdp, self._value_iteration_hyperparameters)
         self._pi = value_function_to_greedy_policy(Vs[-1], self._mdp, self._rng)
 
     def _get_action(self) -> DiscreteAction:
