@@ -24,7 +24,6 @@ from mlrp_course.mdp.discrete_mdp import DiscreteMDP
 from mlrp_course.structs import Image
 from mlrp_course.utils import load_image_asset
 
-# Define the state and action types.
 ChaseAction: TypeAlias = str
 BunnyPosition: TypeAlias = Optional[Tuple[int, int]]
 

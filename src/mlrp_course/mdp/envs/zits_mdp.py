@@ -5,7 +5,6 @@ from typing import Dict, Set, TypeAlias
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP
 from mlrp_course.structs import Image
 
-# Define the state and action types.
 ZitsState: TypeAlias = int
 ZitsAction: TypeAlias = str
 

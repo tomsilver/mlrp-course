@@ -5,7 +5,6 @@ from typing import Dict, Optional, Set, Tuple, TypeAlias
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP
 from mlrp_course.structs import Image
 
-# Define the state and action types.
 MarshmellowState: TypeAlias = Tuple[int, bool]
 MarshmellowAction: TypeAlias = str
 
