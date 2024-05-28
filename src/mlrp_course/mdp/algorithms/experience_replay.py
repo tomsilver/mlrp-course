@@ -6,11 +6,11 @@ from dataclasses import dataclass
 from typing import Any, Deque, Tuple, TypeAlias
 
 from mlrp_course.agents import Agent
-from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class ExperienceReplayConfig(AlgorithmConfig):
+class ExperienceReplayConfig(Hyperparameters):
     """Hyperparameters for experience replay."""
 
     num_replays_per_update: int = 10
