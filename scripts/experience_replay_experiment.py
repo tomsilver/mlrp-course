@@ -9,11 +9,11 @@ import pandas as pd
 from tqdm import tqdm
 
 from mlrp_course.agents import Agent
-from mlrp_course.mdp.algorithms.experience_replay import ExperienceReplayConfig
+from mlrp_course.mdp.algorithms.experience_replay import ExperienceReplayHyperparameters
 from mlrp_course.mdp.algorithms.q_learning import (
     QLearningAgent,
-    QLearningConfig,
     QLearningExperienceReplayAgent,
+    QLearningHyperparameters,
 )
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, TwoBunnyChaseMDP
 from mlrp_course.utils import DiscreteMDPGymEnv, run_episodes
@@ -97,8 +97,8 @@ def _run_single_seed(
     sample_initial_state = lambda _: ChaseState((0, 0), ((1, 2), (1, 1)))
     env = DiscreteMDPGymEnv(mdp, sample_initial_state)
     # Set up agents.
-    q_learning_config = QLearningConfig()
-    experience_replay_config = ExperienceReplayConfig(
+    q_learning_config = QLearningHyperparameters()
+    experience_replay_config = ExperienceReplayHyperparameters(
         num_replays_per_update=num_replays_per_update
     )
     no_replay_agent = QLearningAgent(

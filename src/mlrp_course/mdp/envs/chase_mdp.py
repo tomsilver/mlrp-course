@@ -10,7 +10,6 @@ from typing import (
     DefaultDict,
     Dict,
     List,
-    Optional,
     Set,
     Tuple,
     TypeAlias,
@@ -25,7 +24,7 @@ from mlrp_course.structs import Image
 from mlrp_course.utils import load_image_asset
 
 ChaseAction: TypeAlias = str
-BunnyPosition: TypeAlias = Optional[Tuple[int, int]]
+BunnyPosition: TypeAlias = Tuple[int, int] | None
 
 
 @dataclass(frozen=True)

@@ -14,7 +14,7 @@ from mlrp_course.utils import (
 
 
 @dataclass(frozen=True)
-class PolicyIterationConfig(Hyperparameters):
+class PolicyIterationHyperparameters(Hyperparameters):
     """Hyperparameters for policy iteration."""
 
     max_num_iterations: int = 1000
@@ -22,7 +22,7 @@ class PolicyIterationConfig(Hyperparameters):
 
 def policy_iteration(
     mdp: DiscreteMDP,
-    config: PolicyIterationConfig,
+    config: PolicyIterationHyperparameters,
 ) -> List[Dict[DiscreteState, float]]:
     """Run policy iteration for a certain number of iterations or until there
     is no change to make.
@@ -78,7 +78,9 @@ def _find_state_action_improvement(
 class PolicyIterationAgent(DiscreteMDPAgent):
     """An agent that plans offline with policy iteration."""
 
-    def __init__(self, planner_config: PolicyIterationConfig, *args, **kwargs) -> None:
+    def __init__(
+        self, planner_config: PolicyIterationHyperparameters, *args, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
         Vs = policy_iteration(self._mdp, planner_config)
         self._pi = value_function_to_greedy_policy(Vs[-1], self._mdp, self._rng)

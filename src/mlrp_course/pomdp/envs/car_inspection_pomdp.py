@@ -12,7 +12,7 @@ CarInspectionAction: TypeAlias = str  # buy, wait, inspect
 
 
 @dataclass(frozen=True)
-class CarInspectionPOMDPConfig(Hyperparameters):
+class CarInspectionPOMDPHyperparameters(Hyperparameters):
     """Hyperparameters for the CarInspectionPOMDP."""
 
     lemon_pass_prob: float = 0.4
@@ -27,8 +27,8 @@ class CarInspectionPOMDP(
 ):
     """Car inspection POMDP from Leslie Kaelbling."""
 
-    def __init__(self, config: CarInspectionPOMDPConfig | None = None) -> None:
-        self._config = config or CarInspectionPOMDPConfig()
+    def __init__(self, config: CarInspectionPOMDPHyperparameters | None = None) -> None:
+        self._config = config or CarInspectionPOMDPHyperparameters()
 
     @property
     def observation_space(self) -> Set[CarInspectionObs]:

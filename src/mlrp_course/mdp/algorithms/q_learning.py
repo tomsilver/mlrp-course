@@ -6,14 +6,14 @@ from typing import Collection, Dict
 from mlrp_course.agents import Agent
 from mlrp_course.mdp.algorithms.experience_replay import (
     ExperienceReplayAgent,
-    ExperienceReplayConfig,
+    ExperienceReplayHyperparameters,
 )
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteState
 from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class QLearningConfig(Hyperparameters):
+class QLearningHyperparameters(Hyperparameters):
     """Hyperparameters for Q Learning."""
 
     explore_strategy: str = "epsilon-greedy"
@@ -28,7 +28,7 @@ class QLearningAgent(Agent):
         self,
         actions: Collection[DiscreteAction],
         gamma: float,
-        config: QLearningConfig,
+        config: QLearningHyperparameters,
         *args,
         **kwargs,
     ) -> None:
@@ -84,8 +84,8 @@ class QLearningExperienceReplayAgent(ExperienceReplayAgent, QLearningAgent):
         self,
         actions: Collection[DiscreteAction],
         gamma: float,
-        q_learning_config: QLearningConfig,
-        experience_replay_config: ExperienceReplayConfig,
+        q_learning_config: QLearningHyperparameters,
+        experience_replay_config: ExperienceReplayHyperparameters,
         seed: int,
     ) -> None:
         ExperienceReplayAgent.__init__(self, experience_replay_config, seed)

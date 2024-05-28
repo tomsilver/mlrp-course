@@ -1,20 +1,20 @@
 """Tests for POMDP expectimax search."""
 
 from mlrp_course.pomdp.algorithms.expectimax_search import (
-    ExpectimaxSearchConfig,
+    ExpectimaxSearchHyperparameters,
     pomdp_expectimax_search,
 )
 from mlrp_course.pomdp.discrete_pomdp import BeliefState
 from mlrp_course.pomdp.envs.car_inspection_pomdp import (
     CarInspectionPOMDP,
-    CarInspectionPOMDPConfig,
+    CarInspectionPOMDPHyperparameters,
 )
 
 
 def test_pomdp_expectimax_search():
     """Tests for POMDP expectimax search."""
     initial_belief = BeliefState({"lemon": 0.5, "peach": 0.5})
-    search_config = ExpectimaxSearchConfig(search_horizon=3)
+    search_config = ExpectimaxSearchHyperparameters(search_horizon=3)
     # By default, the cost of buying a lemon is really bad, and the inspection
     # cost is not so bad, so we should expect to inspect.
     pomdp = CarInspectionPOMDP()
@@ -22,7 +22,7 @@ def test_pomdp_expectimax_search():
     assert act == "inspect"
     # If the costs are different, we should expect to just buy.
     pomdp = CarInspectionPOMDP(
-        CarInspectionPOMDPConfig(
+        CarInspectionPOMDPHyperparameters(
             inspection_fee=10000,
             lemon_reward=-10,
         )
@@ -31,7 +31,7 @@ def test_pomdp_expectimax_search():
     assert act == "buy"
     # Now we expect to dont-buy.
     pomdp = CarInspectionPOMDP(
-        CarInspectionPOMDPConfig(
+        CarInspectionPOMDPHyperparameters(
             inspection_fee=10000,
             lemon_reward=-100,
         )
@@ -40,7 +40,7 @@ def test_pomdp_expectimax_search():
     assert act == "dont-buy"
     # Now we expect to dont-buy because inspection tells us nothing.
     pomdp = CarInspectionPOMDP(
-        CarInspectionPOMDPConfig(
+        CarInspectionPOMDPHyperparameters(
             lemon_pass_prob=0.5,
             peach_pass_prob=0.5,
         )

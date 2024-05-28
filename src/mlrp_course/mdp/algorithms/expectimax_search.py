@@ -9,7 +9,7 @@ from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class ExpectimaxSearchConfig(Hyperparameters):
+class ExpectimaxSearchHyperparameters(Hyperparameters):
     """Hyperparameters for expectimax search."""
 
     search_horizon: int = 10
@@ -18,7 +18,7 @@ class ExpectimaxSearchConfig(Hyperparameters):
 def expectimax_search(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
-    config: ExpectimaxSearchConfig,
+    config: ExpectimaxSearchHyperparameters,
 ) -> DiscreteAction:
     """Returns a single action to take."""
     # Note: no iteration over state space.
@@ -45,7 +45,9 @@ def expectimax_search(
 class ExpectimaxSearchAgent(DiscreteMDPAgent):
     """An agent that runs expectimax search at every timestep."""
 
-    def __init__(self, planner_config: ExpectimaxSearchConfig, *args, **kwargs) -> None:
+    def __init__(
+        self, planner_config: ExpectimaxSearchHyperparameters, *args, **kwargs
+    ) -> None:
         self._planner_config = planner_config
         super().__init__(*args, **kwargs)
 

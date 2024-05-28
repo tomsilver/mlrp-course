@@ -12,7 +12,7 @@ from mlrp_course.utils import sample_trajectory
 
 
 @dataclass(frozen=True)
-class MCTSConfig(Hyperparameters):
+class MCTSHyperparameters(Hyperparameters):
     """Hyperparameters for MCTS."""
 
     search_horizon: int = 10
@@ -27,7 +27,7 @@ def mcts(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
     rng: np.random.Generator,
-    config: MCTSConfig,
+    config: MCTSHyperparameters,
 ) -> DiscreteAction:
     """Monte Carlo Tree Search."""
 
@@ -154,7 +154,7 @@ def _explore(
 class MCTSPAgent(DiscreteMDPAgent):
     """An agent that runs MCTS on every timestep."""
 
-    def __init__(self, planner_config: MCTSConfig, *args, **kwargs) -> None:
+    def __init__(self, planner_config: MCTSHyperparameters, *args, **kwargs) -> None:
         self._planner_config = planner_config
         super().__init__(*args, **kwargs)
 

@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mlrp_course.mdp.algorithms.mcts import MCTSConfig, mcts
+from mlrp_course.mdp.algorithms.mcts import MCTSHyperparameters, mcts
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, LargeChaseMDP
 
 
@@ -11,7 +11,7 @@ def test_mcts():
     mdp = LargeChaseMDP()
     state = ChaseState((1, 1), ((3, 3), (3, 4)))
     rng = np.random.default_rng(123)
-    config = MCTSConfig(
+    config = MCTSHyperparameters(
         search_horizon=100,
         num_simulations=100,
         max_rollout_length=10,

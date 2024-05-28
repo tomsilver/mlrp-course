@@ -3,7 +3,7 @@
 import numpy as np
 
 from mlrp_course.mdp.algorithms.sparse_sampling import (
-    SparseSamplingConfig,
+    SparseSamplingHyperparameters,
     sparse_sampling,
 )
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, LargeChaseMDP
@@ -12,7 +12,7 @@ from mlrp_course.mdp.envs.chase_mdp import ChaseState, LargeChaseMDP
 def test_sparse_sampling():
     """Tests for sparse_sampling.py."""
     mdp = LargeChaseMDP()
-    config = SparseSamplingConfig(search_horizon=5)
+    config = SparseSamplingHyperparameters(search_horizon=5)
     state = ChaseState((1, 1), ((3, 3),))
     rng = np.random.default_rng(123)
     for _ in range(20):

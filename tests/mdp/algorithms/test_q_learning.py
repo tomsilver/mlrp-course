@@ -1,6 +1,9 @@
 """Tests for q_learning.py."""
 
-from mlrp_course.mdp.algorithms.q_learning import QLearningAgent, QLearningConfig
+from mlrp_course.mdp.algorithms.q_learning import (
+    QLearningAgent,
+    QLearningHyperparameters,
+)
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, StaticBunnyChaseMDP
 from mlrp_course.utils import DiscreteMDPGymEnv, run_episodes
 
@@ -13,7 +16,7 @@ def test_value_iteration():
     seed = 123
     env.reset(seed=seed)
     agent = QLearningAgent(
-        mdp.action_space, mdp.temporal_discount_factor, QLearningConfig(), seed
+        mdp.action_space, mdp.temporal_discount_factor, QLearningHyperparameters(), seed
     )
     agent.train()
     run_episodes(agent, env, num_episodes=10000, max_episode_length=10)

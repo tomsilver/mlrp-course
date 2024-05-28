@@ -10,7 +10,7 @@ from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class ExperienceReplayConfig(Hyperparameters):
+class ExperienceReplayHyperparameters(Hyperparameters):
     """Hyperparameters for experience replay."""
 
     num_replays_per_update: int = 10
@@ -24,7 +24,7 @@ _Action: TypeAlias = Any
 class ExperienceReplayAgent(Agent[_Obs, _Action], abc.ABC):
     """A mix-in that implements experience replay."""
 
-    def __init__(self, config: ExperienceReplayConfig, seed: int) -> None:
+    def __init__(self, config: ExperienceReplayHyperparameters, seed: int) -> None:
         self._experience_replay_config = config
         self._buffer: Deque[Tuple[_Obs, _Action, _Obs, float, bool]] = deque(
             [], maxlen=config.buffer_length

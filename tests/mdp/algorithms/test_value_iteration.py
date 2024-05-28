@@ -1,7 +1,7 @@
 """Tests for value_iteration.py."""
 
 from mlrp_course.mdp.algorithms.value_iteration import (
-    ValueIterationConfig,
+    ValueIterationHyperparameters,
     value_iteration,
 )
 from mlrp_course.mdp.envs.chase_mdp import ChaseMDP, ChaseState
@@ -10,7 +10,7 @@ from mlrp_course.mdp.envs.chase_mdp import ChaseMDP, ChaseState
 def test_value_iteration():
     """Tests for value_iteration.py."""
     mdp = ChaseMDP()
-    config = ValueIterationConfig(max_num_iterations=100)
+    config = ValueIterationHyperparameters(max_num_iterations=100)
     Vs = value_iteration(mdp, config)
     assert len(Vs) < 100  # should be well less
     V = Vs[-1]

@@ -10,25 +10,25 @@ from tqdm import tqdm
 from mlrp_course.agents import Agent
 from mlrp_course.mdp.algorithms.expectimax_search import (
     ExpectimaxSearchAgent,
-    ExpectimaxSearchConfig,
+    ExpectimaxSearchHyperparameters,
 )
 from mlrp_course.mdp.algorithms.finite_horizon_dp import (
     FiniteHorizonDPAgent,
-    FiniteHorizonDPConfig,
+    FiniteHorizonDPHyperparameters,
 )
-from mlrp_course.mdp.algorithms.mcts import MCTSConfig, MCTSPAgent
+from mlrp_course.mdp.algorithms.mcts import MCTSHyperparameters, MCTSPAgent
 from mlrp_course.mdp.algorithms.policy_iteration import (
     PolicyIterationAgent,
-    PolicyIterationConfig,
+    PolicyIterationHyperparameters,
 )
-from mlrp_course.mdp.algorithms.rtdp import RTDPAgent, RTDPConfig
+from mlrp_course.mdp.algorithms.rtdp import RTDPAgent, RTDPHyperparameters
 from mlrp_course.mdp.algorithms.sparse_sampling import (
     SparseSamplingAgent,
-    SparseSamplingConfig,
+    SparseSamplingHyperparameters,
 )
 from mlrp_course.mdp.algorithms.value_iteration import (
     ValueIterationAgent,
-    ValueIterationConfig,
+    ValueIterationHyperparameters,
 )
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP, DiscreteState
 from mlrp_course.mdp.envs.chase_mdp import (
@@ -110,25 +110,25 @@ def _create_agent(
 ) -> Agent:
 
     if name == "finite_horizon_dp":
-        return FiniteHorizonDPAgent(FiniteHorizonDPConfig(), mdp, seed)
+        return FiniteHorizonDPAgent(FiniteHorizonDPHyperparameters(), mdp, seed)
 
     if name == "value_iteration":
-        return ValueIterationAgent(ValueIterationConfig(), mdp, seed)
+        return ValueIterationAgent(ValueIterationHyperparameters(), mdp, seed)
 
     if name == "policy_iteration":
-        return PolicyIterationAgent(PolicyIterationConfig(), mdp, seed)
+        return PolicyIterationAgent(PolicyIterationHyperparameters(), mdp, seed)
 
     if name == "expectimax_search":
-        return ExpectimaxSearchAgent(ExpectimaxSearchConfig(), mdp, seed)
+        return ExpectimaxSearchAgent(ExpectimaxSearchHyperparameters(), mdp, seed)
 
     if name == "sparse_sampling":
-        return SparseSamplingAgent(SparseSamplingConfig(), mdp, seed)
+        return SparseSamplingAgent(SparseSamplingHyperparameters(), mdp, seed)
 
     if name == "rtdp":
-        return RTDPAgent(RTDPConfig(), mdp, seed)
+        return RTDPAgent(RTDPHyperparameters(), mdp, seed)
 
     if name == "mcts":
-        return MCTSPAgent(MCTSConfig(), mdp, seed)
+        return MCTSPAgent(MCTSHyperparameters(), mdp, seed)
 
     raise NotImplementedError("Approach not found.")
 
