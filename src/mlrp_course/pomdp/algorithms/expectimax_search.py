@@ -1,7 +1,7 @@
 """Run online planning with expectimax search for POMDPs."""
 
 from mlrp_course.mdp.algorithms.expectimax_search import (
-    ExpectimaxSearchConfig,
+    ExpectimaxSearchHyperparameters,
     expectimax_search,
 )
 from mlrp_course.mdp.discrete_mdp import DiscreteAction
@@ -12,7 +12,7 @@ from mlrp_course.pomdp.utils import BeliefMDP
 def pomdp_expectimax_search(
     initial_belief_state: BeliefState,
     pomdp: DiscretePOMDP,
-    config: ExpectimaxSearchConfig,
+    config: ExpectimaxSearchHyperparameters,
 ) -> DiscreteAction:
     """Returns a single action to take."""
     mdp = BeliefMDP(pomdp)

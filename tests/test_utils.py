@@ -1,7 +1,5 @@
 """Tests for utils.py."""
 
-from typing import Optional
-
 from mlrp_course.mdp.discrete_mdp import DiscreteState
 from mlrp_course.mdp.envs.marshmellow_mdp import MarshmallowMDP
 from mlrp_course.utils import DiscreteMDPGymEnv
@@ -11,7 +9,7 @@ def test_discrete_mdp_gym_env():
     """Tests for DiscreteMDPGymEnv()."""
     mdp = MarshmallowMDP()
 
-    def _sample_initial_state(_: Optional[int]) -> DiscreteState:
+    def _sample_initial_state(_: int | None) -> DiscreteState:
         return (0, True)
 
     env = DiscreteMDPGymEnv(mdp, _sample_initial_state)

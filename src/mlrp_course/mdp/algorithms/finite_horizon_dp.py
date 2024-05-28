@@ -10,13 +10,13 @@ from mlrp_course.utils import value_function_to_greedy_policy
 
 
 @dataclass(frozen=True)
-class FiniteHorizonDPConfig(Hyperparameters):
+class FiniteHorizonDPHyperparameters(Hyperparameters):
     """Hyperparameters for finite-horizon DP."""
 
 
 def finite_horizon_dp(
     mdp: DiscreteMDP,
-    config: FiniteHorizonDPConfig,
+    config: FiniteHorizonDPHyperparameters,
 ) -> Dict[int, Dict[DiscreteState, float]]:
     """Solve finite-horizon MDPs by dynamic programming."""
     del config  # no hyperparameters used
@@ -48,9 +48,19 @@ def finite_horizon_dp(
 class FiniteHorizonDPAgent(DiscreteMDPAgent):
     """An agent that plans offline with finite-horizon dynamic programming."""
 
-    def __init__(self, planner_config: FiniteHorizonDPConfig, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._value_fn = finite_horizon_dp(self._mdp, planner_config)
+    def __init__(
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        finite_horizon_dp_hyperparameters: FiniteHorizonDPHyperparameters | None = None,
+    ) -> None:
+        self._finite_horizon_dp_hyperparameters = (
+            finite_horizon_dp_hyperparameters or FiniteHorizonDPHyperparameters()
+        )
+        super().__init__(mdp, seed)
+        self._value_fn = finite_horizon_dp(
+            self._mdp, self._finite_horizon_dp_hyperparameters
+        )
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None

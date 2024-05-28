@@ -11,7 +11,7 @@ from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class SparseSamplingConfig(Hyperparameters):
+class SparseSamplingHyperparameters(Hyperparameters):
     """Hyperparameters for sparse sampling."""
 
     search_horizon: int = 10
@@ -22,7 +22,7 @@ def sparse_sampling(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
     rng: np.random.Generator,
-    config: SparseSamplingConfig,
+    config: SparseSamplingHyperparameters,
 ) -> DiscreteAction:
     """Returns a single action to take."""
     # Note: no iteration over state space.
@@ -52,12 +52,22 @@ def sparse_sampling(
 class SparseSamplingAgent(DiscreteMDPAgent):
     """An agent that runs RTDP at every timestep."""
 
-    def __init__(self, planner_config: SparseSamplingConfig, *args, **kwargs) -> None:
-        self._planner_config = planner_config
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        sparse_sampling_hyperparameters: SparseSamplingHyperparameters | None = None,
+    ) -> None:
+        self._sparse_sampling_hyperparameters = (
+            sparse_sampling_hyperparameters or SparseSamplingHyperparameters()
+        )
+        super().__init__(mdp, seed)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
         return sparse_sampling(
-            self._last_observation, self._mdp, self._rng, self._planner_config
+            self._last_observation,
+            self._mdp,
+            self._rng,
+            self._sparse_sampling_hyperparameters,
         )

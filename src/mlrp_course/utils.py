@@ -1,7 +1,7 @@
 """Utilities."""
 
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
@@ -141,16 +141,16 @@ class DiscreteMDPGymEnv(gym.Env):
     def __init__(
         self,
         mdp: DiscreteMDP,
-        sample_initial_state: Callable[[Optional[int]], DiscreteState],
+        sample_initial_state: Callable[[int | None], DiscreteState],
     ) -> None:
         self._mdp = mdp
         self._sample_initial_state = sample_initial_state
         self._remaining_horizon = self._mdp.horizon or float("inf")
-        self._current_state: Optional[DiscreteState] = None  # set in reset()
+        self._current_state: DiscreteState | None = None  # set in reset()
         super().__init__()
 
     def reset(
-        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
+        self, *, seed: int | None = None, options: Dict | None = None
     ) -> Tuple[DiscreteState, Dict]:
         super().reset(seed=seed)
         self._current_state = self._sample_initial_state(seed)

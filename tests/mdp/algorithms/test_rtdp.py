@@ -2,13 +2,13 @@
 
 import numpy as np
 
-from mlrp_course.mdp.algorithms.rtdp import RTDPConfig, rtdp
+from mlrp_course.mdp.algorithms.rtdp import RTDPHyperparameters, rtdp
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, ChaseWithRoomsMDP
 
 
 def test_rtdp():
     """Tests for rtdp.py."""
-    config = RTDPConfig(search_horizon=10)
+    config = RTDPHyperparameters(search_horizon=10)
     mdp = ChaseWithRoomsMDP()
     state = ChaseState((1, 1), ((3, 3),))
     rng = np.random.default_rng(123)

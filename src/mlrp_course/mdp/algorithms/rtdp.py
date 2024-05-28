@@ -17,7 +17,7 @@ from mlrp_course.utils import (
 
 
 @dataclass(frozen=True)
-class RTDPConfig(Hyperparameters):
+class RTDPHyperparameters(Hyperparameters):
     """Hyperparameters for RTDP."""
 
     search_horizon: int = 10
@@ -28,7 +28,7 @@ def rtdp(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
     rng: np.random.Generator,
-    config: RTDPConfig,
+    config: RTDPHyperparameters,
 ) -> DiscreteAction:
     """Real-time dynamic programming."""
 
@@ -54,10 +54,17 @@ def rtdp(
 class RTDPAgent(DiscreteMDPAgent):
     """An agent that runs RTDP at every timestep."""
 
-    def __init__(self, planner_config: RTDPConfig, *args, **kwargs) -> None:
-        self._planner_config = planner_config
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        rtdp_hyperparameters: RTDPHyperparameters | None = None,
+    ) -> None:
+        self._rtdp_hyperparameters = rtdp_hyperparameters or RTDPHyperparameters()
+        super().__init__(mdp, seed)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
-        return rtdp(self._last_observation, self._mdp, self._rng, self._planner_config)
+        return rtdp(
+            self._last_observation, self._mdp, self._rng, self._rtdp_hyperparameters
+        )

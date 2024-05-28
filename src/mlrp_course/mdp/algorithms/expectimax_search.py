@@ -9,7 +9,7 @@ from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class ExpectimaxSearchConfig(Hyperparameters):
+class ExpectimaxSearchHyperparameters(Hyperparameters):
     """Hyperparameters for expectimax search."""
 
     search_horizon: int = 10
@@ -18,7 +18,7 @@ class ExpectimaxSearchConfig(Hyperparameters):
 def expectimax_search(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
-    config: ExpectimaxSearchConfig,
+    config: ExpectimaxSearchHyperparameters,
 ) -> DiscreteAction:
     """Returns a single action to take."""
     # Note: no iteration over state space.
@@ -45,12 +45,23 @@ def expectimax_search(
 class ExpectimaxSearchAgent(DiscreteMDPAgent):
     """An agent that runs expectimax search at every timestep."""
 
-    def __init__(self, planner_config: ExpectimaxSearchConfig, *args, **kwargs) -> None:
-        self._planner_config = planner_config
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        expectimax_search_hyperparameters: (
+            ExpectimaxSearchHyperparameters | None
+        ) = None,
+    ) -> None:
+        self._expectimax_search_hyperparameters = (
+            expectimax_search_hyperparameters or ExpectimaxSearchHyperparameters()
+        )
+        super().__init__(mdp, seed)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
         return expectimax_search(
-            self._last_observation, self._mdp, self._planner_config
+            self._last_observation,
+            self._mdp,
+            self._expectimax_search_hyperparameters,
         )

@@ -12,7 +12,7 @@ from mlrp_course.utils import sample_trajectory
 
 
 @dataclass(frozen=True)
-class MCTSConfig(Hyperparameters):
+class MCTSHyperparameters(Hyperparameters):
     """Hyperparameters for MCTS."""
 
     search_horizon: int = 10
@@ -27,7 +27,7 @@ def mcts(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
     rng: np.random.Generator,
-    config: MCTSConfig,
+    config: MCTSHyperparameters,
 ) -> DiscreteAction:
     """Monte Carlo Tree Search."""
 
@@ -151,13 +151,20 @@ def _explore(
     return max(mdp.action_space, key=lambda a: (_score_action(a), a))
 
 
-class MCTSPAgent(DiscreteMDPAgent):
+class MCTSAgent(DiscreteMDPAgent):
     """An agent that runs MCTS on every timestep."""
 
-    def __init__(self, planner_config: MCTSConfig, *args, **kwargs) -> None:
-        self._planner_config = planner_config
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        mdp: DiscreteMDP,
+        seed: int,
+        mcts_hyperparameters: MCTSHyperparameters | None = None,
+    ) -> None:
+        self._mcts_hyperparameters = mcts_hyperparameters or MCTSHyperparameters()
+        super().__init__(mdp, seed)
 
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
-        return mcts(self._last_observation, self._mdp, self._rng, self._planner_config)
+        return mcts(
+            self._last_observation, self._mdp, self._rng, self._mcts_hyperparameters
+        )
