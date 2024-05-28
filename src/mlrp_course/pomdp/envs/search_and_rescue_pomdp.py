@@ -155,13 +155,10 @@ class SearchAndRescuePOMDP(
         reward = self._config.living_reward
         if self.state_is_terminal(next_state):
             reward += self._config.rescue_reward
-        if action.type == "move":
-            robot_loc = state.robot_loc
-            next_r = robot_loc[0] + action.direction[0]
-            next_c = robot_loc[1] + action.direction[1]
-            # If in fire, big negative reward.
-            if self._grid[next_r, next_c]:
-                reward += self._config.fire_reward
+        # If in fire, big negative reward.
+        next_r, next_c = next_state.robot_loc
+        if self._grid[next_r, next_c] == self._FIRE:
+            reward += self._config.fire_reward
         return reward
 
     def get_transition_distribution(
