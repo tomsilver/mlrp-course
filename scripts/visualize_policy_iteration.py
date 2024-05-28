@@ -3,11 +3,11 @@
 import imageio.v2 as iio
 from visualize_value_iteration import render_chase_value_function
 
-from mlrp_course.algorithms.policy_iteration import (
+from mlrp_course.mdp.algorithms.policy_iteration import (
     PolicyIterationConfig,
     policy_iteration,
 )
-from mlrp_course.mdp.chase_mdp import ChaseMDP
+from mlrp_course.mdp.envs.chase_mdp import ChaseMDP
 
 
 def _main(outfile: str, fps: int) -> None:

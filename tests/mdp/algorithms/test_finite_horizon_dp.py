@@ -2,11 +2,11 @@
 
 import numpy as np
 
-from mlrp_course.algorithms.finite_horizon_dp import (
+from mlrp_course.mdp.algorithms.finite_horizon_dp import (
     FiniteHorizonDPConfig,
     finite_horizon_dp,
 )
-from mlrp_course.mdp.marshmellow_mdp import MarshmallowMDP
+from mlrp_course.mdp.envs.marshmellow_mdp import MarshmallowMDP
 
 
 def test_finite_horizon_dp():

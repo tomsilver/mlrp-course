@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from mlrp_course.algorithms.rtdp import RTDPConfig, rtdp
-from mlrp_course.mdp.chase_mdp import ChaseState, ChaseWithRoomsMDP
+from mlrp_course.mdp.algorithms.rtdp import RTDPConfig, rtdp
+from mlrp_course.mdp.envs.chase_mdp import ChaseState, ChaseWithRoomsMDP
 
 
 def test_rtdp():

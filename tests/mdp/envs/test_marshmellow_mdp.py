@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mlrp_course.mdp.marshmellow_mdp import MarshmallowMDP
+from mlrp_course.mdp.envs.marshmellow_mdp import MarshmallowMDP
 
 
 def test_marshmellow_mdp():

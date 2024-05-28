@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mlrp_course.mdp.zits_mdp import ZitsMDP
+from mlrp_course.mdp.envs.zits_mdp import ZitsMDP
 
 
 def test_zits_mdp():

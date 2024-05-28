@@ -9,13 +9,13 @@ import pandas as pd
 from tqdm import tqdm
 
 from mlrp_course.agents import Agent
-from mlrp_course.algorithms.experience_replay import ExperienceReplayConfig
-from mlrp_course.algorithms.q_learning import (
+from mlrp_course.mdp.algorithms.experience_replay import ExperienceReplayConfig
+from mlrp_course.mdp.algorithms.q_learning import (
     QLearningAgent,
     QLearningConfig,
     QLearningExperienceReplayAgent,
 )
-from mlrp_course.mdp.chase_mdp import ChaseState, TwoBunnyChaseMDP
+from mlrp_course.mdp.envs.chase_mdp import ChaseState, TwoBunnyChaseMDP
 from mlrp_course.utils import DiscreteMDPGymEnv, run_episodes
 
 

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from mlrp_course.mdp.discrete_mdp import DiscreteState
-from mlrp_course.mdp.marshmellow_mdp import MarshmallowMDP
+from mlrp_course.mdp.envs.marshmellow_mdp import MarshmallowMDP
 from mlrp_course.utils import DiscreteMDPGymEnv
 
 
