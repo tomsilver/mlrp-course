@@ -28,15 +28,15 @@ class CarInspectionPOMDP(
         return {"buy", "dont-buy", "inspect"}
 
     def get_observation_distribution(
-        self, state: CarInspectionState, action: CarInspectionAction
+        self, next_state: CarInspectionState, action: CarInspectionAction
     ) -> Dict[CarInspectionObs, float]:
         if action == "inspect":
-            if state == "lemon":
+            if next_state == "lemon":
                 return {
                     "pass": 0.4,
                     "fail": 0.6,
                 }
-            assert state == "peach"
+            assert next_state == "peach"
             return {
                 "pass": 0.9,
                 "fail": 0.1,
