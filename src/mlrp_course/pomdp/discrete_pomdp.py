@@ -45,7 +45,7 @@ class BeliefState:
         assert np.isclose(sum(self.state_to_prob.values()), 1.0)
 
     def __hash__(self) -> int:
-        return hash(sorted(self.state_to_prob.items()))
+        return hash(tuple(sorted(self.state_to_prob.items())))
 
     def __call__(self, state: DiscreteState) -> float:
         """Get the probability for the given state."""

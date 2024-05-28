@@ -8,7 +8,7 @@ import numpy as np
 
 from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.structs import Hyperparameters
 from mlrp_course.utils import (
     bellman_backup,
     sample_trajectory,
@@ -17,7 +17,7 @@ from mlrp_course.utils import (
 
 
 @dataclass(frozen=True)
-class RTDPConfig(AlgorithmConfig):
+class RTDPConfig(Hyperparameters):
     """Hyperparameters for RTDP."""
 
     search_horizon: int = 10

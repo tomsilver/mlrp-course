@@ -67,14 +67,17 @@ def get_belief_space_transition_distribution(
     P = pomdp.get_transition_probability
     O = pomdp.get_observation_probability
 
-    # Optimization: calculate all possible next states.
+    # Optimization: calculate all possible next states and observations.
     S_t1: Set[DiscreteState] = set()
+    O_t1: Set[DiscreteObs] = set()
     for s_t in b_t:
-        S_t1.update(pomdp.get_transition_distribution(s_t, a_t))
+        for s_t1 in pomdp.get_transition_distribution(s_t, a_t):
+            S_t1.add(s_t1)
+            O_t1.update(pomdp.get_observation_distribution(s_t1, a_t))
 
     dist: Dict[BeliefState, float] = defaultdict(float)
 
-    for o_t1 in pomdp.observation_space:
+    for o_t1 in O_t1:
         b_t1 = state_estimator(b_t, a_t, o_t1, pomdp)
         # Pr(o_t1 | b_t, a_t).
         p = sum(
@@ -107,6 +110,7 @@ def state_estimator(
 
     # Normalize.
     z = sum(next_state_to_prob.values())
+    assert z > 0, "Was state_estimator() called with an impossible observation?"
     next_state_to_prob = {s: p / z for s, p in next_state_to_prob.items()}
 
     return BeliefState(next_state_to_prob)

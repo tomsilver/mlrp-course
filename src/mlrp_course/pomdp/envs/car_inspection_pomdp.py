@@ -1,19 +1,34 @@
 """Car inspection POMDP from Leslie Kaelbling."""
 
+from dataclasses import dataclass
 from typing import Dict, Optional, Set, TypeAlias
 
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
-from mlrp_course.structs import Image
+from mlrp_course.structs import Hyperparameters, Image
 
 CarInspectionObs: TypeAlias = str  # none, pass, fail
 CarInspectionState: TypeAlias = str  # lemon or peach
 CarInspectionAction: TypeAlias = str  # buy, wait, inspect
 
 
+@dataclass(frozen=True)
+class CarInspectionPOMDPConfig(Hyperparameters):
+    """Hyperparameters for the CarInspectionPOMDP."""
+
+    lemon_pass_prob: float = 0.4
+    peach_pass_prob: float = 0.9
+    inspection_fee: float = 9.0
+    lemon_reward: float = -100.0
+    peach_reward: float = 60.0
+
+
 class CarInspectionPOMDP(
     DiscretePOMDP[CarInspectionObs, CarInspectionState, CarInspectionAction]
 ):
     """Car inspection POMDP from Leslie Kaelbling."""
+
+    def __init__(self, config: CarInspectionPOMDPConfig | None = None) -> None:
+        self._config = config or CarInspectionPOMDPConfig()
 
     @property
     def observation_space(self) -> Set[CarInspectionObs]:
@@ -33,13 +48,13 @@ class CarInspectionPOMDP(
         if action == "inspect":
             if next_state == "lemon":
                 return {
-                    "pass": 0.4,
-                    "fail": 0.6,
+                    "pass": self._config.lemon_pass_prob,
+                    "fail": 1 - self._config.lemon_pass_prob,
                 }
             assert next_state == "peach"
             return {
-                "pass": 0.9,
-                "fail": 0.1,
+                "pass": self._config.peach_pass_prob,
+                "fail": 1 - self._config.peach_pass_prob,
             }
         return {"none": 1.0}
 
@@ -58,14 +73,14 @@ class CarInspectionPOMDP(
         next_state: CarInspectionState,
     ) -> float:
         if action == "inspect":
-            return -9  # $9 inspection fee
+            return -self._config.inspection_fee
         if action == "dont-buy":
             return 0
         assert action == "buy"
         if state == "lemon":
-            return -100
+            return self._config.lemon_reward
         assert state == "peach"
-        return 60
+        return self._config.peach_reward
 
     def get_transition_distribution(
         self, state: CarInspectionState, action: CarInspectionAction

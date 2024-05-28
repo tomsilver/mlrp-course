@@ -5,12 +5,12 @@ from typing import Dict, List, Optional
 
 from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.structs import Hyperparameters
 from mlrp_course.utils import bellman_backup, value_function_to_greedy_policy
 
 
 @dataclass(frozen=True)
-class ValueIterationConfig(AlgorithmConfig):
+class ValueIterationConfig(Hyperparameters):
     """Hyperparameters for value iteration."""
 
     max_num_iterations: int = 1000

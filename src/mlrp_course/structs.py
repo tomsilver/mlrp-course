@@ -9,8 +9,8 @@ from numpy.typing import NDArray
 Image: TypeAlias = NDArray[np.uint8]
 
 
-class AlgorithmConfig:
-    """General configuration for algorithms."""
+class Hyperparameters:
+    """General hyperparameters."""
 
 
 _T = TypeVar("_T", bound="HashableComparable")

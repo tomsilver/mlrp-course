@@ -7,11 +7,11 @@ import numpy as np
 
 from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class SparseSamplingConfig(AlgorithmConfig):
+class SparseSamplingConfig(Hyperparameters):
     """Hyperparameters for sparse sampling."""
 
     search_horizon: int = 10

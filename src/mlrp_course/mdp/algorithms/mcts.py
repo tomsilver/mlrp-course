@@ -7,12 +7,12 @@ import numpy as np
 
 from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.structs import Hyperparameters
 from mlrp_course.utils import sample_trajectory
 
 
 @dataclass(frozen=True)
-class MCTSConfig(AlgorithmConfig):
+class MCTSConfig(Hyperparameters):
     """Hyperparameters for MCTS."""
 
     search_horizon: int = 10

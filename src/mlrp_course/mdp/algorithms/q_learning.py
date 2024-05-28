@@ -9,11 +9,11 @@ from mlrp_course.mdp.algorithms.experience_replay import (
     ExperienceReplayConfig,
 )
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteState
-from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class QLearningConfig(AlgorithmConfig):
+class QLearningConfig(Hyperparameters):
     """Hyperparameters for Q Learning."""
 
     explore_strategy: str = "epsilon-greedy"

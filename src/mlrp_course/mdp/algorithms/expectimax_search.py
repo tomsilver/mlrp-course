@@ -5,11 +5,11 @@ from functools import lru_cache
 
 from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import AlgorithmConfig
+from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class ExpectimaxSearchConfig(AlgorithmConfig):
+class ExpectimaxSearchConfig(Hyperparameters):
     """Hyperparameters for expectimax search."""
 
     search_horizon: int = 10
