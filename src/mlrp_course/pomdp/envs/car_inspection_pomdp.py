@@ -60,7 +60,7 @@ class CarInspectionPOMDP(
 
     @property
     def horizon(self) -> Optional[int]:
-        return 2
+        return 3
 
     def state_is_terminal(self, state: CarInspectionState) -> bool:
         # No terminal states here.
