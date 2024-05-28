@@ -6,7 +6,10 @@ import imageio.v2 as iio
 import numpy as np
 from matplotlib import pyplot as plt
 
-from mlrp_course.algorithms.value_iteration import ValueIterationConfig, value_iteration
+from mlrp_course.mdp.algorithms.value_iteration import (
+    ValueIterationConfig,
+    value_iteration,
+)
 from mlrp_course.mdp.chase_mdp import ChaseMDP
 from mlrp_course.mdp.discrete_mdp import DiscreteState
 from mlrp_course.structs import Image

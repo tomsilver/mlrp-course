@@ -1,14 +1,17 @@
-"""Tests for value_iteration.py."""
+"""Tests for policy_iteration.py."""
 
-from mlrp_course.algorithms.value_iteration import ValueIterationConfig, value_iteration
+from mlrp_course.mdp.algorithms.policy_iteration import (
+    PolicyIterationConfig,
+    policy_iteration,
+)
 from mlrp_course.mdp.chase_mdp import ChaseMDP, ChaseState
 
 
-def test_value_iteration():
-    """Tests for value_iteration.py."""
+def test_policy_iteration():
+    """Tests for policy_iteration.py."""
     mdp = ChaseMDP()
-    config = ValueIterationConfig(max_num_iterations=100)
-    Vs = value_iteration(mdp, config)
+    config = PolicyIterationConfig(max_num_iterations=100)
+    Vs = policy_iteration(mdp, config)
     assert len(Vs) < 100  # should be well less
     V = Vs[-1]
     state0 = ChaseState((0, 0), ((0, 1),))

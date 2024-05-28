@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mlrp_course.algorithms.expectimax_search import (
+from mlrp_course.mdp.algorithms.expectimax_search import (
     ExpectimaxSearchConfig,
     expectimax_search,
 )

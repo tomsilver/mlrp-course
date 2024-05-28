@@ -8,25 +8,25 @@ import numpy as np
 from tqdm import tqdm
 
 from mlrp_course.agents import Agent
-from mlrp_course.algorithms.expectimax_search import (
+from mlrp_course.mdp.algorithms.expectimax_search import (
     ExpectimaxSearchAgent,
     ExpectimaxSearchConfig,
 )
-from mlrp_course.algorithms.finite_horizon_dp import (
+from mlrp_course.mdp.algorithms.finite_horizon_dp import (
     FiniteHorizonDPAgent,
     FiniteHorizonDPConfig,
 )
-from mlrp_course.algorithms.mcts import MCTSConfig, MCTSPAgent
-from mlrp_course.algorithms.policy_iteration import (
+from mlrp_course.mdp.algorithms.mcts import MCTSConfig, MCTSPAgent
+from mlrp_course.mdp.algorithms.policy_iteration import (
     PolicyIterationAgent,
     PolicyIterationConfig,
 )
-from mlrp_course.algorithms.rtdp import RTDPAgent, RTDPConfig
-from mlrp_course.algorithms.sparse_sampling import (
+from mlrp_course.mdp.algorithms.rtdp import RTDPAgent, RTDPConfig
+from mlrp_course.mdp.algorithms.sparse_sampling import (
     SparseSamplingAgent,
     SparseSamplingConfig,
 )
-from mlrp_course.algorithms.value_iteration import (
+from mlrp_course.mdp.algorithms.value_iteration import (
     ValueIterationAgent,
     ValueIterationConfig,
 )

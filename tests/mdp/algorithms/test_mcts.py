@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mlrp_course.algorithms.mcts import MCTSConfig, mcts
+from mlrp_course.mdp.algorithms.mcts import MCTSConfig, mcts
 from mlrp_course.mdp.chase_mdp import ChaseState, LargeChaseMDP
 
 

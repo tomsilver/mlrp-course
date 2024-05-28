@@ -2,7 +2,10 @@
 
 import numpy as np
 
-from mlrp_course.algorithms.sparse_sampling import SparseSamplingConfig, sparse_sampling
+from mlrp_course.mdp.algorithms.sparse_sampling import (
+    SparseSamplingConfig,
+    sparse_sampling,
+)
 from mlrp_course.mdp.chase_mdp import ChaseState, LargeChaseMDP
 
 

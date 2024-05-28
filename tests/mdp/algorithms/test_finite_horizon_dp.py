@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mlrp_course.algorithms.finite_horizon_dp import (
+from mlrp_course.mdp.algorithms.finite_horizon_dp import (
     FiniteHorizonDPConfig,
     finite_horizon_dp,
 )

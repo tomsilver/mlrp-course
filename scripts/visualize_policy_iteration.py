@@ -3,7 +3,7 @@
 import imageio.v2 as iio
 from visualize_value_iteration import render_chase_value_function
 
-from mlrp_course.algorithms.policy_iteration import (
+from mlrp_course.mdp.algorithms.policy_iteration import (
     PolicyIterationConfig,
     policy_iteration,
 )

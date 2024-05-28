@@ -1,6 +1,6 @@
 """Tests for policy_evaluation.py."""
 
-from mlrp_course.algorithms.policy_evaluation import evaluate_policy_linear_system
+from mlrp_course.mdp.algorithms.policy_evaluation import evaluate_policy_linear_system
 from mlrp_course.mdp.zits_mdp import ZitsMDP
 
 

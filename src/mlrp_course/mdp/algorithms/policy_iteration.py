@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from mlrp_course.agents import DiscreteMDPAgent
-from mlrp_course.algorithms.policy_evaluation import evaluate_policy_linear_system
+from mlrp_course.mdp.algorithms.policy_evaluation import evaluate_policy_linear_system
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import AlgorithmConfig
 from mlrp_course.utils import (

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Collection, Dict
 
 from mlrp_course.agents import Agent
-from mlrp_course.algorithms.experience_replay import (
+from mlrp_course.mdp.algorithms.experience_replay import (
     ExperienceReplayAgent,
     ExperienceReplayConfig,
 )
