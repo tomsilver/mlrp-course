@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from mlrp_course.mdp.chase_mdp import ChaseMDP, ChaseState
+from mlrp_course.mdp.envs.chase_mdp import ChaseMDP, ChaseState
 
 
 def test_chase_mdp():

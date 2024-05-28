@@ -6,7 +6,7 @@ from mlrp_course.mdp.algorithms.sparse_sampling import (
     SparseSamplingConfig,
     sparse_sampling,
 )
-from mlrp_course.mdp.chase_mdp import ChaseState, LargeChaseMDP
+from mlrp_course.mdp.envs.chase_mdp import ChaseState, LargeChaseMDP
 
 
 def test_sparse_sampling():

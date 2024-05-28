@@ -3,7 +3,7 @@
 import numpy as np
 
 from mlrp_course.mdp.algorithms.mcts import MCTSConfig, mcts
-from mlrp_course.mdp.chase_mdp import ChaseState, LargeChaseMDP
+from mlrp_course.mdp.envs.chase_mdp import ChaseState, LargeChaseMDP
 
 
 def test_mcts():

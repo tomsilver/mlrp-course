@@ -15,7 +15,7 @@ from mlrp_course.mdp.algorithms.q_learning import (
     QLearningConfig,
     QLearningExperienceReplayAgent,
 )
-from mlrp_course.mdp.chase_mdp import ChaseState, TwoBunnyChaseMDP
+from mlrp_course.mdp.envs.chase_mdp import ChaseState, TwoBunnyChaseMDP
 from mlrp_course.utils import DiscreteMDPGymEnv, run_episodes
 
 

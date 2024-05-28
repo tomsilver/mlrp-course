@@ -30,7 +30,8 @@ from mlrp_course.mdp.algorithms.value_iteration import (
     ValueIterationAgent,
     ValueIterationConfig,
 )
-from mlrp_course.mdp.chase_mdp import (
+from mlrp_course.mdp.discrete_mdp import DiscreteMDP, DiscreteState
+from mlrp_course.mdp.envs.chase_mdp import (
     ChaseMDP,
     ChaseState,
     ChaseWithLargeRoomsMDP,
@@ -38,7 +39,6 @@ from mlrp_course.mdp.chase_mdp import (
     LargeChaseMDP,
     TwoBunnyChaseMDP,
 )
-from mlrp_course.mdp.discrete_mdp import DiscreteMDP, DiscreteState
 from mlrp_course.structs import Image
 
 
