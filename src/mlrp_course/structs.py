@@ -41,8 +41,7 @@ class CategoricalDistribution(Generic[_T]):
     """A categorical distribution."""
 
     def __init__(self, outcome_to_prob: Dict[_T, float], normalize: bool = False):
-        # Prune any zero outcomes to maintain sparsity.
-        d = {o: p for o, p in outcome_to_prob.items() if not np.isclose(p, 0.0)}
+        d = dict(outcome_to_prob)  # don't change input
         # Normalize the distribution if asked.
         if normalize:
             z = sum(d.values())
@@ -52,35 +51,32 @@ class CategoricalDistribution(Generic[_T]):
         assert np.isclose(sum(d.values()), 1.0)
         # Finalize.
         self._outcome_to_prob = d
-
-    def __post_init__(self) -> None:
-        zero_outcomes = {
-            o for o, p in self._outcome_to_prob.items() if np.isclose(p, 0.0)
-        }
-        for o in zero_outcomes:
-            del self._outcome_to_prob[o]
-        assert np.isclose(sum(self._outcome_to_prob.values()), 1.0)
+        self._hashable = tuple(sorted(d.items()))
+        self._hash = hash(self._hashable)
+        self._str = f"CategoricalDistribution({self._hashable})"
 
     def __hash__(self) -> int:
-        return hash(tuple(sorted(self._outcome_to_prob.items())))
+        return self._hash
 
     def __call__(self, outcome: _T) -> float:
         """Get the probability for the given outcome."""
-        return self._outcome_to_prob.get(outcome, 0.0)
+        return self[outcome]
 
     def __getitem__(self, outcome: _T) -> float:
-        return self(outcome)
+        return self._outcome_to_prob.get(outcome, 0.0)
 
     def __iter__(self) -> Iterator[_T]:
         return iter(self._outcome_to_prob)
 
+    def __repr__(self) -> str:
+        return self._str
+
     def __str__(self) -> str:
-        return str(sorted(self.items()))
+        return self._str
 
     def __eq__(self, other: Any) -> bool:
         assert isinstance(other, CategoricalDistribution)
-        outcomes = set(self) | set(other)
-        return all(np.isclose(self(o), other(o)) for o in outcomes)
+        return hash(self) == hash(other)
 
     def __lt__(self, other: Any) -> bool:
         assert isinstance(other, CategoricalDistribution)
@@ -88,7 +84,9 @@ class CategoricalDistribution(Generic[_T]):
 
     def items(self) -> Iterator[Tuple[_T, float]]:
         """Iterate the dictionary."""
-        return iter(self._outcome_to_prob.items())
+        for outcome, prob in self._outcome_to_prob.items():
+            if prob > 0:
+                yield outcome, prob
 
     def sample(self, rng: np.random.Generator) -> _T:
         """Draw a random sample."""
