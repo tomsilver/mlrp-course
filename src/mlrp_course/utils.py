@@ -1,11 +1,14 @@
 """Utilities."""
 
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Tuple, TypeVar
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
+from skimage.transform import resize  # pylint: disable=no-name-in-module
 
 from mlrp_course.agent import Agent
 from mlrp_course.structs import HashableComparable, Image
@@ -49,6 +52,43 @@ def load_image_asset(filename: str) -> Image:
     asset_dir = Path(__file__).parent / "assets"
     image_file = asset_dir / filename
     return plt.imread(image_file)
+
+
+@lru_cache(maxsize=None)
+def get_avatar_by_name(avatar_name: str, tilesize: int) -> Image:
+    """Helper for rendering."""
+    if avatar_name == "robot":
+        im = load_image_asset("robot.png")
+    elif avatar_name == "bunny":
+        im = load_image_asset("bunny.png")
+    elif avatar_name == "obstacle":
+        im = load_image_asset("obstacle.png")
+    elif avatar_name == "fire":
+        im = load_image_asset("fire.png")
+    elif avatar_name == "hidden":
+        im = load_image_asset("hidden.png")
+    else:
+        raise ValueError(f"No asset for {avatar_name} known")
+    return resize(im[:, :, :3], (tilesize, tilesize, 3), preserve_range=True)
+
+
+def render_avatar_grid(avatar_grid: NDArray, tilesize: int = 64) -> Image:
+    """Helper for rendering."""
+    height, width = avatar_grid.shape
+    canvas = np.zeros((height * tilesize, width * tilesize, 3))
+
+    for r in range(height):
+        for c in range(width):
+            avatar_name: str | None = avatar_grid[r, c]
+            if avatar_name is None:
+                continue
+            im = get_avatar_by_name(avatar_name, tilesize)
+            canvas[
+                r * tilesize : (r + 1) * tilesize,
+                c * tilesize : (c + 1) * tilesize,
+            ] = im
+
+    return (255 * canvas).astype(np.uint8)
 
 
 def fig2data(fig: plt.Figure) -> Image:

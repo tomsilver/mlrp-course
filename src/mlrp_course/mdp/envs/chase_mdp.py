@@ -3,7 +3,6 @@
 import itertools
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import (
     Any,
     ClassVar,
@@ -17,11 +16,10 @@ from typing import (
 
 import numpy as np
 from numpy.typing import NDArray
-from skimage.transform import resize  # pylint: disable=no-name-in-module
 
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP
 from mlrp_course.structs import CategoricalDistribution, Image
-from mlrp_course.utils import load_image_asset
+from mlrp_course.utils import render_avatar_grid
 
 ChaseAction: TypeAlias = str
 BunnyPosition: TypeAlias = Tuple[int, int] | None
@@ -167,40 +165,14 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
             rew += self._living_reward
         return rew
 
-    @lru_cache(maxsize=None)
-    def _get_token_image(self, cell_type: str, tilesize: int) -> Image:
-        if cell_type == "robot":
-            im = load_image_asset("robot.png")
-        elif cell_type == "bunny":
-            im = load_image_asset("bunny.png")
-        elif cell_type == "obstacle":
-            im = load_image_asset("obstacle.png")
-        else:
-            raise ValueError(f"No asset for {cell_type} known")
-        return resize(im[:, :, :3], (tilesize, tilesize, 3), preserve_range=True)
-
     def render_state(self, state: ChaseState) -> Image:
         height, width = self.get_height(), self.get_width()
-        tilesize = 64
-        canvas = np.zeros((height * tilesize, width * tilesize, 3))
-
-        for r in range(height):
-            for c in range(width):
-                if (r, c) == state.robot_pos:
-                    cell_type = "robot"
-                elif (r, c) in state.bunny_positions:
-                    cell_type = "bunny"
-                elif self._obstacles[(r, c)]:
-                    cell_type = "obstacle"
-                else:
-                    continue
-                im = self._get_token_image(cell_type, tilesize)
-                canvas[
-                    r * tilesize : (r + 1) * tilesize,
-                    c * tilesize : (c + 1) * tilesize,
-                ] = im
-
-        return (255 * canvas).astype(np.uint8)
+        avatar_grid = np.full((height, width), None, dtype=object)
+        avatar_grid[state.robot_pos] = "robot"
+        for pos in state.bunny_positions:
+            avatar_grid[pos] = "bunny"
+        avatar_grid[self._obstacles] = "obstacle"
+        return render_avatar_grid(avatar_grid)
 
 
 class StaticBunnyChaseMDP(ChaseMDP):

@@ -9,6 +9,7 @@ import numpy as np
 
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
 from mlrp_course.structs import CategoricalDistribution, Hyperparameters, Image
+from mlrp_course.utils import render_avatar_grid
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -199,9 +200,12 @@ class SearchAndRescuePOMDP(
         return CategoricalDistribution(dist)
 
     def render_state(self, state: SearchAndRescueState) -> Image:
-        import ipdb
-
-        ipdb.set_trace()
+        avatar_grid = np.full(self._grid.shape, None, dtype=object)
+        avatar_grid[state.robot_loc] = "robot"
+        avatar_grid[self._grid == self._FIRE] = "fire"
+        avatar_grid[self._grid == self._HIDDEN] = "hidden"
+        avatar_grid[self._grid == self._WALL] = "wall"
+        return render_avatar_grid(avatar_grid)
 
 
 class TinySearchAndRescuePOMDP(SearchAndRescuePOMDP):
