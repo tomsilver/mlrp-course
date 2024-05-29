@@ -27,6 +27,9 @@ class DiscretePOMDPAgent(Agent[DiscreteObs, DiscreteAction], abc.ABC):
         state_to_prob: Dict[DiscreteState, float] = {}
         for s in self._pomdp.state_space:
             dist = self._pomdp.get_initial_observation_distribution(s)
+            # Keep the distribution sparse.
+            if obs not in dist:
+                continue
             state_to_prob[s] = dist[obs]
         z = sum(state_to_prob.values())
         assert z > 0, "Impossible initial observation"

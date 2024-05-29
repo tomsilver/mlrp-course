@@ -67,6 +67,9 @@ class SearchAndRescuePOMDP(
         ]
     )
 
+    # Subclasses may disable some action directions.
+    _action_directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
     def __init__(
         self, config: SearchAndRescuePOMDPHyperparameters | None = None
     ) -> None:
@@ -103,7 +106,7 @@ class SearchAndRescuePOMDP(
     @property
     def action_space(self) -> Set[SearchAndRescueAction]:
         actions: Set[SearchAndRescueAction] = set()
-        for d in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        for d in self._action_directions:
             for t in ["move", "scan"]:
                 actions.add(SearchAndRescueAction(t, d))
         return actions
@@ -183,7 +186,7 @@ class SearchAndRescuePOMDP(
             return {state: 1.0}
         # Moving is stochastic otherwise.
         dist: Dict[SearchAndRescueState, float] = defaultdict(float)
-        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        for dr, dc in self._action_directions:
             if (robot_r + dr, robot_c + dc) in self._possible_robot_locs:
                 next_robot_loc = (robot_r + dr, robot_c + dc)
             else:
@@ -197,3 +200,12 @@ class SearchAndRescuePOMDP(
 
     def render_state(self, state: SearchAndRescueState) -> Image:
         raise NotImplementedError("Rendering not implemented for POMDP.")
+
+
+class TinySearchAndRescuePOMDP(SearchAndRescuePOMDP):
+    """Tiny version of the SearchAndRescuePOMDP with reduced action space."""
+
+    E, H = SearchAndRescuePOMDP._EMPTY, SearchAndRescuePOMDP._HIDDEN
+    _grid = np.array([[H, E, E, E, H]])
+
+    _action_directions = [(0, -1), (0, 1)]
