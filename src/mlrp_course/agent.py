@@ -36,11 +36,10 @@ class Agent(Generic[_ObsType, _ActType]):
     def reset(
         self,
         obs: _ObsType,
-    ) -> _ActType:
+    ) -> None:
         """Start a new episode."""
         self._last_observation = obs
         self._timestep = 0
-        return self.step()
 
     def step(self) -> _ActType:
         """Get the next action to take."""

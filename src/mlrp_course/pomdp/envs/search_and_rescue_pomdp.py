@@ -196,15 +196,19 @@ class SearchAndRescuePOMDP(
             if (dr, dc) == action.direction:
                 dist[next_state] += 1.0 - self._config.move_noise_probability
             else:
-                dist[next_state] += self._config.move_noise_probability / 3.0
+                N = len(self._action_directions) - 1
+                dist[next_state] += self._config.move_noise_probability / N
         return CategoricalDistribution(dist)
 
     def render_state(self, state: SearchAndRescueState) -> Image:
         avatar_grid = np.full(self._grid.shape, None, dtype=object)
-        avatar_grid[state.robot_loc] = "robot"
         avatar_grid[self._grid == self._FIRE] = "fire"
         avatar_grid[self._grid == self._HIDDEN] = "hidden"
         avatar_grid[self._grid == self._WALL] = "wall"
+        if state.robot_loc == state.person_loc:
+            avatar_grid[state.robot_loc] = "bunny"
+        else:
+            avatar_grid[state.robot_loc] = "robot"
         return render_avatar_grid(avatar_grid)
 
 

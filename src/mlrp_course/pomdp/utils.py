@@ -44,7 +44,7 @@ class DiscretePOMDPAgent(Agent[DiscreteObs, DiscreteAction], abc.ABC):
     def reset(
         self,
         obs: DiscreteObs,
-    ) -> DiscreteAction:
+    ) -> None:
         self._belief_state = self._get_initial_belief_state(obs)
         return super().reset(obs)
 
