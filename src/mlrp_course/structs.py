@@ -51,7 +51,7 @@ class CategoricalDistribution(Generic[_T]):
         assert np.isclose(sum(d.values()), 1.0)
         # Finalize.
         self._outcome_to_prob = d
-        self._hashable = tuple(sorted(d.items()))
+        self._hashable = tuple(d.items())
         self._hash = hash(self._hashable)
         self._str = f"CategoricalDistribution({self._hashable})"
 
@@ -66,7 +66,9 @@ class CategoricalDistribution(Generic[_T]):
         return self._outcome_to_prob.get(outcome, 0.0)
 
     def __iter__(self) -> Iterator[_T]:
-        return iter(self._outcome_to_prob)
+        for outcome, prob in self._outcome_to_prob.items():
+            if prob > 0:
+                yield outcome
 
     def __repr__(self) -> str:
         return self._str
@@ -76,7 +78,8 @@ class CategoricalDistribution(Generic[_T]):
 
     def __eq__(self, other: Any) -> bool:
         assert isinstance(other, CategoricalDistribution)
-        return hash(self) == hash(other)
+        outcomes = set(self) | set(other)
+        return all(np.isclose(self(o), other(o)) for o in outcomes)
 
     def __lt__(self, other: Any) -> bool:
         assert isinstance(other, CategoricalDistribution)

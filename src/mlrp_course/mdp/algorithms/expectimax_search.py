@@ -26,11 +26,14 @@ def expectimax_search(
     R = mdp.get_reward
     P = mdp.get_transition_distribution
     gamma = mdp.temporal_discount_factor
+    H = config.search_horizon
+    if mdp.horizon is not None:
+        H = min(H, mdp.horizon)
 
     @lru_cache(maxsize=None)
     def V(s, h):
         """Shorthand for the value function."""
-        if h == config.search_horizon:
+        if h == H:
             return 0
         return max(Q(s, a, h) for a in A)
 
