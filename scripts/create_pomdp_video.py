@@ -10,6 +10,7 @@ from tqdm import tqdm
 from mlrp_course.agent import Agent
 from mlrp_course.mdp.discrete_mdp import DiscreteState
 from mlrp_course.pomdp.algorithms.expectimax_search import (
+    ExpectimaxSearchHyperparameters,
     POMDPExpectimaxSearchAgent,
 )
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
@@ -50,10 +51,14 @@ def _create_agent(
     name: str,
     pomdp: DiscretePOMDP,
     seed: int,
+    max_horizon: int,
 ) -> Agent:
 
     if name == "expectimax_search":
-        return POMDPExpectimaxSearchAgent(pomdp, seed)
+        hyperparameters = ExpectimaxSearchHyperparameters(
+            max_search_horizon=max_horizon
+        )
+        return POMDPExpectimaxSearchAgent(pomdp, seed, hyperparameters)
 
     raise NotImplementedError("Approach not found.")
 
@@ -68,10 +73,10 @@ def _main(
 ) -> None:
     rng = np.random.default_rng(seed)
     pomdp, initial_state = _create_pomdp_and_initial_state(pomdp_name, rng)
-    agent = _create_agent(approach_name, pomdp, seed)
-    outfile = outdir / f"{pomdp_name}_{approach_name}_{seed}.gif"
     if pomdp.horizon is not None:
         max_horizon = min(max_horizon, pomdp.horizon)
+    agent = _create_agent(approach_name, pomdp, seed, max_horizon)
+    outfile = outdir / f"{pomdp_name}_{approach_name}_{seed}.gif"
     initial_obs = pomdp.sample_initial_observation(initial_state, rng)
     agent.reset(initial_obs)
     states: List[DiscreteState] = [initial_state]

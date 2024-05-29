@@ -12,12 +12,13 @@ from mlrp_course.structs import Hyperparameters
 class ExpectimaxSearchHyperparameters(Hyperparameters):
     """Hyperparameters for expectimax search."""
 
-    search_horizon: int = 10
+    max_search_horizon: int = 10
 
 
 def expectimax_search(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
+    timestep: int,
     config: ExpectimaxSearchHyperparameters,
 ) -> DiscreteAction:
     """Returns a single action to take."""
@@ -26,11 +27,14 @@ def expectimax_search(
     R = mdp.get_reward
     P = mdp.get_transition_distribution
     gamma = mdp.temporal_discount_factor
+    H = config.max_search_horizon
+    if mdp.horizon is not None:
+        H = min(H, mdp.horizon - timestep)
 
     @lru_cache(maxsize=None)
     def V(s, h):
         """Shorthand for the value function."""
-        if h == config.search_horizon:
+        if h == H or mdp.state_is_terminal(s):
             return 0
         return max(Q(s, a, h) for a in A)
 
@@ -63,5 +67,6 @@ class ExpectimaxSearchAgent(DiscreteMDPAgent):
         return expectimax_search(
             self._last_observation,
             self._mdp,
+            self._timestep,
             self._expectimax_search_hyperparameters,
         )

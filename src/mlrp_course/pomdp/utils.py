@@ -77,7 +77,7 @@ class BeliefMDP(DiscreteMDP[BeliefState, DiscreteAction]):
         return self._pomdp.horizon
 
     def state_is_terminal(self, state: BeliefState) -> bool:
-        return False
+        return all(self._pomdp.state_is_terminal(s) for s in state)
 
     def get_reward(
         self, state: BeliefState, action: DiscreteAction, next_state: BeliefState

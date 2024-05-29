@@ -12,11 +12,12 @@ from mlrp_course.pomdp.utils import BeliefMDP, DiscretePOMDPAgent
 def pomdp_expectimax_search(
     initial_belief_state: BeliefState,
     pomdp: DiscretePOMDP,
+    timestep: int,
     config: ExpectimaxSearchHyperparameters,
 ) -> DiscreteAction:
     """Returns a single action to take."""
     mdp = BeliefMDP(pomdp)
-    return expectimax_search(initial_belief_state, mdp, config)
+    return expectimax_search(initial_belief_state, mdp, timestep, config)
 
 
 class POMDPExpectimaxSearchAgent(DiscretePOMDPAgent):
@@ -37,5 +38,8 @@ class POMDPExpectimaxSearchAgent(DiscretePOMDPAgent):
 
     def _get_action(self) -> DiscreteAction:
         return pomdp_expectimax_search(
-            self._belief_state, self._pomdp, self._expectimax_search_hyperparameters
+            self._belief_state,
+            self._pomdp,
+            self._timestep,
+            self._expectimax_search_hyperparameters,
         )

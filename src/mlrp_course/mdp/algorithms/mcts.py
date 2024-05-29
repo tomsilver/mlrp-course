@@ -14,7 +14,7 @@ from mlrp_course.structs import Hyperparameters
 class MCTSHyperparameters(Hyperparameters):
     """Hyperparameters for MCTS."""
 
-    search_horizon: int = 10
+    max_search_horizon: int = 10
     num_simulations: int = 100
     explore_strategy: str = "ucb"
     max_rollout_length: int = 100
@@ -39,7 +39,7 @@ def mcts(
         _simulate(
             initial_state,
             mdp,
-            config.search_horizon,
+            config.max_search_horizon,
             Q,
             N,
             rng,

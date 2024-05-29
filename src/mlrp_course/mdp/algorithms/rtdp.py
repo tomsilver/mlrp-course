@@ -20,17 +20,23 @@ from mlrp_course.structs import Hyperparameters
 class RTDPHyperparameters(Hyperparameters):
     """Hyperparameters for RTDP."""
 
-    search_horizon: int = 10
+    max_search_horizon: int = 10
     num_trajectory_samples: int = 10
 
 
 def rtdp(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
+    timestep: int,
     rng: np.random.Generator,
     config: RTDPHyperparameters,
 ) -> DiscreteAction:
     """Real-time dynamic programming."""
+
+    # Calculate the remaining horizon.
+    H = config.max_search_horizon
+    if mdp.horizon is not None:
+        H = min(H, mdp.horizon - timestep)
 
     # Lazily initialize value function.
     V: Dict[DiscreteState, float] = defaultdict(float)
@@ -39,9 +45,7 @@ def rtdp(
         # Turn value function estimate into greedy policy.
         pi = value_function_to_greedy_policy(V, mdp, rng)
         # Collect a trajectory.
-        states, _ = sample_trajectory(
-            initial_state, pi, mdp, config.search_horizon, rng
-        )
+        states, _ = sample_trajectory(initial_state, pi, mdp, H, rng)
         # Update the values.
         for s in states[::-1]:
             V[s] = bellman_backup(s, V, mdp)
@@ -66,5 +70,9 @@ class RTDPAgent(DiscreteMDPAgent):
     def _get_action(self) -> DiscreteAction:
         assert self._last_observation is not None
         return rtdp(
-            self._last_observation, self._mdp, self._rng, self._rtdp_hyperparameters
+            self._last_observation,
+            self._mdp,
+            self._timestep,
+            self._rng,
+            self._rtdp_hyperparameters,
         )
