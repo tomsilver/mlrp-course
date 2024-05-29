@@ -20,7 +20,7 @@ from numpy.typing import NDArray
 from skimage.transform import resize  # pylint: disable=no-name-in-module
 
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP
-from mlrp_course.structs import Image
+from mlrp_course.structs import CategoricalDistribution, Image
 from mlrp_course.utils import load_image_asset
 
 ChaseAction: TypeAlias = str
@@ -136,9 +136,7 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
 
     def get_transition_distribution(
         self, state: ChaseState, action: ChaseAction
-    ) -> Dict[ChaseState, float]:
-        # Discrete distributions, represented with a dict
-        # mapping next states to probs.
+    ) -> CategoricalDistribution[ChaseState]:
         next_state_dist: Dict[ChaseState, float] = {}
         next_robot_pos = self._get_next_robot_pos(state, action)
         next_bunny_pos_dists = self._get_next_bunny_distributions(state, next_robot_pos)
@@ -153,7 +151,7 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
             state = ChaseState(next_robot_pos, tuple(bunny_positions))
             next_state_dist[state] = prob
 
-        return next_state_dist
+        return CategoricalDistribution(next_state_dist)
 
     def get_reward(
         self, state: ChaseState, action: ChaseAction, next_state: ChaseState
@@ -303,7 +301,7 @@ class LargeChaseMDP(ChaseMDP):
 
     def get_transition_distribution(
         self, state: ChaseState, action: ChaseAction
-    ) -> Dict[ChaseState, float]:
+    ) -> CategoricalDistribution[ChaseState]:
         raise NotImplementedError("Transition distribution too large.")
 
     def sample_next_state(

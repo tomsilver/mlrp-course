@@ -1,10 +1,10 @@
 """Tiger POMDP."""
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Set, TypeAlias
+from typing import Optional, Set, TypeAlias
 
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
-from mlrp_course.structs import Hyperparameters, Image
+from mlrp_course.structs import CategoricalDistribution, Hyperparameters, Image
 
 TigerObs: TypeAlias = str  # none, hear-left, hear-right
 TigerState: TypeAlias = str  # tiger-left or tiger-right
@@ -43,20 +43,24 @@ class TigerPOMDP(DiscretePOMDP[TigerObs, TigerState, TigerAction]):
         self,
         action: TigerAction,
         next_state: TigerState,
-    ) -> Dict[TigerObs, float]:
+    ) -> CategoricalDistribution[TigerObs]:
         if action in ("open-left", "open-right"):
-            return {"none": 1.0}
+            return CategoricalDistribution({"none": 1.0})
         assert action == "listen"
         if next_state == "tiger-right":
-            return {
-                "hear-left": self._config.hearing_noise,
-                "hear-right": 1.0 - self._config.hearing_noise,
-            }
+            return CategoricalDistribution(
+                {
+                    "hear-left": self._config.hearing_noise,
+                    "hear-right": 1.0 - self._config.hearing_noise,
+                }
+            )
         assert next_state == "tiger-left"
-        return {
-            "hear-left": 1.0 - self._config.hearing_noise,
-            "hear-right": self._config.hearing_noise,
-        }
+        return CategoricalDistribution(
+            {
+                "hear-left": 1.0 - self._config.hearing_noise,
+                "hear-right": self._config.hearing_noise,
+            }
+        )
 
     @property
     def horizon(self) -> Optional[int]:
@@ -86,9 +90,9 @@ class TigerPOMDP(DiscretePOMDP[TigerObs, TigerState, TigerAction]):
 
     def get_transition_distribution(
         self, state: TigerState, action: TigerAction
-    ) -> Dict[TigerState, float]:
+    ) -> CategoricalDistribution[TigerState]:
         # The state never changes in this very simple POMDP.
-        return {state: 1.0}
+        return CategoricalDistribution({state: 1.0})
 
     def render_state(self, state: TigerState) -> Image:
         raise NotImplementedError("Rendering not implemented for POMDP.")

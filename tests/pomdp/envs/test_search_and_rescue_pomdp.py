@@ -21,29 +21,24 @@ def test_search_and_rescue_pomdp():
         SearchAndRescueAction("scan", (-1, 0)),
         SearchAndRescueState((1, 2), (0, 2)),
     )
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueObs((1, 2), "got-response")], 0.9)
     dist = pomdp.get_observation_distribution(
         SearchAndRescueAction("scan", (0, -1)),
         SearchAndRescueState((1, 2), (0, 2)),
     )
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueObs((1, 2), "got-response")], 0.1)
     dist = pomdp.get_observation_distribution(
         SearchAndRescueAction("move", (-1, 0)),
         SearchAndRescueState((1, 2), (0, 2)),
     )
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueObs((1, 2))], 1.0)
     dist = pomdp.get_transition_distribution(
         SearchAndRescueState((1, 2), (0, 2)), SearchAndRescueAction("scan", (-1, 0))
     )
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueState((1, 2), (0, 2))], 1.0)
     dist = pomdp.get_transition_distribution(
         SearchAndRescueState((1, 2), (0, 2)), SearchAndRescueAction("move", (-1, 0))
     )
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueState((0, 2), (0, 2))], 0.9)
     assert np.isclose(dist[SearchAndRescueState((1, 2), (0, 2))], 0.1 / 3)
     assert np.isclose(dist[SearchAndRescueState((1, 1), (0, 2))], 0.1 / 3)

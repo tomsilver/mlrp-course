@@ -18,7 +18,6 @@ def test_chase_mdp():
     assert not mdp.state_is_terminal(state0)
     assert mdp.state_is_terminal(state1)
     dist = mdp.get_transition_distribution(state0, "down")
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[state2], 0.75)
     assert np.isclose(dist[state3], 0.125)
     assert np.isclose(dist[state4], 0.125)

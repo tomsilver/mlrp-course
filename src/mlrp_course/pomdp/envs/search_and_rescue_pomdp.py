@@ -8,7 +8,7 @@ from typing import Dict, List, Set, Tuple
 import numpy as np
 
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
-from mlrp_course.structs import Hyperparameters, Image
+from mlrp_course.structs import CategoricalDistribution, Hyperparameters, Image
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -115,10 +115,10 @@ class SearchAndRescuePOMDP(
         self,
         action: SearchAndRescueAction,
         next_state: SearchAndRescueState,
-    ) -> Dict[SearchAndRescueObs, float]:
+    ) -> CategoricalDistribution[SearchAndRescueObs]:
         robot_loc = next_state.robot_loc
         if action.type == "move":
-            return {SearchAndRescueObs(robot_loc): 1.0}
+            return CategoricalDistribution({SearchAndRescueObs(robot_loc): 1.0})
         assert action.type == "scan"
         # If the action was a scan, get a noisy response.
         # First figure out the "correct" directions to scan.
@@ -146,13 +146,13 @@ class SearchAndRescuePOMDP(
             SearchAndRescueObs(robot_loc, correct_response): 1.0 - noise_prob,
             SearchAndRescueObs(robot_loc, incorrect_response): noise_prob,
         }
-        return dist
+        return CategoricalDistribution(dist)
 
     def get_initial_observation_distribution(
         self, initial_state: SearchAndRescueState
-    ) -> Dict[SearchAndRescueObs, float]:
+    ) -> CategoricalDistribution[SearchAndRescueObs]:
         robot_loc = initial_state.robot_loc
-        return {SearchAndRescueObs(robot_loc): 1.0}
+        return CategoricalDistribution({SearchAndRescueObs(robot_loc): 1.0})
 
     def state_is_terminal(self, state: SearchAndRescueState) -> bool:
         return state.robot_loc == state.person_loc
@@ -174,16 +174,16 @@ class SearchAndRescuePOMDP(
 
     def get_transition_distribution(
         self, state: SearchAndRescueState, action: SearchAndRescueAction
-    ) -> Dict[SearchAndRescueState, float]:
+    ) -> CategoricalDistribution[SearchAndRescueState]:
         # Scanning does not change the state.
         if action.type == "scan":
-            return {state: 1.0}
+            return CategoricalDistribution({state: 1.0})
         assert action.type == "move"
         robot_r, robot_c = state.robot_loc
         person_loc = state.person_loc
         # Moving is deterministically null if we're in a fire.
         if self._grid[robot_r, robot_c] == self._FIRE:
-            return {state: 1.0}
+            return CategoricalDistribution({state: 1.0})
         # Moving is stochastic otherwise.
         dist: Dict[SearchAndRescueState, float] = defaultdict(float)
         for dr, dc in self._action_directions:
@@ -196,10 +196,12 @@ class SearchAndRescuePOMDP(
                 dist[next_state] += 1.0 - self._config.move_noise_probability
             else:
                 dist[next_state] += self._config.move_noise_probability / 3.0
-        return dist
+        return CategoricalDistribution(dist)
 
     def render_state(self, state: SearchAndRescueState) -> Image:
-        raise NotImplementedError("Rendering not implemented for POMDP.")
+        import ipdb
+
+        ipdb.set_trace()
 
 
 class TinySearchAndRescuePOMDP(SearchAndRescuePOMDP):

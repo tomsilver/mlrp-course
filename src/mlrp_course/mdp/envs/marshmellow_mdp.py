@@ -1,9 +1,9 @@
 """The Marshmallow MDP described in lecture."""
 
-from typing import Dict, Optional, Set, Tuple, TypeAlias
+from typing import Optional, Set, Tuple, TypeAlias
 
 from mlrp_course.mdp.discrete_mdp import DiscreteMDP
-from mlrp_course.structs import Image
+from mlrp_course.structs import CategoricalDistribution, Image
 
 MarshmellowState: TypeAlias = Tuple[int, bool]
 MarshmellowAction: TypeAlias = str
@@ -40,7 +40,7 @@ class MarshmallowMDP(DiscreteMDP[MarshmellowState, MarshmellowAction]):
 
     def get_transition_distribution(
         self, state: MarshmellowState, action: MarshmellowAction
-    ) -> Dict[MarshmellowState, float]:
+    ) -> CategoricalDistribution[MarshmellowState]:
         # Update marshmallow deterministically
         if action == "eat":
             next_m = False
@@ -65,7 +65,7 @@ class MarshmallowMDP(DiscreteMDP[MarshmellowState, MarshmellowAction]):
             # Hunger deterministically set to 1 after eating
             dist[(0, next_m)] = 1.0
 
-        return dist
+        return CategoricalDistribution(dist)
 
     def render_state(self, state: MarshmellowState) -> Image:
         raise NotImplementedError("Rendering not implemented for MDP.")

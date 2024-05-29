@@ -12,11 +12,9 @@ def test_zits_mdp():
     assert "apply" in mdp.action_space
     assert not mdp.state_is_terminal(1)
     dist = mdp.get_transition_distribution(2, "apply")
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[0], 0.8)
     assert np.isclose(dist[4], 0.2)
     dist = mdp.get_transition_distribution(2, "sleep")
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[1], 0.6)
     assert np.isclose(dist[3], 0.4)
     reward = mdp.get_reward(2, "sleep", 1)

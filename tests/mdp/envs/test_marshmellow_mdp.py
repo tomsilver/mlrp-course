@@ -12,10 +12,8 @@ def test_marshmellow_mdp():
     assert "eat" in mdp.action_space
     assert not mdp.state_is_terminal((1, True))
     dist = mdp.get_transition_distribution((1, True), "eat")
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[(0, False)], 1.0)
     dist = mdp.get_transition_distribution((1, False), "eat")
-    assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[(1, False)], 0.75)
     assert np.isclose(dist[(2, False)], 0.25)
     reward = mdp.get_reward((1, True), "eat", (0, False))

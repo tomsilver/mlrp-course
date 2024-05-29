@@ -1,7 +1,7 @@
 """Utilities."""
 
 from pathlib import Path
-from typing import Dict, List, Tuple, TypeVar
+from typing import List, Tuple, TypeVar
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
@@ -42,16 +42,6 @@ def run_episodes(
                 break
         traces.append((observations, actions, rewards))
     return traces
-
-
-_T = TypeVar("_T", bound=HashableComparable)
-
-
-def sample_from_categorical(dist: Dict[_T, float], rng: np.random.Generator) -> _T:
-    """Sample from a categorical distribution."""
-    candidates, probs = zip(*dist.items(), strict=True)
-    idx = rng.choice(len(candidates), p=probs)
-    return candidates[idx]
 
 
 def load_image_asset(filename: str) -> Image:

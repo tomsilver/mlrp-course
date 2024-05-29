@@ -7,7 +7,7 @@ from typing import Dict, Optional, Set
 from mlrp_course.agent import Agent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.pomdp.discrete_pomdp import BeliefState, DiscreteObs, DiscretePOMDP
-from mlrp_course.structs import Image
+from mlrp_course.structs import CategoricalDistribution, Image
 
 
 class DiscretePOMDPAgent(Agent[DiscreteObs, DiscreteAction], abc.ABC):
@@ -30,7 +30,7 @@ class DiscretePOMDPAgent(Agent[DiscreteObs, DiscreteAction], abc.ABC):
             # Keep the distribution sparse.
             if obs not in dist:
                 continue
-            state_to_prob[s] = dist[obs]
+            state_to_prob[s] = dist(obs)
         z = sum(state_to_prob.values())
         assert z > 0, "Impossible initial observation"
         state_to_prob = {s: p / z for s, p in state_to_prob.items()}
@@ -86,7 +86,7 @@ class BeliefMDP(DiscreteMDP[BeliefState, DiscreteAction]):
 
     def get_transition_distribution(
         self, state: BeliefState, action: DiscreteAction
-    ) -> Dict[BeliefState, float]:
+    ) -> CategoricalDistribution[BeliefState]:
         return get_belief_space_transition_distribution(state, action, self._pomdp)
 
     def render_state(self, state: BeliefState) -> Image:
@@ -107,7 +107,7 @@ def get_belief_space_reward(
 
 def get_belief_space_transition_distribution(
     b_t: BeliefState, a_t: DiscreteAction, pomdp: DiscretePOMDP
-) -> Dict[BeliefState, float]:
+) -> CategoricalDistribution[BeliefState]:
     """Transition distribution in belief space for POMDPs."""
     P = pomdp.get_transition_probability
     O = pomdp.get_observation_probability
@@ -132,7 +132,7 @@ def get_belief_space_transition_distribution(
         )
         dist[b_t1] = p
 
-    return dist
+    return CategoricalDistribution(dist, normalize=True)
 
 
 def state_estimator(
@@ -153,9 +153,4 @@ def state_estimator(
             P(s_t, a_t, s_t1) * p_st1 for s_t, p_st1 in b_t.items()
         )
 
-    # Normalize.
-    z = sum(next_state_to_prob.values())
-    assert z > 0, "Was state_estimator() called with an impossible observation?"
-    next_state_to_prob = {s: p / z for s, p in next_state_to_prob.items()}
-
-    return BeliefState(next_state_to_prob)
+    return BeliefState(next_state_to_prob, normalize=True)

@@ -14,9 +14,9 @@ from mlrp_course.pomdp.algorithms.expectimax_search import (
 )
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
 from mlrp_course.pomdp.envs.search_and_rescue_pomdp import (
-    TinySearchAndRescuePOMDP,
     SearchAndRescuePOMDP,
     SearchAndRescueState,
+    TinySearchAndRescuePOMDP,
 )
 from mlrp_course.structs import Image
 
@@ -25,12 +25,11 @@ def _sample_search_and_rescue_initial_state(
     pomdp: SearchAndRescuePOMDP,
     rng: np.random.Generator,
 ) -> SearchAndRescueState:
-    possible_person_locs = sorted(
-        pomdp._possible_person_locs  # pylint: disable=protected-access
-    )
+    # pylint: disable=protected-access
+    possible_person_locs = sorted(pomdp._possible_person_locs)
     person_loc = possible_person_locs[rng.choice(len(possible_person_locs))]
     possible_robot_locs = sorted(
-        set(pomdp._possible_robot_locs) - set(pomdp._possible_person_locs)  # pylint: disable=protected-access
+        set(pomdp._possible_robot_locs) - set(pomdp._possible_person_locs)
     )
     robot_loc = possible_robot_locs[rng.choice(len(possible_robot_locs))]
     return SearchAndRescueState(robot_loc, person_loc)

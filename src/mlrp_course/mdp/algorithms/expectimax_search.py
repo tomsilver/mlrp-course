@@ -37,7 +37,7 @@ def expectimax_search(
     @lru_cache(maxsize=None)
     def Q(s, a, h):
         """Shorthand for the action-value function."""
-        return sum(P(s, a)[ns] * (R(s, a, ns) + gamma * V(ns, h + 1)) for ns in P(s, a))
+        return sum(P(s, a)(ns) * (R(s, a, ns) + gamma * V(ns, h + 1)) for ns in P(s, a))
 
     return max(A, key=lambda a: Q(initial_state, a, 0))
 

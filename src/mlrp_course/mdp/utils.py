@@ -58,7 +58,7 @@ def value_function_to_greedy_policy(
     # avoid enumerating the state space.
     def Q(s: DiscreteState, a: DiscreteAction) -> float:
         """Shorthand for the action-value function."""
-        return sum(P(s, a)[ns] * (R(s, a, ns) + gamma * V[ns]) for ns in P(s, a))
+        return sum(P(s, a)(ns) * (R(s, a, ns) + gamma * V[ns]) for ns in P(s, a))
 
     def pi(s: DiscreteState) -> DiscreteAction:
         """The greedy policy."""
