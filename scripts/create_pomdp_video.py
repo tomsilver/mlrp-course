@@ -7,7 +7,7 @@ import imageio.v2 as iio
 import numpy as np
 from tqdm import tqdm
 
-from mlrp_course.agents import Agent
+from mlrp_course.agent import Agent
 from mlrp_course.mdp.discrete_mdp import DiscreteState
 from mlrp_course.pomdp.algorithms.expectimax_search import (
     POMDPExpectimaxSearchAgent,
@@ -25,12 +25,12 @@ def _sample_search_and_rescue_initial_state(
     rng: np.random.Generator,
 ) -> SearchAndRescueState:
     possible_robot_locs = sorted(
-        pomdp._possible_robot_locs
-    )  # pylint: disable=protected-access
+        pomdp._possible_robot_locs  # pylint: disable=protected-access
+    )
     robot_loc = possible_robot_locs[rng.choice(len(possible_robot_locs))]
     possible_person_locs = sorted(
-        pomdp._possible_person_locs
-    )  # pylint: disable=protected-access
+        pomdp._possible_person_locs  # pylint: disable=protected-access
+    )
     person_loc = possible_person_locs[rng.choice(len(possible_person_locs))]
     return SearchAndRescueState(robot_loc, person_loc)
 

@@ -6,9 +6,9 @@ from typing import Dict
 
 import numpy as np
 
-from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.mdp.utils import (
+    DiscreteMDPAgent,
     bellman_backup,
     sample_trajectory,
     value_function_to_greedy_policy,

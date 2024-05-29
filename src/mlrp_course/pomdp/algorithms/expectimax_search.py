@@ -1,13 +1,12 @@
 """Run online planning with expectimax search for POMDPs."""
 
-from mlrp_course.agents import DiscretePOMDPAgent
 from mlrp_course.mdp.algorithms.expectimax_search import (
     ExpectimaxSearchHyperparameters,
     expectimax_search,
 )
 from mlrp_course.mdp.discrete_mdp import DiscreteAction
 from mlrp_course.pomdp.discrete_pomdp import BeliefState, DiscretePOMDP
-from mlrp_course.pomdp.utils import BeliefMDP
+from mlrp_course.pomdp.utils import BeliefMDP, DiscretePOMDPAgent
 
 
 def pomdp_expectimax_search(

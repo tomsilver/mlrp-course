@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 
-from mlrp_course.agents import Agent
+from mlrp_course.agent import Agent
 from mlrp_course.mdp.algorithms.experience_replay import ExperienceReplayHyperparameters
 from mlrp_course.mdp.algorithms.q_learning import (
     QLearningAgent,

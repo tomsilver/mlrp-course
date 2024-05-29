@@ -1,10 +1,12 @@
 """MDP Utilities."""
 
+import abc
 from typing import Callable, Dict, List, Tuple
 
 import gymnasium as gym
 import numpy as np
 
+from mlrp_course.agent import Agent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import Image
 
@@ -129,3 +131,11 @@ class DiscreteMDPGymEnv(gym.Env):
     def render(self) -> Image:
         assert self.render_mode == "rgb_array"
         return self._mdp.render_state(self._current_state)
+
+
+class DiscreteMDPAgent(Agent[DiscreteState, DiscreteAction], abc.ABC):
+    """An agent acting in a DiscreteMDP."""
+
+    def __init__(self, mdp: DiscreteMDP, seed: int) -> None:
+        self._mdp = mdp
+        super().__init__(seed)

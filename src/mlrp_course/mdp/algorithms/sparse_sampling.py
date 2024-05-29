@@ -5,8 +5,8 @@ from functools import lru_cache
 
 import numpy as np
 
-from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.mdp.utils import DiscreteMDPAgent
 from mlrp_course.structs import Hyperparameters
 
 

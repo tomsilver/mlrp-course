@@ -7,7 +7,7 @@ import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 
-from mlrp_course.agents import Agent
+from mlrp_course.agent import Agent
 from mlrp_course.structs import HashableComparable, Image
 
 _O = TypeVar("_O", bound=HashableComparable)

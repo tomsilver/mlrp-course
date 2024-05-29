@@ -7,7 +7,7 @@ import imageio.v2 as iio
 import numpy as np
 from tqdm import tqdm
 
-from mlrp_course.agents import Agent
+from mlrp_course.agent import Agent
 from mlrp_course.mdp.algorithms.expectimax_search import (
     ExpectimaxSearchAgent,
 )
