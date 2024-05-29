@@ -1,4 +1,4 @@
-"""Create videos of various MDP planning approaches running in various MDPs."""
+"""Create videos of various POMDP planning approaches in various POMDPs."""
 
 from pathlib import Path
 from typing import List, Tuple
