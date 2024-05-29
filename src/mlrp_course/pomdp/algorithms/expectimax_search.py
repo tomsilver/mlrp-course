@@ -37,7 +37,5 @@ class POMDPExpectimaxSearchAgent(DiscretePOMDPAgent):
 
     def _get_action(self) -> DiscreteAction:
         return pomdp_expectimax_search(
-            self._belief_state,
-            self._pomdp,
-            self._expectimax_search_hyperparameters,
+            self._belief_state, self._pomdp, self._expectimax_search_hyperparameters
         )
