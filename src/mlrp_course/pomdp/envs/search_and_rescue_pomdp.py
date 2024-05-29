@@ -109,7 +109,9 @@ class SearchAndRescuePOMDP(
         return actions
 
     def get_observation_distribution(
-        self, next_state: SearchAndRescueState, action: SearchAndRescueAction
+        self,
+        action: SearchAndRescueAction,
+        next_state: SearchAndRescueState,
     ) -> Dict[SearchAndRescueObs, float]:
         robot_loc = next_state.robot_loc
         if action.type == "move":
@@ -142,6 +144,12 @@ class SearchAndRescuePOMDP(
             SearchAndRescueObs(robot_loc, incorrect_response): noise_prob,
         }
         return dist
+
+    def get_initial_observation_distribution(
+        self, initial_state: SearchAndRescueState
+    ) -> Dict[SearchAndRescueObs, float]:
+        robot_loc = initial_state.robot_loc
+        return {SearchAndRescueObs(robot_loc): 1.0}
 
     def state_is_terminal(self, state: SearchAndRescueState) -> bool:
         return state.robot_loc == state.person_loc

@@ -11,13 +11,13 @@ def test_car_inspection_pomdp():
     assert "pass" in pomdp.observation_space
     assert "lemon" in pomdp.state_space
     assert "inspect" in pomdp.action_space
-    dist = pomdp.get_observation_distribution("lemon", "inspect")
+    dist = pomdp.get_observation_distribution("inspect", "lemon")
     assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist["pass"], 0.4)
-    dist = pomdp.get_observation_distribution("peach", "inspect")
+    dist = pomdp.get_observation_distribution("inspect", "peach")
     assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist["pass"], 0.9)
-    dist = pomdp.get_observation_distribution("lemon", "buy")
+    dist = pomdp.get_observation_distribution("buy", "lemon")
     assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist["none"], 1.0)
     assert not pomdp.state_is_terminal("lemon")

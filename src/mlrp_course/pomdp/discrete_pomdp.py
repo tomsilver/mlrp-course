@@ -8,6 +8,7 @@ import numpy as np
 
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
 from mlrp_course.structs import HashableComparable
+from mlrp_course.utils import sample_from_categorical
 
 DiscreteObs: TypeAlias = HashableComparable
 
@@ -26,13 +27,33 @@ class DiscretePOMDP(Generic[_O, _S, _A], DiscreteMDP[_S, _A]):
 
     @abc.abstractmethod
     def get_observation_distribution(
-        self, next_state: _S, action: _A
+        self, action: _A, next_state: _S
     ) -> Dict[_O, float]:
         """Return a discrete distribution over observations."""
 
-    def get_observation_probability(self, next_state: _S, action: _A, obs: _O) -> float:
+    @abc.abstractmethod
+    def get_initial_observation_distribution(
+        self, initial_state: _S
+    ) -> Dict[_O, float]:
+        """Return a discrete distribution over observations."""
+
+    def sample_observation(
+        self, action: _A, next_state: _S, rng: np.random.Generator
+    ) -> _O:
+        """Sample an observation from the observation distribution."""
+        dist = self.get_observation_distribution(action, next_state)
+        return sample_from_categorical(dist, rng)
+
+    def sample_initial_observation(
+        self, initial_state: _S, rng: np.random.Generator
+    ) -> _O:
+        """Sample an initial observation."""
+        dist = self.get_initial_observation_distribution(initial_state)
+        return sample_from_categorical(dist, rng)
+
+    def get_observation_probability(self, action: _A, next_state: _S, obs: _O) -> float:
         """Convenience method for some algorithms."""
-        return self.get_observation_distribution(next_state, action).get(obs, 0.0)
+        return self.get_observation_distribution(action, next_state).get(obs, 0.0)
 
 
 @dataclass(frozen=True)

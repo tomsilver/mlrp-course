@@ -6,6 +6,7 @@ from typing import Dict, Generic, Optional, Set, TypeAlias, TypeVar
 import numpy as np
 
 from mlrp_course.structs import HashableComparable, Image
+from mlrp_course.utils import sample_from_categorical
 
 DiscreteState: TypeAlias = HashableComparable
 DiscreteAction: TypeAlias = HashableComparable
@@ -55,11 +56,8 @@ class DiscreteMDP(Generic[_S, _A]):
         This function may be overwritten by subclasses when the explicit
         distribution is too large to enumerate.
         """
-        next_state_dist = self.get_transition_distribution(state, action)
-        next_states, probs = zip(*next_state_dist.items(), strict=True)
-        next_state_index = rng.choice(len(next_states), p=probs)
-        next_state = next_states[next_state_index]
-        return next_state
+        dist = self.get_transition_distribution(state, action)
+        return sample_from_categorical(dist, rng)
 
     def get_transition_probability(
         self, state: _S, action: _A, next_state: _S

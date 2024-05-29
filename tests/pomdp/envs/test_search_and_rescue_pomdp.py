@@ -18,17 +18,20 @@ def test_search_and_rescue_pomdp():
     assert SearchAndRescueState((1, 2), (0, 2)) in pomdp.state_space
     assert SearchAndRescueAction("move", (0, -1)) in pomdp.action_space
     dist = pomdp.get_observation_distribution(
-        SearchAndRescueState((1, 2), (0, 2)), SearchAndRescueAction("scan", (-1, 0))
+        SearchAndRescueAction("scan", (-1, 0)),
+        SearchAndRescueState((1, 2), (0, 2)),
     )
     assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueObs((1, 2), "got-response")], 0.9)
     dist = pomdp.get_observation_distribution(
-        SearchAndRescueState((1, 2), (0, 2)), SearchAndRescueAction("scan", (0, -1))
+        SearchAndRescueAction("scan", (0, -1)),
+        SearchAndRescueState((1, 2), (0, 2)),
     )
     assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueObs((1, 2), "got-response")], 0.1)
     dist = pomdp.get_observation_distribution(
-        SearchAndRescueState((1, 2), (0, 2)), SearchAndRescueAction("move", (-1, 0))
+        SearchAndRescueAction("move", (-1, 0)),
+        SearchAndRescueState((1, 2), (0, 2)),
     )
     assert np.isclose(sum(dist.values()), 1.0)
     assert np.isclose(dist[SearchAndRescueObs((1, 2))], 1.0)

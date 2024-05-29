@@ -40,7 +40,9 @@ class TigerPOMDP(DiscretePOMDP[TigerObs, TigerState, TigerAction]):
         return {"listen", "open-left", "open-right"}
 
     def get_observation_distribution(
-        self, next_state: TigerState, action: TigerAction
+        self,
+        action: TigerAction,
+        next_state: TigerState,
     ) -> Dict[TigerObs, float]:
         if action in ("open-left", "open-right"):
             return {"none": 1.0}

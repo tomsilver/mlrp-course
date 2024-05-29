@@ -5,8 +5,8 @@ from typing import Dict
 
 from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.mdp.utils import value_function_to_greedy_policy
 from mlrp_course.structs import Hyperparameters
-from mlrp_course.utils import value_function_to_greedy_policy
 
 
 @dataclass(frozen=True)

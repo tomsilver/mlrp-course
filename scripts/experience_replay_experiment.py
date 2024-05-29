@@ -15,7 +15,8 @@ from mlrp_course.mdp.algorithms.q_learning import (
     QLearningExperienceReplayAgent,
 )
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, TwoBunnyChaseMDP
-from mlrp_course.utils import DiscreteMDPGymEnv, run_episodes
+from mlrp_course.mdp.utils import DiscreteMDPGymEnv
+from mlrp_course.utils import run_episodes
 
 
 def _main(
