@@ -1,9 +1,11 @@
 """Data structures."""
 
+from functools import cached_property
 from typing import (
     Any,
     Dict,
     Generic,
+    Hashable,
     Iterator,
     Protocol,
     Tuple,
@@ -40,7 +42,9 @@ class HashableComparable(Protocol):
 class CategoricalDistribution(Generic[_T]):
     """A categorical distribution."""
 
-    def __init__(self, outcome_to_prob: Dict[_T, float], normalize: bool = False):
+    def __init__(
+        self, outcome_to_prob: Dict[_T, float], normalize: bool = False
+    ) -> None:
         # Prune zero entries and avoid modifying input.
         d = {o: p for o, p in outcome_to_prob.items() if p > 0}
         # Normalize the distribution if asked.
@@ -52,9 +56,21 @@ class CategoricalDistribution(Generic[_T]):
         assert np.isclose(sum(d.values()), 1.0)
         # Finalize.
         self._outcome_to_prob = d
-        self._hashable = tuple(d.items())
-        self._hash = hash(self._hashable)
-        self._str = f"CategoricalDistribution({self._hashable})"
+
+    @cached_property
+    def _hashable(self) -> Hashable:
+        # NOTE: it is important to sort here, even though dictionary ordering
+        # is deterministic, because the same distribution may be created with
+        # two different dictionary orderings.
+        return tuple(sorted(self._outcome_to_prob.items()))
+
+    @cached_property
+    def _hash(self) -> int:
+        return hash(self._hashable)
+
+    @cached_property
+    def _str(self) -> str:
+        return f"CategoricalDistribution({self._hashable})"
 
     def __hash__(self) -> int:
         return self._hash
@@ -67,9 +83,7 @@ class CategoricalDistribution(Generic[_T]):
         return self._outcome_to_prob.get(outcome, 0.0)
 
     def __iter__(self) -> Iterator[_T]:
-        for outcome, prob in self._outcome_to_prob.items():
-            if prob > 0:
-                yield outcome
+        return iter(self._outcome_to_prob)
 
     def __repr__(self) -> str:
         return self._str
@@ -88,9 +102,7 @@ class CategoricalDistribution(Generic[_T]):
 
     def items(self) -> Iterator[Tuple[_T, float]]:
         """Iterate the dictionary."""
-        for outcome, prob in self._outcome_to_prob.items():
-            if prob > 0:
-                yield outcome, prob
+        return iter(self._outcome_to_prob.items())
 
     def sample(self, rng: np.random.Generator) -> _T:
         """Draw a random sample."""
