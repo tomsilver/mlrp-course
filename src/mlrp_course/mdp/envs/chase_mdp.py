@@ -170,7 +170,8 @@ class ChaseMDP(DiscreteMDP[ChaseState, ChaseAction]):
         avatar_grid = np.full((height, width), None, dtype=object)
         avatar_grid[state.robot_pos] = "robot"
         for pos in state.bunny_positions:
-            avatar_grid[pos] = "bunny"
+            if pos is not None:
+                avatar_grid[pos] = "bunny"
         avatar_grid[self._obstacles] = "obstacle"
         return render_avatar_grid(avatar_grid)
 
