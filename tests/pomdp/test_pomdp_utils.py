@@ -15,7 +15,7 @@ def test_belief_mdp():
     """Tests for BeliefMDP."""
     pomdp = TinySearchAndRescuePOMDP()
     belief_mdp = BeliefMDP(pomdp)
-    initial_belief_state = BeliefState(
+    belief_state0 = BeliefState(
         {
             SearchAndRescueState((0, 1), (0, 0)): 0.5,
             SearchAndRescueState((0, 1), (0, 2)): 0.5,
@@ -24,48 +24,94 @@ def test_belief_mdp():
 
     scan_left = SearchAndRescueAction("scan", (0, -1))
     assert scan_left in belief_mdp.action_space
-    next_belief_state1 = BeliefState(
+    belief_state1 = BeliefState(
         {
             SearchAndRescueState((0, 1), (0, 0)): 0.9,
             SearchAndRescueState((0, 1), (0, 2)): 0.1,
         }
     )
-    next_belief_state2 = BeliefState(
+    belief_state2 = BeliefState(
         {
             SearchAndRescueState((0, 1), (0, 0)): 0.1,
             SearchAndRescueState((0, 1), (0, 2)): 0.9,
         }
     )
-    dist = belief_mdp.get_transition_distribution(initial_belief_state, scan_left)
-    assert np.isclose(dist[next_belief_state1], 0.5)
-    assert np.isclose(dist[next_belief_state2], 0.5)
+    assert not belief_mdp.state_is_terminal(belief_state1)
+    assert not belief_mdp.state_is_terminal(belief_state2)
+    dist = belief_mdp.get_transition_distribution(belief_state0, scan_left)
+    assert np.isclose(dist[belief_state1], 0.5)
+    assert np.isclose(dist[belief_state2], 0.5)
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, scan_left, belief_state1), -1.0
+    )
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, scan_left, belief_state2), -1.0
+    )
 
     scan_right = SearchAndRescueAction("scan", (0, 1))
     assert scan_right in belief_mdp.action_space
-    dist = belief_mdp.get_transition_distribution(initial_belief_state, scan_right)
-    assert np.isclose(dist[next_belief_state1], 0.5)
-    assert np.isclose(dist[next_belief_state2], 0.5)
+    dist = belief_mdp.get_transition_distribution(belief_state0, scan_right)
+    assert np.isclose(dist[belief_state1], 0.5)
+    assert np.isclose(dist[belief_state2], 0.5)
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, scan_right, belief_state1), -1.0
+    )
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, scan_right, belief_state2), -1.0
+    )
 
     move_left = SearchAndRescueAction("move", (0, -1))
     assert move_left in belief_mdp.action_space
-    next_belief_state3 = BeliefState(
+    belief_state3 = BeliefState(
         {
             SearchAndRescueState((0, 0), (0, 0)): 0.5,
             SearchAndRescueState((0, 0), (0, 2)): 0.5,
         }
     )
-    next_belief_state4 = BeliefState(
+    belief_state4 = BeliefState(
         {
             SearchAndRescueState((0, 2), (0, 0)): 0.5,
             SearchAndRescueState((0, 2), (0, 2)): 0.5,
         }
     )
-    dist = belief_mdp.get_transition_distribution(initial_belief_state, move_left)
-    assert np.isclose(dist[next_belief_state3], 0.95)
-    assert np.isclose(dist[next_belief_state4], 0.05)
+    assert not belief_mdp.state_is_terminal(belief_state3)
+    assert not belief_mdp.state_is_terminal(belief_state4)
+    dist = belief_mdp.get_transition_distribution(belief_state0, move_left)
+    assert np.isclose(dist[belief_state3], 0.95)
+    assert np.isclose(dist[belief_state4], 0.05)
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, move_left, belief_state3), -1.0 + 0.5 * 100
+    )
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, move_left, belief_state4), -1.0 + 0.5 * 100
+    )
 
     move_right = SearchAndRescueAction("move", (0, 1))
     assert move_right in belief_mdp.action_space
-    dist = belief_mdp.get_transition_distribution(initial_belief_state, move_right)
-    assert np.isclose(dist[next_belief_state3], 0.05)
-    assert np.isclose(dist[next_belief_state4], 0.95)
+    dist = belief_mdp.get_transition_distribution(belief_state0, move_right)
+    assert np.isclose(dist[belief_state3], 0.05)
+    assert np.isclose(dist[belief_state4], 0.95)
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, move_right, belief_state3),
+        -1.0 + 0.5 * 100,
+    )
+    assert np.isclose(
+        belief_mdp.get_reward(belief_state0, move_right, belief_state4),
+        -1.0 + 0.5 * 100,
+    )
+
+    # Test tricky case where part of the belief state has terminated.
+    dist = belief_mdp.get_transition_distribution(belief_state3, move_left)
+    belief_state5 = BeliefState(
+        {
+            SearchAndRescueState((0, 1), (0, 2)): 1.0,
+        }
+    )
+    belief_state6 = BeliefState(
+        {
+            SearchAndRescueState((0, 0), (0, 0)): 0.5 / (0.5 + 0.475),
+            SearchAndRescueState((0, 0), (0, 2)): 0.475 / (0.5 + 0.475),
+        }
+    )
+    assert np.isclose(dist[belief_state5], 0.05 * 0.5)
+    assert np.isclose(dist[belief_state6], 1.0 - 0.05 * 0.5)

@@ -127,7 +127,10 @@ class BeliefMDP(DiscreteMDP[BeliefState, DiscreteAction]):
 
 
 def state_estimator(
-    b_t: BeliefState, a_t: DiscreteAction, o_t1: DiscreteObs, pomdp: DiscretePOMDP
+    b_t: BeliefState,
+    a_t: DiscreteAction,
+    o_t1: DiscreteObs,
+    pomdp: DiscretePOMDP,
 ) -> BeliefState:
     """State estimator for POMDPs."""
     P = pomdp.get_transition_probability
