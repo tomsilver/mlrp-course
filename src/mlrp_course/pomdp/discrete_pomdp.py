@@ -1,13 +1,12 @@
 """A generic definition of a POMDP with discrete spaces."""
 
 import abc
-from dataclasses import dataclass
-from typing import Any, Dict, Generic, Iterator, Set, Tuple, TypeAlias, TypeVar
+from typing import Generic, Set, TypeAlias, TypeVar
 
 import numpy as np
 
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import HashableComparable
+from mlrp_course.structs import CategoricalDistribution, HashableComparable
 
 DiscreteObs: TypeAlias = HashableComparable
 
@@ -26,46 +25,32 @@ class DiscretePOMDP(Generic[_O, _S, _A], DiscreteMDP[_S, _A]):
 
     @abc.abstractmethod
     def get_observation_distribution(
-        self, next_state: _S, action: _A
-    ) -> Dict[_O, float]:
+        self, action: _A, next_state: _S
+    ) -> CategoricalDistribution[_O]:
         """Return a discrete distribution over observations."""
 
-    def get_observation_probability(self, next_state: _S, action: _A, obs: _O) -> float:
+    @abc.abstractmethod
+    def get_initial_observation_distribution(
+        self, initial_state: _S
+    ) -> CategoricalDistribution[_O]:
+        """Return a discrete distribution over observations."""
+
+    def sample_observation(
+        self, action: _A, next_state: _S, rng: np.random.Generator
+    ) -> _O:
+        """Sample an observation from the observation distribution."""
+        return self.get_observation_distribution(action, next_state).sample(rng)
+
+    def sample_initial_observation(
+        self, initial_state: _S, rng: np.random.Generator
+    ) -> _O:
+        """Sample an initial observation."""
+        return self.get_initial_observation_distribution(initial_state).sample(rng)
+
+    def get_observation_probability(self, action: _A, next_state: _S, obs: _O) -> float:
         """Convenience method for some algorithms."""
-        return self.get_observation_distribution(next_state, action).get(obs, 0.0)
+        return self.get_observation_distribution(action, next_state)(obs)
 
 
-@dataclass(frozen=True)
-class BeliefState:
+class BeliefState(CategoricalDistribution[DiscreteState]):
     """A belief state for a DiscretePOMDP."""
-
-    state_to_prob: Dict[DiscreteState, float]
-
-    def __post_init__(self) -> None:
-        assert np.isclose(sum(self.state_to_prob.values()), 1.0)
-
-    def __hash__(self) -> int:
-        return hash(tuple(sorted(self.state_to_prob.items())))
-
-    def __call__(self, state: DiscreteState) -> float:
-        """Get the probability for the given state."""
-        return self.state_to_prob.get(state, 0.0)
-
-    def __iter__(self) -> Iterator[DiscreteState]:
-        return iter(self.state_to_prob)
-
-    def __str__(self) -> str:
-        return str(sorted(self.items()))
-
-    def __eq__(self, other: Any) -> bool:
-        assert isinstance(other, BeliefState)
-        states = set(self) | set(other)
-        return all(np.isclose(self(s), other(s)) for s in states)
-
-    def __lt__(self, other: Any) -> bool:
-        assert isinstance(other, BeliefState)
-        return str(self) < str(other)
-
-    def items(self) -> Iterator[Tuple[DiscreteState, float]]:
-        """Iterate the dictionary."""
-        return iter(self.state_to_prob.items())

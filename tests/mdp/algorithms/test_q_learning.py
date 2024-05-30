@@ -4,7 +4,8 @@ from mlrp_course.mdp.algorithms.q_learning import (
     QLearningAgent,
 )
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, StaticBunnyChaseMDP
-from mlrp_course.utils import DiscreteMDPGymEnv, run_episodes
+from mlrp_course.mdp.utils import DiscreteMDPGymEnv
+from mlrp_course.utils import run_episodes
 
 
 def test_value_iteration():

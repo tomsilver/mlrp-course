@@ -5,17 +5,16 @@ from typing import Dict
 
 import numpy as np
 
-from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.mdp.utils import DiscreteMDPAgent, sample_trajectory
 from mlrp_course.structs import Hyperparameters
-from mlrp_course.utils import sample_trajectory
 
 
 @dataclass(frozen=True)
 class MCTSHyperparameters(Hyperparameters):
     """Hyperparameters for MCTS."""
 
-    search_horizon: int = 10
+    max_search_horizon: int = 10
     num_simulations: int = 100
     explore_strategy: str = "ucb"
     max_rollout_length: int = 100
@@ -40,7 +39,7 @@ def mcts(
         _simulate(
             initial_state,
             mdp,
-            config.search_horizon,
+            config.max_search_horizon,
             Q,
             N,
             rng,

@@ -8,14 +8,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 
-from mlrp_course.agents import Agent
+from mlrp_course.agent import Agent
 from mlrp_course.mdp.algorithms.experience_replay import ExperienceReplayHyperparameters
 from mlrp_course.mdp.algorithms.q_learning import (
     QLearningAgent,
     QLearningExperienceReplayAgent,
 )
 from mlrp_course.mdp.envs.chase_mdp import ChaseState, TwoBunnyChaseMDP
-from mlrp_course.utils import DiscreteMDPGymEnv, run_episodes
+from mlrp_course.mdp.utils import DiscreteMDPGymEnv
+from mlrp_course.utils import run_episodes
 
 
 def _main(

@@ -1,10 +1,10 @@
 """Car inspection POMDP from Leslie Kaelbling."""
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Set, TypeAlias
+from typing import Optional, Set, TypeAlias
 
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
-from mlrp_course.structs import Hyperparameters, Image
+from mlrp_course.structs import CategoricalDistribution, Hyperparameters, Image
 
 CarInspectionObs: TypeAlias = str  # none, pass, fail
 CarInspectionState: TypeAlias = str  # lemon or peach
@@ -43,20 +43,26 @@ class CarInspectionPOMDP(
         return {"buy", "dont-buy", "inspect"}
 
     def get_observation_distribution(
-        self, next_state: CarInspectionState, action: CarInspectionAction
-    ) -> Dict[CarInspectionObs, float]:
+        self,
+        action: CarInspectionAction,
+        next_state: CarInspectionState,
+    ) -> CategoricalDistribution[CarInspectionObs]:
         if action == "inspect":
             if next_state == "lemon":
-                return {
-                    "pass": self._config.lemon_pass_prob,
-                    "fail": 1 - self._config.lemon_pass_prob,
-                }
+                return CategoricalDistribution(
+                    {
+                        "pass": self._config.lemon_pass_prob,
+                        "fail": 1 - self._config.lemon_pass_prob,
+                    }
+                )
             assert next_state == "peach"
-            return {
-                "pass": self._config.peach_pass_prob,
-                "fail": 1 - self._config.peach_pass_prob,
-            }
-        return {"none": 1.0}
+            return CategoricalDistribution(
+                {
+                    "pass": self._config.peach_pass_prob,
+                    "fail": 1 - self._config.peach_pass_prob,
+                }
+            )
+        return CategoricalDistribution({"none": 1.0})
 
     @property
     def horizon(self) -> Optional[int]:
@@ -84,9 +90,9 @@ class CarInspectionPOMDP(
 
     def get_transition_distribution(
         self, state: CarInspectionState, action: CarInspectionAction
-    ) -> Dict[CarInspectionState, float]:
+    ) -> CategoricalDistribution[CarInspectionState]:
         # The state never changes in this very simple POMDP.
-        return {state: 1.0}
+        return CategoricalDistribution({state: 1.0})
 
     def render_state(self, state: CarInspectionState) -> Image:
         raise NotImplementedError("Rendering not implemented for POMDP.")

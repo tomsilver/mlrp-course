@@ -2,7 +2,7 @@
 
 from mlrp_course.mdp.discrete_mdp import DiscreteState
 from mlrp_course.mdp.envs.marshmellow_mdp import MarshmallowMDP
-from mlrp_course.utils import DiscreteMDPGymEnv
+from mlrp_course.mdp.utils import DiscreteMDPGymEnv
 
 
 def test_discrete_mdp_gym_env():

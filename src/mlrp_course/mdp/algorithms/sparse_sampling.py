@@ -5,8 +5,8 @@ from functools import lru_cache
 
 import numpy as np
 
-from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
+from mlrp_course.mdp.utils import DiscreteMDPAgent
 from mlrp_course.structs import Hyperparameters
 
 
@@ -14,13 +14,14 @@ from mlrp_course.structs import Hyperparameters
 class SparseSamplingHyperparameters(Hyperparameters):
     """Hyperparameters for sparse sampling."""
 
-    search_horizon: int = 10
+    max_search_horizon: int = 10
     num_samples: int = 5
 
 
 def sparse_sampling(
     initial_state: DiscreteState,
     mdp: DiscreteMDP,
+    timestep: int,
     rng: np.random.Generator,
     config: SparseSamplingHyperparameters,
 ) -> DiscreteAction:
@@ -29,11 +30,14 @@ def sparse_sampling(
     A = mdp.action_space
     R = mdp.get_reward
     gamma = mdp.temporal_discount_factor
+    H = config.max_search_horizon
+    if mdp.horizon is not None:
+        H = min(H, mdp.horizon - timestep)
 
     @lru_cache(maxsize=None)
     def V(s, h):
         """Shorthand for the value function."""
-        if h == config.search_horizon:
+        if h == H or mdp.state_is_terminal(s):
             return 0
         return max(Q(s, a, h) for a in A)
 
@@ -68,6 +72,7 @@ class SparseSamplingAgent(DiscreteMDPAgent):
         return sparse_sampling(
             self._last_observation,
             self._mdp,
+            self._timestep,
             self._rng,
             self._sparse_sampling_hyperparameters,
         )

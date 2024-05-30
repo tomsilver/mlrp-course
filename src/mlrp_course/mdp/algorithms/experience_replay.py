@@ -5,7 +5,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any, Deque, Tuple, TypeAlias
 
-from mlrp_course.agents import Agent
+from mlrp_course.agent import Agent
 from mlrp_course.structs import Hyperparameters
 
 

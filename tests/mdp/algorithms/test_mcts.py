@@ -12,7 +12,7 @@ def test_mcts():
     state = ChaseState((1, 1), ((3, 3), (3, 4)))
     rng = np.random.default_rng(123)
     config = MCTSHyperparameters(
-        search_horizon=100,
+        max_search_horizon=100,
         num_simulations=100,
         max_rollout_length=10,
     )

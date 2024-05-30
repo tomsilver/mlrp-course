@@ -3,14 +3,14 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from mlrp_course.agents import DiscreteMDPAgent
 from mlrp_course.mdp.algorithms.policy_evaluation import evaluate_policy_linear_system
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-from mlrp_course.structs import Hyperparameters
-from mlrp_course.utils import (
+from mlrp_course.mdp.utils import (
+    DiscreteMDPAgent,
     value_function_to_greedy_policy,
     value_to_action_value_function,
 )
+from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)

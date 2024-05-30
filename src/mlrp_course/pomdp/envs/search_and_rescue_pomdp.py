@@ -8,7 +8,8 @@ from typing import Dict, List, Set, Tuple
 import numpy as np
 
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
-from mlrp_course.structs import Hyperparameters, Image
+from mlrp_course.structs import CategoricalDistribution, Hyperparameters, Image
+from mlrp_course.utils import render_avatar_grid
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -40,7 +41,7 @@ class SearchAndRescuePOMDPHyperparameters(Hyperparameters):
     """Hyperparameters for the SearchAndRescuePOMDP."""
 
     scan_noise_probability: float = 0.1
-    move_noise_probability: float = 0.1
+    move_noise_probability: float = 0.05
     living_reward: float = -1.0
     rescue_reward: float = 100.0
     fire_reward: float = -100.0
@@ -66,6 +67,9 @@ class SearchAndRescuePOMDP(
             [E, E, E, E, H, W, W],
         ]
     )
+
+    # Subclasses may disable some action directions.
+    _action_directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
     def __init__(
         self, config: SearchAndRescuePOMDPHyperparameters | None = None
@@ -103,17 +107,19 @@ class SearchAndRescuePOMDP(
     @property
     def action_space(self) -> Set[SearchAndRescueAction]:
         actions: Set[SearchAndRescueAction] = set()
-        for d in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        for d in self._action_directions:
             for t in ["move", "scan"]:
                 actions.add(SearchAndRescueAction(t, d))
         return actions
 
     def get_observation_distribution(
-        self, next_state: SearchAndRescueState, action: SearchAndRescueAction
-    ) -> Dict[SearchAndRescueObs, float]:
+        self,
+        action: SearchAndRescueAction,
+        next_state: SearchAndRescueState,
+    ) -> CategoricalDistribution[SearchAndRescueObs]:
         robot_loc = next_state.robot_loc
         if action.type == "move":
-            return {SearchAndRescueObs(robot_loc): 1.0}
+            return CategoricalDistribution({SearchAndRescueObs(robot_loc): 1.0})
         assert action.type == "scan"
         # If the action was a scan, get a noisy response.
         # First figure out the "correct" directions to scan.
@@ -141,7 +147,13 @@ class SearchAndRescuePOMDP(
             SearchAndRescueObs(robot_loc, correct_response): 1.0 - noise_prob,
             SearchAndRescueObs(robot_loc, incorrect_response): noise_prob,
         }
-        return dist
+        return CategoricalDistribution(dist)
+
+    def get_initial_observation_distribution(
+        self, initial_state: SearchAndRescueState
+    ) -> CategoricalDistribution[SearchAndRescueObs]:
+        robot_loc = initial_state.robot_loc
+        return CategoricalDistribution({SearchAndRescueObs(robot_loc): 1.0})
 
     def state_is_terminal(self, state: SearchAndRescueState) -> bool:
         return state.robot_loc == state.person_loc
@@ -163,19 +175,19 @@ class SearchAndRescuePOMDP(
 
     def get_transition_distribution(
         self, state: SearchAndRescueState, action: SearchAndRescueAction
-    ) -> Dict[SearchAndRescueState, float]:
+    ) -> CategoricalDistribution[SearchAndRescueState]:
         # Scanning does not change the state.
         if action.type == "scan":
-            return {state: 1.0}
+            return CategoricalDistribution({state: 1.0})
         assert action.type == "move"
         robot_r, robot_c = state.robot_loc
         person_loc = state.person_loc
         # Moving is deterministically null if we're in a fire.
         if self._grid[robot_r, robot_c] == self._FIRE:
-            return {state: 1.0}
+            return CategoricalDistribution({state: 1.0})
         # Moving is stochastic otherwise.
         dist: Dict[SearchAndRescueState, float] = defaultdict(float)
-        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        for dr, dc in self._action_directions:
             if (robot_r + dr, robot_c + dc) in self._possible_robot_locs:
                 next_robot_loc = (robot_r + dr, robot_c + dc)
             else:
@@ -184,8 +196,26 @@ class SearchAndRescuePOMDP(
             if (dr, dc) == action.direction:
                 dist[next_state] += 1.0 - self._config.move_noise_probability
             else:
-                dist[next_state] += self._config.move_noise_probability / 3.0
-        return dist
+                N = len(self._action_directions) - 1
+                dist[next_state] += self._config.move_noise_probability / N
+        return CategoricalDistribution(dist)
 
     def render_state(self, state: SearchAndRescueState) -> Image:
-        raise NotImplementedError("Rendering not implemented for POMDP.")
+        avatar_grid = np.full(self._grid.shape, None, dtype=object)
+        avatar_grid[self._grid == self._FIRE] = "fire"
+        avatar_grid[self._grid == self._HIDDEN] = "hidden"
+        avatar_grid[self._grid == self._WALL] = "obstacle"
+        if state.robot_loc == state.person_loc:
+            avatar_grid[state.robot_loc] = "bunny"
+        else:
+            avatar_grid[state.robot_loc] = "robot"
+        return render_avatar_grid(avatar_grid)
+
+
+class TinySearchAndRescuePOMDP(SearchAndRescuePOMDP):
+    """Tiny version of the SearchAndRescuePOMDP with reduced action space."""
+
+    E, H = SearchAndRescuePOMDP._EMPTY, SearchAndRescuePOMDP._HIDDEN
+    _grid = np.array([[H, E, H]])
+
+    _action_directions = [(0, -1), (0, 1)]

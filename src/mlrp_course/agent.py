@@ -5,8 +5,6 @@ from typing import Generic, TypeVar
 
 import numpy as np
 
-from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
-
 _ObsType = TypeVar("_ObsType")
 _ActType = TypeVar("_ActType")
 
@@ -38,11 +36,10 @@ class Agent(Generic[_ObsType, _ActType]):
     def reset(
         self,
         obs: _ObsType,
-    ) -> _ActType:
+    ) -> None:
         """Start a new episode."""
         self._last_observation = obs
         self._timestep = 0
-        return self.step()
 
     def step(self) -> _ActType:
         """Get the next action to take."""
@@ -71,11 +68,3 @@ class Agent(Generic[_ObsType, _ActType]):
     def eval(self) -> None:
         """Switch to eval mode."""
         self._train_or_eval = "eval"
-
-
-class DiscreteMDPAgent(Agent[DiscreteState, DiscreteAction], abc.ABC):
-    """An agent acting in a DiscreteMDP."""
-
-    def __init__(self, mdp: DiscreteMDP, seed: int) -> None:
-        self._mdp = mdp
-        super().__init__(seed)
