@@ -40,9 +40,14 @@ def _create_pomdp_and_initial_state(
     name: str, rng: np.random.Generator
 ) -> Tuple[DiscretePOMDP, DiscreteState]:
     if name == "tiny-search-and-rescue":
-        pomdp = TinySearchAndRescuePOMDP()
-        initial_state = _sample_search_and_rescue_initial_state(pomdp, rng)
-        return pomdp, initial_state
+        tiny_pomdp = TinySearchAndRescuePOMDP()
+        initial_state = _sample_search_and_rescue_initial_state(tiny_pomdp, rng)
+        return tiny_pomdp, initial_state
+
+    if name == "search-and-rescue":
+        sar_pomdp = SearchAndRescuePOMDP()
+        initial_state = _sample_search_and_rescue_initial_state(sar_pomdp, rng)
+        return sar_pomdp, initial_state
 
     raise NotImplementedError("MDP not supported")
 

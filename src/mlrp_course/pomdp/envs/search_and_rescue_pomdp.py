@@ -204,7 +204,7 @@ class SearchAndRescuePOMDP(
         avatar_grid = np.full(self._grid.shape, None, dtype=object)
         avatar_grid[self._grid == self._FIRE] = "fire"
         avatar_grid[self._grid == self._HIDDEN] = "hidden"
-        avatar_grid[self._grid == self._WALL] = "wall"
+        avatar_grid[self._grid == self._WALL] = "obstacle"
         if state.robot_loc == state.person_loc:
             avatar_grid[state.robot_loc] = "bunny"
         else:
