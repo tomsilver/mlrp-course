@@ -39,10 +39,10 @@ def test_search_and_rescue_pomdp():
     dist = pomdp.get_transition_distribution(
         SearchAndRescueState((1, 2), (0, 2)), SearchAndRescueAction("move", (-1, 0))
     )
-    assert np.isclose(dist[SearchAndRescueState((0, 2), (0, 2))], 0.9)
-    assert np.isclose(dist[SearchAndRescueState((1, 2), (0, 2))], 0.1 / 3)
-    assert np.isclose(dist[SearchAndRescueState((1, 1), (0, 2))], 0.1 / 3)
-    assert np.isclose(dist[SearchAndRescueState((2, 2), (0, 2))], 0.1 / 3)
+    assert np.isclose(dist[SearchAndRescueState((0, 2), (0, 2))], 0.95)
+    assert np.isclose(dist[SearchAndRescueState((1, 2), (0, 2))], 0.05 / 3)
+    assert np.isclose(dist[SearchAndRescueState((1, 1), (0, 2))], 0.05 / 3)
+    assert np.isclose(dist[SearchAndRescueState((2, 2), (0, 2))], 0.05 / 3)
     assert pomdp.state_is_terminal(SearchAndRescueState((0, 2), (0, 2)))
     reward = pomdp.get_reward(
         SearchAndRescueState((1, 2), (0, 2)),

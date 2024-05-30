@@ -2,7 +2,7 @@
 
 import abc
 from collections import defaultdict
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, TypeVar
 
 from mlrp_course.agent import Agent
 from mlrp_course.mdp.discrete_mdp import DiscreteAction, DiscreteMDP, DiscreteState
@@ -57,7 +57,10 @@ class BeliefMDP(DiscreteMDP[BeliefState, DiscreteAction]):
     """A belief-space MDP induced by a POMDP."""
 
     def __init__(self, pomdp: DiscretePOMDP) -> None:
-        self._pomdp = pomdp
+        # Remove terminal states from the POMDP. Otherwise, we could have bugs
+        # where the agent repeatedly receives rewards from a terminal state
+        # if there are other states in the belief state that are not terminal.
+        self._pomdp = _POMDPWithoutTerminalStates(pomdp)
         super().__init__()
 
     @property
@@ -82,57 +85,45 @@ class BeliefMDP(DiscreteMDP[BeliefState, DiscreteAction]):
     def get_reward(
         self, state: BeliefState, action: DiscreteAction, next_state: BeliefState
     ) -> float:
-        return get_belief_space_reward(state, action, next_state, self._pomdp)
+        R = self._pomdp.get_reward
+        return sum(
+            R(s_t, action, s_t1) * p_st * p_st1
+            for s_t, p_st in state.items()
+            for s_t1, p_st1 in next_state.items()
+        )
 
     def get_transition_distribution(
         self, state: BeliefState, action: DiscreteAction
     ) -> CategoricalDistribution[BeliefState]:
-        return get_belief_space_transition_distribution(state, action, self._pomdp)
+        P = self._pomdp.get_transition_probability
+        O = self._pomdp.get_observation_probability
+        b_t = state
+        a_t = action
+
+        # Optimization: calculate all possible next states and observations.
+        S_t1: Set[DiscreteState] = set()
+        O_t1: Set[DiscreteObs] = set()
+        for s_t in b_t:
+            for s_t1 in self._pomdp.get_transition_distribution(s_t, a_t):
+                S_t1.add(s_t1)
+                O_t1.update(self._pomdp.get_observation_distribution(a_t, s_t1))
+
+        dist: Dict[BeliefState, float] = defaultdict(float)
+
+        for o_t1 in O_t1:
+            b_t1 = state_estimator(b_t, a_t, o_t1, self._pomdp)
+            # Pr(o_t1 | b_t, a_t).
+            p = sum(
+                O(a_t, s_t1, o_t1)
+                * sum(P(s_t, a_t, s_t1) * p_st for s_t, p_st in b_t.items())
+                for s_t1 in S_t1
+            )
+            dist[b_t1] = p
+
+        return CategoricalDistribution(dist, normalize=True)
 
     def render_state(self, state: BeliefState) -> Image:
         raise NotImplementedError("Rendering not implemented for belief MDP")
-
-
-def get_belief_space_reward(
-    b_t: BeliefState, a_t: DiscreteAction, b_t1: BeliefState, pomdp: DiscretePOMDP
-) -> float:
-    """Reward function in belief space for POMDPs."""
-    R = pomdp.get_reward
-    return sum(
-        R(s_t, a_t, s_t1) * p_st * p_st1
-        for s_t, p_st in b_t.items()
-        for s_t1, p_st1 in b_t1.items()
-    )
-
-
-def get_belief_space_transition_distribution(
-    b_t: BeliefState, a_t: DiscreteAction, pomdp: DiscretePOMDP
-) -> CategoricalDistribution[BeliefState]:
-    """Transition distribution in belief space for POMDPs."""
-    P = pomdp.get_transition_probability
-    O = pomdp.get_observation_probability
-
-    # Optimization: calculate all possible next states and observations.
-    S_t1: Set[DiscreteState] = set()
-    O_t1: Set[DiscreteObs] = set()
-    for s_t in b_t:
-        for s_t1 in pomdp.get_transition_distribution(s_t, a_t):
-            S_t1.add(s_t1)
-            O_t1.update(pomdp.get_observation_distribution(a_t, s_t1))
-
-    dist: Dict[BeliefState, float] = defaultdict(float)
-
-    for o_t1 in O_t1:
-        b_t1 = state_estimator(b_t, a_t, o_t1, pomdp)
-        # Pr(o_t1 | b_t, a_t).
-        p = sum(
-            O(a_t, s_t1, o_t1)
-            * sum(P(s_t, a_t, s_t1) * p_st for s_t, p_st in b_t.items())
-            for s_t1 in S_t1
-        )
-        dist[b_t1] = p
-
-    return CategoricalDistribution(dist, normalize=True)
 
 
 def state_estimator(
@@ -154,3 +145,67 @@ def state_estimator(
         )
 
     return BeliefState(next_state_to_prob, normalize=True)
+
+
+_O = TypeVar("_O", bound=DiscreteObs)
+_S = TypeVar("_S", bound=DiscreteState)
+_A = TypeVar("_A", bound=DiscreteAction)
+
+
+class _POMDPWithoutTerminalStates(DiscretePOMDP[_O, _S, _A]):
+    """A POMDP with terminal states effectively removed."""
+
+    def __init__(self, pomdp: DiscretePOMDP[_O, _S, _A]) -> None:
+        self._pomdp = pomdp
+
+    @property
+    def observation_space(self) -> Set[_O]:
+        return self._pomdp.observation_space
+
+    @property
+    def state_space(self) -> Set[_S]:
+        return self._pomdp.state_space
+
+    @property
+    def action_space(self) -> Set[_A]:
+        return self._pomdp.action_space
+
+    @property
+    def temporal_discount_factor(self) -> float:
+        return self._pomdp.temporal_discount_factor
+
+    @property
+    def horizon(self) -> Optional[int]:
+        return self._pomdp.horizon
+
+    def get_observation_distribution(
+        self, action: _A, next_state: _S
+    ) -> CategoricalDistribution[_O]:
+        return self._pomdp.get_observation_distribution(action, next_state)
+
+    def get_initial_observation_distribution(
+        self, initial_state: _S
+    ) -> CategoricalDistribution[_O]:
+        return self._pomdp.get_initial_observation_distribution(initial_state)
+
+    def state_is_terminal(self, state: _S) -> bool:
+        # Never terminate.
+        return False
+
+    def get_reward(self, state: _S, action: _A, next_state: _S) -> float:
+        # If we've terminated, don't give any more rewards.
+        if self._pomdp.state_is_terminal(state):
+            return 0.0
+        return self._pomdp.get_reward(state, action, next_state)
+
+    def get_transition_distribution(
+        self, state: _S, action: _A
+    ) -> CategoricalDistribution[_S]:
+        # Extend the original transition distribution so that terminal states
+        # always transition to themselves.
+        if self._pomdp.state_is_terminal(state):
+            return CategoricalDistribution({state: 1.0})
+        return self._pomdp.get_transition_distribution(state, action)
+
+    def render_state(self, state: _S) -> Image:
+        return self._pomdp.render_state(state)

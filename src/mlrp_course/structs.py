@@ -41,7 +41,8 @@ class CategoricalDistribution(Generic[_T]):
     """A categorical distribution."""
 
     def __init__(self, outcome_to_prob: Dict[_T, float], normalize: bool = False):
-        d = dict(outcome_to_prob)  # don't change input
+        # Prune zero entries and avoid modifying input.
+        d = {o: p for o, p in outcome_to_prob.items() if p > 0}
         # Normalize the distribution if asked.
         if normalize:
             z = sum(d.values())

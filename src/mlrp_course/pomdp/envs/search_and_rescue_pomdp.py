@@ -41,7 +41,7 @@ class SearchAndRescuePOMDPHyperparameters(Hyperparameters):
     """Hyperparameters for the SearchAndRescuePOMDP."""
 
     scan_noise_probability: float = 0.1
-    move_noise_probability: float = 0.1
+    move_noise_probability: float = 0.05
     living_reward: float = -1.0
     rescue_reward: float = 100.0
     fire_reward: float = -100.0
@@ -216,6 +216,6 @@ class TinySearchAndRescuePOMDP(SearchAndRescuePOMDP):
     """Tiny version of the SearchAndRescuePOMDP with reduced action space."""
 
     E, H = SearchAndRescuePOMDP._EMPTY, SearchAndRescuePOMDP._HIDDEN
-    _grid = np.array([[H, E, E, E, H]])
+    _grid = np.array([[H, E, H]])
 
     _action_directions = [(0, -1), (0, 1)]
