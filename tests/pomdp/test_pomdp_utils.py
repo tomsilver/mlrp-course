@@ -115,3 +115,17 @@ def test_belief_mdp():
     )
     assert np.isclose(dist[belief_state5], 0.05 * 0.5)
     assert np.isclose(dist[belief_state6], 1.0 - 0.05 * 0.5)
+
+    # Test that the total rewards accrued over a long random rollout do not
+    # ever exceed the theoretical maximum.
+    returns = 0.0
+    rng = np.random.default_rng(123)
+    A = sorted(belief_mdp.action_space)
+    b = belief_state0
+    for _ in range(100):
+        a = A[rng.choice(len(A))]
+        nb = belief_mdp.sample_next_state(b, a, rng)
+        r = belief_mdp.get_reward(b, a, nb)
+        returns += r
+        assert returns < 100.0
+        b = nb
