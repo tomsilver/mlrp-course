@@ -94,7 +94,6 @@ def _main(
     print("Sampling trajectory...")
     for _ in range(max_horizon):
         action = agent.step()
-        print(action)
         next_state = pomdp.sample_next_state(state, action, rng)
         obs = pomdp.sample_observation(action, next_state, rng)
         reward = pomdp.get_reward(state, action, next_state)
