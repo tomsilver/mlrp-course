@@ -48,7 +48,6 @@ def mcts(
             config.num_rollouts,
             config.exploration_bonus,
         )
-
     return max(mdp.action_space, key=lambda a: Q[initial_state].get(a, -float("inf")))
 
 
@@ -123,9 +122,11 @@ def _estimate_heuristic(
 
     total_returns = 0.0
     for _ in range(num_rollouts):
+        rollout_returns = 0.0
         states, actions = sample_trajectory(state, pi, mdp, max_rollout_length, rng)
         for s, a, ns in zip(states[:-1], actions, states[1:], strict=True):
-            total_returns += R(s, a, ns)
+            rollout_returns += R(s, a, ns)
+        total_returns += rollout_returns
     return total_returns / num_rollouts
 
 

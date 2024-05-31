@@ -13,6 +13,7 @@ from mlrp_course.pomdp.algorithms.expectimax_search import (
     ExpectimaxSearchHyperparameters,
     POMDPExpectimaxSearchAgent,
 )
+from mlrp_course.pomdp.algorithms.pomdp_mcts import POMDPMCTSAgent
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
 from mlrp_course.pomdp.envs.search_and_rescue_pomdp import (
     SearchAndRescuePOMDP,
@@ -65,6 +66,9 @@ def _create_agent(
         )
         return POMDPExpectimaxSearchAgent(pomdp, seed, hyperparameters)
 
+    if name == "mcts":
+        return POMDPMCTSAgent(pomdp, seed)
+
     raise NotImplementedError("Approach not found.")
 
 
@@ -90,6 +94,7 @@ def _main(
     print("Sampling trajectory...")
     for _ in range(max_horizon):
         action = agent.step()
+        print(action)
         next_state = pomdp.sample_next_state(state, action, rng)
         obs = pomdp.sample_observation(action, next_state, rng)
         reward = pomdp.get_reward(state, action, next_state)

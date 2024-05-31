@@ -85,11 +85,14 @@ class BeliefMDP(DiscreteMDP[BeliefState, DiscreteAction]):
     def get_reward(
         self, state: BeliefState, action: DiscreteAction, next_state: BeliefState
     ) -> float:
+        P = self._pomdp.get_transition_distribution
         R = self._pomdp.get_reward
         return sum(
-            R(s_t, action, s_t1) * p_st * p_st1
+            p_st
+            * sum(
+                p_st1 * R(s_t, action, s_t1) for s_t1, p_st1 in P(s_t, action).items()
+            )
             for s_t, p_st in state.items()
-            for s_t1, p_st1 in next_state.items()
         )
 
     def get_transition_distribution(
