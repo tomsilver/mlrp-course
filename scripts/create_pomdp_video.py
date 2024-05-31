@@ -13,6 +13,7 @@ from mlrp_course.pomdp.algorithms.expectimax_search import (
     ExpectimaxSearchHyperparameters,
     POMDPExpectimaxSearchAgent,
 )
+from mlrp_course.pomdp.algorithms.pomdp_mcts import POMDPMCTSAgent
 from mlrp_course.pomdp.discrete_pomdp import DiscretePOMDP
 from mlrp_course.pomdp.envs.search_and_rescue_pomdp import (
     SearchAndRescuePOMDP,
@@ -64,6 +65,9 @@ def _create_agent(
             max_search_horizon=max_horizon
         )
         return POMDPExpectimaxSearchAgent(pomdp, seed, hyperparameters)
+
+    if name == "mcts":
+        return POMDPMCTSAgent(pomdp, seed)
 
     raise NotImplementedError("Approach not found.")
 

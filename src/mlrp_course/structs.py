@@ -16,6 +16,7 @@ from typing import (
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.special import logsumexp
 
 # Type aliases.
 Image: TypeAlias = NDArray[np.uint8]
@@ -46,23 +47,25 @@ class CategoricalDistribution(Generic[_T]):
         self, outcome_to_prob: Dict[_T, float], normalize: bool = False
     ) -> None:
         # Prune zero entries and avoid modifying input.
-        d = {o: p for o, p in outcome_to_prob.items() if p > 0}
+        d = {o: np.log(p) for o, p in outcome_to_prob.items() if p > 0}
         # Normalize the distribution if asked.
         if normalize:
-            z = sum(d.values())
-            assert z > 0, "Categorical distribution has no nonzero probability"
-            d = {o: p / z for o, p in d.items()}
-        # Validate the distribution.
-        assert np.isclose(sum(d.values()), 1.0)
+            z = logsumexp(list(d.values()))
+            d = {o: lp - z for o, lp in d.items()}
         # Finalize.
-        self._outcome_to_prob = d
+        self._outcome_to_log_prob = d
 
     @cached_property
     def _hashable(self) -> Hashable:
         # NOTE: it is important to sort here, even though dictionary ordering
         # is deterministic, because the same distribution may be created with
         # two different dictionary orderings.
-        return tuple(sorted(self._outcome_to_prob.items()))
+        return tuple(
+            sorted(
+                (o, np.round(np.exp(lp), decimals=6))
+                for o, lp in self._outcome_to_log_prob.items()
+            )
+        )
 
     @cached_property
     def _hash(self) -> int:
@@ -80,10 +83,13 @@ class CategoricalDistribution(Generic[_T]):
         return self[outcome]
 
     def __getitem__(self, outcome: _T) -> float:
-        return self._outcome_to_prob.get(outcome, 0.0)
+        log_prob = self._outcome_to_log_prob.get(outcome, -np.inf)
+        prob = np.exp(log_prob)
+        assert 0 <= prob <= 1
+        return prob
 
     def __iter__(self) -> Iterator[_T]:
-        return iter(self._outcome_to_prob)
+        return iter(self._outcome_to_log_prob)
 
     def __repr__(self) -> str:
         return self._str
@@ -102,10 +108,15 @@ class CategoricalDistribution(Generic[_T]):
 
     def items(self) -> Iterator[Tuple[_T, float]]:
         """Iterate the dictionary."""
-        return iter(self._outcome_to_prob.items())
+        for outcome, log_prob in self._outcome_to_log_prob.items():
+            yield (outcome, np.exp(log_prob))
 
     def sample(self, rng: np.random.Generator) -> _T:
         """Draw a random sample."""
-        candidates, probs = zip(*self._outcome_to_prob.items(), strict=True)
-        idx = rng.choice(len(candidates), p=probs)
+        candidates = sorted(self)
+        log_probs = [self[c] for c in candidates]
+        # https://stackoverflow.com/questions/58339083
+        n = len(candidates)
+        gumbels = rng.gumbel(size=n)
+        idx = np.argmax(gumbels + log_probs)
         return candidates[idx]
