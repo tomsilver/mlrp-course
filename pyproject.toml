@@ -14,6 +14,7 @@ dependencies = [
    "imageio",
    "sympy",
    "scikit-image",
+   "scipy",
    "tqdm",
    "types-tqdm",
    "gymnasium",
@@ -59,5 +60,6 @@ follow_imports = "skip"
 [[tool.mypy.overrides]]
 module = [
     "matplotlib.*",
+    "scipy.*",
 ]
 ignore_missing_imports = true

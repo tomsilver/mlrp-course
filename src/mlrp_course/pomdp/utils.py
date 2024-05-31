@@ -117,9 +117,8 @@ class BeliefMDP(DiscreteMDP[BeliefState, DiscreteAction]):
             b_t1 = state_estimator(b_t, a_t, o_t1, self._pomdp)
             # Pr(o_t1 | b_t, a_t).
             p = sum(
-                O(a_t, s_t1, o_t1)
-                * sum(P(s_t, a_t, s_t1) * p_st for s_t, p_st in b_t.items())
-                for s_t1 in S_t1
+                p_st * sum(O(a_t, s_t1, o_t1) * P(s_t, a_t, s_t1) for s_t1 in S_t1)
+                for s_t, p_st in b_t.items()
             )
             dist[b_t1] = p
 
