@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import cached_property
+from functools import cached_property, lru_cache
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
@@ -112,6 +112,7 @@ class SearchAndRescuePOMDP(
                 actions.add(SearchAndRescueAction(t, d))
         return actions
 
+    @lru_cache(maxsize=None)
     def get_observation_distribution(
         self,
         action: SearchAndRescueAction,
@@ -158,6 +159,7 @@ class SearchAndRescuePOMDP(
     def state_is_terminal(self, state: SearchAndRescueState) -> bool:
         return state.robot_loc == state.person_loc
 
+    @lru_cache(maxsize=None)
     def get_reward(
         self,
         state: SearchAndRescueState,
@@ -173,6 +175,7 @@ class SearchAndRescuePOMDP(
             reward += self._config.fire_reward
         return reward
 
+    @lru_cache(maxsize=None)
     def get_transition_distribution(
         self, state: SearchAndRescueState, action: SearchAndRescueAction
     ) -> CategoricalDistribution[SearchAndRescueState]:
