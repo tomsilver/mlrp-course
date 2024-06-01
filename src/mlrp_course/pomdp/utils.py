@@ -146,7 +146,7 @@ def state_estimator(
     next_state_to_prob: Dict[DiscreteState, float] = {}
     for s_t1 in S_t1:
         next_state_to_prob[s_t1] = O(a_t, s_t1, o_t1) * sum(
-            P(s_t, a_t, s_t1) * p_st1 for s_t, p_st1 in b_t.items()
+            P(s_t, a_t, s_t1) * p_st for s_t, p_st in b_t.items()
         )
 
     return BeliefState(next_state_to_prob, normalize=True)
