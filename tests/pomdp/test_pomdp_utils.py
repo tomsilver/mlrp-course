@@ -5,6 +5,7 @@ import numpy as np
 from mlrp_course.pomdp.discrete_pomdp import BeliefState
 from mlrp_course.pomdp.envs.search_and_rescue_pomdp import (
     SearchAndRescueAction,
+    SearchAndRescuePOMDPHyperparameters,
     SearchAndRescueState,
     TinySearchAndRescuePOMDP,
 )
@@ -115,3 +116,53 @@ def test_belief_mdp():
     )
     assert np.isclose(dist[belief_state5], 0.05 * 0.5)
     assert np.isclose(dist[belief_state6], 1.0 - 0.05 * 0.5)
+
+
+def test_weirdness():
+    """Temporary test to figure out weird behavior where belief MDP gets more
+    reward than would ever be possible under POMDP."""
+    pomdp = TinySearchAndRescuePOMDP(
+        SearchAndRescuePOMDPHyperparameters(
+            move_noise_probability=0.0, living_reward=-1, rescue_reward=100
+        ),
+    )
+    belief_mdp = BeliefMDP(pomdp)
+    belief_state = BeliefState(
+        {
+            SearchAndRescueState((0, 1), (0, 0)): 0.5,
+            SearchAndRescueState((0, 1), (0, 2)): 0.5,
+        }
+    )
+    move_left = SearchAndRescueAction("move", (0, -1))
+    move_right = SearchAndRescueAction("move", (0, 1))
+    rng = np.random.default_rng(124)
+    next_belief_state = belief_mdp.sample_next_state(belief_state, move_left, rng)
+    reward = belief_mdp.get_reward(belief_state, move_left, next_belief_state)
+    # Total reward so far: 49
+    assert np.isclose(reward, 0.5 * (100 - 1) + 0.5 * -1)
+    belief_state = next_belief_state
+    next_belief_state = belief_mdp.sample_next_state(belief_state, move_right, rng)
+    reward = belief_mdp.get_reward(belief_state, move_right, next_belief_state)
+    # Total reward so far: 48.5
+    assert np.isclose(reward, 0.5 * (0) + 0.5 * -1)
+    next_belief_distribution = belief_mdp.get_transition_distribution(
+        belief_state, move_right
+    )
+    # NOTE: there are now two possible next outcomes. One where we observe
+    # the robot moving to the right, and the other where the robot put.
+    # Suppose we sample the former case (below).
+    next_belief_state = BeliefState(
+        {
+            SearchAndRescueState((0, 1), (0, 2)): 1.0,
+        }
+    )
+    assert np.isclose(next_belief_distribution[next_belief_state], 0.5)
+    reward = belief_mdp.get_reward(belief_state, move_right, next_belief_state)
+    # Total reward so far: 48.0
+    assert np.isclose(reward, 0.5 * (0) + 0.5 * -1)
+    belief_state = next_belief_state
+    next_belief_state = belief_mdp.sample_next_state(belief_state, move_right, rng)
+    reward = belief_mdp.get_reward(belief_state, move_right, next_belief_state)
+    # Total reward so far: 147!!! This is very strange, because the MAX reward
+    # possible in the original POMDP is 99.
+    assert np.isclose(reward, 1.0 * (100 - 1))
