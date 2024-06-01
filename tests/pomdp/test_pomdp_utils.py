@@ -136,33 +136,41 @@ def test_weirdness():
     move_left = SearchAndRescueAction("move", (0, -1))
     move_right = SearchAndRescueAction("move", (0, 1))
     rng = np.random.default_rng(124)
+    print("Belief state 0:")
+    print(belief_state)
+    print("Action 0:", move_left)
     next_belief_state = belief_mdp.sample_next_state(belief_state, move_left, rng)
+    print("Belief state 1:")
+    print(next_belief_state)
     reward = belief_mdp.get_reward(belief_state, move_left, next_belief_state)
+    print("Reward 0:", reward)
     # Total reward so far: 49
     assert np.isclose(reward, 0.5 * (100 - 1) + 0.5 * -1)
     belief_state = next_belief_state
-    next_belief_state = belief_mdp.sample_next_state(belief_state, move_right, rng)
-    reward = belief_mdp.get_reward(belief_state, move_right, next_belief_state)
-    # Total reward so far: 48.5
-    assert np.isclose(reward, 0.5 * (0) + 0.5 * -1)
-    next_belief_distribution = belief_mdp.get_transition_distribution(
-        belief_state, move_right
-    )
+    print("Action 1:", move_right)
     # NOTE: there are now two possible next outcomes. One where we observe
-    # the robot moving to the right, and the other where the robot put.
+    # the robot moving to the right, and the other where the robot stays put.
     # Suppose we sample the former case (below).
     next_belief_state = BeliefState(
         {
             SearchAndRescueState((0, 1), (0, 2)): 1.0,
         }
     )
+    next_belief_distribution = belief_mdp.get_transition_distribution(
+        belief_state, move_right
+    )
     assert np.isclose(next_belief_distribution[next_belief_state], 0.5)
+    print("Belief state 2:", next_belief_state)
     reward = belief_mdp.get_reward(belief_state, move_right, next_belief_state)
-    # Total reward so far: 48.0
+    print("Reward 1:", reward)
+    # Total reward so far: 48.5
     assert np.isclose(reward, 0.5 * (0) + 0.5 * -1)
     belief_state = next_belief_state
+    print("Action 2:", move_right)
     next_belief_state = belief_mdp.sample_next_state(belief_state, move_right, rng)
+    print("Belief state 3:", next_belief_state)
     reward = belief_mdp.get_reward(belief_state, move_right, next_belief_state)
-    # Total reward so far: 147!!! This is very strange, because the MAX reward
+    print("Reward 2:", reward)
+    # Total reward so far: 147.5!!! This is surprising because the MAX reward
     # possible in the original POMDP is 99.
     assert np.isclose(reward, 1.0 * (100 - 1))
