@@ -8,6 +8,11 @@ from mlrp_course.classical.envs.classical_problem import (
     DiscreteAction,
     DiscreteState,
 )
+from mlrp_course.classical.envs.pddl_problem import (
+    PDDLAction,
+    PDDLPlanningProblem,
+    PDDLState,
+)
 
 _S = TypeVar("_S", bound=DiscreteState)
 _A = TypeVar("_A", bound=DiscreteAction)
@@ -32,3 +37,18 @@ class TrivialHeuristic(ClassicalPlanningHeuristic):
 
     def _get_cost_to_go(self, state: _S) -> float:
         return 0.0
+
+
+class PDDLHeuristic(ClassicalPlanningHeuristic[PDDLState, PDDLAction], abc.ABC):
+    """An approximator of cost-to-go for PDDL Problems."""
+
+    def __init__(self, problem: PDDLPlanningProblem) -> None:
+        super().__init__(problem)
+        self._goal = problem.goal_atoms
+
+
+class GoalCountHeuristic(PDDLHeuristic):
+    """Count the number of goal atoms not satisfied in a PDDL problem.."""
+
+    def _get_cost_to_go(self, state: PDDLState) -> float:
+        return len(self._goal - state)

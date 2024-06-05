@@ -1,17 +1,21 @@
 """Compare various classical planning heuristics."""
 
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import List, Tuple
 
 import pandas as pd
+from matplotlib import pyplot as plt
 
-from mlrp_course.classical.algorithms.heuristics import TrivialHeuristic
+from mlrp_course.classical.algorithms.heuristics import (
+    GoalCountHeuristic,
+    TrivialHeuristic,
+)
 from mlrp_course.classical.algorithms.search import SearchMetrics, run_astar, run_gbfs
 from mlrp_course.classical.envs.pddl_problem import PDDLPlanningProblem
 from mlrp_course.utils import load_pddl_asset
 
 _HEURISTICS = {
-    #   "goal-count": GoalCountHeuristic,
+    "goal-count": GoalCountHeuristic,
     "trivial": TrivialHeuristic,
 }
 
@@ -27,6 +31,7 @@ def _run_single_trial(
     domain_name: str,
     problem_idx: int,
 ) -> SearchMetrics:
+    print("Running", search_name, heuristic_name, domain_name, problem_idx)
     # Create the problem.
     domain_str = load_pddl_asset(f"{domain_name}/domain.pddl")
     problem_str = load_pddl_asset(f"{domain_name}/problem{problem_idx}.pddl")
@@ -36,9 +41,7 @@ def _run_single_trial(
     search = _SEARCH[search_name]
     # Run the search.
     _, _, metrics = search(problem, heuristic)
-    import ipdb
-
-    ipdb.set_trace()
+    return metrics
 
 
 def _main(
@@ -49,11 +52,11 @@ def _main(
     outdir: Path,
     load: bool,
 ) -> None:
-    csv_file = outdir / f"{domain_name}_classical_heuristics_experiment.csv"
+    csv_file = outdir / f"{domain_name}_{search_name}_heuristics_experiment.csv"
     if load:
         assert csv_file.exists()
         df = pd.read_csv(csv_file)
-        return _df_to_plot(domain_name, df, outdir)
+        return _df_to_plot(domain_name, search_name, df, outdir)
     columns = [
         "Search",
         "Heuristic",
@@ -83,13 +86,23 @@ def _main(
             )
     df = pd.DataFrame(results, columns=columns)
     df.to_csv(csv_file)
-    return _df_to_plot(domain_name, df, outdir)
+    return _df_to_plot(domain_name, search_name, df, outdir)
 
 
-def _df_to_plot(domain_name: str, df: pd.DataFrame, outdir: Path) -> None:
-    import ipdb
-
-    ipdb.set_trace()
+def _df_to_plot(
+    domain_name: str, search_name: str, df: pd.DataFrame, outdir: Path
+) -> None:
+    plt.figure()
+    grouped = df.groupby("Heuristic")["Num Node Evals"].agg(["mean", "sem"])
+    plt.bar(grouped.index, grouped["mean"], yerr=grouped["sem"], capsize=5)
+    plt.xlabel("Heuristic")
+    plt.ylabel("Average Num Node Evals")
+    plt.title(f"{domain_name}: {search_name}")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    outfile = outdir / f"{domain_name}_{search_name}_heuristics_experiment.png"
+    plt.savefig(outfile, dpi=350)
+    print(f"Wrote out to {outfile}")
 
 
 if __name__ == "__main__":

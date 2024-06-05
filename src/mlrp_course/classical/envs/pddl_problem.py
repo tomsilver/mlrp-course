@@ -1,6 +1,5 @@
 """A classical planning problem defined with PDDL."""
 
-from dataclasses import dataclass
 from typing import Callable, FrozenSet, Set, TypeAlias
 
 from relational_structs import GroundAtom, GroundOperator, PDDLDomain, PDDLProblem
@@ -26,7 +25,8 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
         self._pddl_domain = PDDLDomain.parse(pddl_domain_str)
         self._pddl_problem = PDDLProblem.parse(pddl_problem_str, self._pddl_domain)
         self._render_fn = render_fn
-        self._goal = frozenset(self._pddl_problem.goal)
+        # Expose the goal atoms to heuristics.
+        self.goal_atoms = frozenset(self._pddl_problem.goal)
         self._all_ground_operators = all_ground_operators(
             self._pddl_domain.operators, self._pddl_problem.objects
         )
@@ -47,7 +47,7 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
         return action.preconditions.issubset(state)
 
     def check_goal(self, state: PDDLState) -> bool:
-        return self._goal.issubset(state)
+        return self.goal_atoms.issubset(state)
 
     def get_cost(
         self, state: PDDLState, action: PDDLAction, next_state: PDDLState
