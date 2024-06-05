@@ -47,6 +47,10 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
     def action_space(self) -> Set[PDDLAction]:
         return self._all_ground_operators
 
+    @property
+    def initial_state(self) -> PDDLState:
+        return frozenset(self._pddl_problem.init_atoms)
+
     def initiable(self, state: PDDLState, action: PDDLAction) -> bool:
         return action.preconditions.issubset(state)
 
