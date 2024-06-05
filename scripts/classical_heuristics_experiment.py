@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib
 
 from mlrp_course.classical.algorithms.heuristics import (
     GoalCountHeuristic,
@@ -92,11 +93,12 @@ def _main(
 def _df_to_plot(
     domain_name: str, search_name: str, df: pd.DataFrame, outdir: Path
 ) -> None:
+    matplotlib.rcParams.update({"font.size": 16})
     plt.figure()
     grouped = df.groupby("Heuristic")["Num Node Evals"].agg(["mean", "sem"])
     plt.bar(grouped.index, grouped["mean"], yerr=grouped["sem"], capsize=5)
     plt.xlabel("Heuristic")
-    plt.ylabel("Average Num Node Evals")
+    plt.ylabel("# Node Evals")
     plt.title(f"{domain_name}: {search_name}")
     plt.xticks(rotation=45)
     plt.tight_layout()
