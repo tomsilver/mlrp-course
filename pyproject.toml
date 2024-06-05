@@ -20,6 +20,7 @@ dependencies = [
    "gymnasium",
    "pandas",
    "pandas-stubs",
+   "relational_structs@git+https://github.com/tomsilver/relational-structs.git",
 ]
 
 [project.optional-dependencies]

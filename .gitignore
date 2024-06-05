@@ -1,7 +1,6 @@
 .DS_Store
 .python-version
 *.gif
-*.png
 *.csv
 
 # Byte-compiled / optimized / DLL files

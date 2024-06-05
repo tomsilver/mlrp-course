@@ -47,26 +47,35 @@ def run_episodes(
     return traces
 
 
-def load_image_asset(filename: str) -> Image:
-    """Load an image asset."""
-    asset_dir = Path(__file__).parent / "assets"
+def load_avatar_asset(filename: str) -> Image:
+    """Load an image of an avatar."""
+    asset_dir = Path(__file__).parent / "assets" / "avatars"
     image_file = asset_dir / filename
     return plt.imread(image_file)
+
+
+def load_pddl_asset(filename: str) -> str:
+    """Load a PDDL string from assets."""
+    asset_dir = Path(__file__).parent / "assets" / "pddl"
+    pddl_file = asset_dir / filename
+    with open(pddl_file, "r", encoding="utf-8") as f:
+        s = f.read()
+    return s
 
 
 @lru_cache(maxsize=None)
 def get_avatar_by_name(avatar_name: str, tilesize: int) -> Image:
     """Helper for rendering."""
     if avatar_name == "robot":
-        im = load_image_asset("robot.png")
+        im = load_avatar_asset("robot.png")
     elif avatar_name == "bunny":
-        im = load_image_asset("bunny.png")
+        im = load_avatar_asset("bunny.png")
     elif avatar_name == "obstacle":
-        im = load_image_asset("obstacle.png")
+        im = load_avatar_asset("obstacle.png")
     elif avatar_name == "fire":
-        im = load_image_asset("fire.png")
+        im = load_avatar_asset("fire.png")
     elif avatar_name == "hidden":
-        im = load_image_asset("hidden.png")
+        im = load_avatar_asset("hidden.png")
     else:
         raise ValueError(f"No asset for {avatar_name} known")
     return resize(im[:, :, :3], (tilesize, tilesize, 3), preserve_range=True)
