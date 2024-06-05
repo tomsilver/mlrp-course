@@ -1,7 +1,7 @@
 """Classical planning problems."""
 
 import abc
-from typing import Generic, Set, TypeAlias, TypeVar
+from typing import Generic, Iterator, Set, Tuple, TypeAlias, TypeVar
 
 from mlrp_course.structs import HashableComparable, Image
 
@@ -49,3 +49,12 @@ class ClassicalPlanningProblem(Generic[_S, _A]):
     @abc.abstractmethod
     def render_state(self, state: _S) -> Image:
         """Optional rendering function for visualizations."""
+
+    def get_successors(self, state: _S) -> Iterator[Tuple[_A, _S, float]]:
+        """Convenience method that subclasses might override for efficiency."""
+        actions = {a for a in self.action_space if self.initiable(state, a)}
+        ordered_actions = sorted(actions)  # sort for determinism
+        for action in ordered_actions:
+            next_state = self.get_next_state(state, action)
+            cost = self.get_cost(state, action, next_state)
+            yield action, next_state, cost

@@ -11,16 +11,7 @@ from mlrp_course.structs import Image
 
 PDDLState: TypeAlias = FrozenSet[GroundAtom]
 PDDLAction: TypeAlias = GroundOperator
-
-
-@dataclass(frozen=True)
-class PDDLGoal:
-    """A goal for a PDDL planning problem."""
-
-    goal_atoms: FrozenSet[GroundAtom]
-
-    def __call__(self, state: PDDLState) -> bool:
-        return self.goal_atoms.issubset(state)
+PDDLGoal: TypeAlias = FrozenSet[GroundAtom]
 
 
 class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
@@ -35,6 +26,7 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
         self._pddl_domain = PDDLDomain.parse(pddl_domain_str)
         self._pddl_problem = PDDLProblem.parse(pddl_problem_str, self._pddl_domain)
         self._render_fn = render_fn
+        self._goal = frozenset(self._pddl_problem.goal)
         self._all_ground_operators = all_ground_operators(
             self._pddl_domain.operators, self._pddl_problem.objects
         )
@@ -53,6 +45,9 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
 
     def initiable(self, state: PDDLState, action: PDDLAction) -> bool:
         return action.preconditions.issubset(state)
+
+    def check_goal(self, state: PDDLState) -> bool:
+        return self._goal.issubset(state)
 
     def get_cost(
         self, state: PDDLState, action: PDDLAction, next_state: PDDLState
