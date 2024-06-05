@@ -157,7 +157,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_interval", default=100, type=int)
     parser.add_argument("--num_evals", default=10, type=int)
     parser.add_argument("--num_replays_per_update", default=50, type=int)
-    parser.add_argument("--outdir", default=Path("."), type=Path)
+    parser.add_argument("--outdir", default=Path("results"), type=Path)
     parser.add_argument("--load", action="store_true")
     args = parser.parse_args()
     _main(

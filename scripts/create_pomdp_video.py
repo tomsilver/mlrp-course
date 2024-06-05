@@ -121,7 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("approach", type=str)
     parser.add_argument("--seed", default=0, type=int)
     parser.add_argument("--max_horizon", default=100, type=int)
-    parser.add_argument("--outdir", default=Path("."), type=Path)
+    parser.add_argument("--outdir", default=Path("results"), type=Path)
     parser.add_argument("--fps", default=2, type=int)
     args = parser.parse_args()
     _main(args.pomdp, args.approach, args.seed, args.max_horizon, args.outdir, args.fps)
