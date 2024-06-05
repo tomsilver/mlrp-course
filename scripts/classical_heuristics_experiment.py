@@ -113,7 +113,7 @@ if __name__ == "__main__":
     parser.add_argument("--domain", default="blocks", type=str)
     parser.add_argument("--num_problems", default=10, type=int)
     parser.add_argument("--start_problem", default=1, type=int)
-    parser.add_argument("--outdir", default=Path("."), type=Path)
+    parser.add_argument("--outdir", default=Path("results"), type=Path)
     parser.add_argument("--load", action="store_true")
     args = parser.parse_args()
     _main(
