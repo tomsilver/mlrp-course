@@ -13,10 +13,8 @@ from typing import (
     Dict,
     Generic,
     List,
-    Optional,
     Tuple,
     TypeVar,
-    cast,
 )
 
 from mlrp_course.classical.envs.classical_problem import ClassicalPlanningProblem
@@ -50,8 +48,8 @@ _A = TypeVar("_A", bound=HashableComparable)
 class _HeuristicSearchNode(Generic[_S, _A]):
     state: _S
     cumulative_cost: float
-    parent: Optional[_HeuristicSearchNode[_S, _A]] = None
-    action: Optional[_A] = None
+    parent: _HeuristicSearchNode[_S, _A] | None = None
+    action: _A | None = None
 
 
 class SearchFailure(Exception):
@@ -141,7 +139,8 @@ def _finish_plan(node: _HeuristicSearchNode[_S, _A]) -> Tuple[List[_S], List[_A]
     rev_action_sequence: List[_A] = []
 
     while node.parent is not None:
-        action = cast(_A, node.action)
+        action = node.action
+        assert action is not None
         rev_action_sequence.append(action)
         rev_state_sequence.append(node.state)
         node = node.parent
