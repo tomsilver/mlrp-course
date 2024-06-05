@@ -3,9 +3,9 @@
 from pathlib import Path
 from typing import List, Tuple
 
+import matplotlib
 import pandas as pd
 from matplotlib import pyplot as plt
-import matplotlib
 
 from mlrp_course.classical.algorithms.heuristics import (
     GoalCountHeuristic,
