@@ -8,6 +8,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from mlrp_course.classical.algorithms.heuristics import (
+    DeleteRelaxationHeuristic,
     GoalCountHeuristic,
     TrivialHeuristic,
 )
@@ -16,8 +17,9 @@ from mlrp_course.classical.envs.pddl_problem import PDDLPlanningProblem
 from mlrp_course.utils import load_pddl_asset
 
 _HEURISTICS = {
-    "goal-count": GoalCountHeuristic,
-    "trivial": TrivialHeuristic,
+    # "goal-count": GoalCountHeuristic,
+    # "trivial": TrivialHeuristic,
+    "delete-relax": DeleteRelaxationHeuristic,
 }
 
 _SEARCH = {
@@ -36,7 +38,7 @@ def _run_single_trial(
     # Create the problem.
     domain_str = load_pddl_asset(f"{domain_name}/domain.pddl")
     problem_str = load_pddl_asset(f"{domain_name}/problem{problem_idx}.pddl")
-    problem = PDDLPlanningProblem(domain_str, problem_str)
+    problem = PDDLPlanningProblem.from_strings(domain_str, problem_str)
     # Create the search.
     heuristic = _HEURISTICS[heuristic_name](problem)
     search = _SEARCH[search_name]

@@ -1,5 +1,7 @@
 """A classical planning problem defined with PDDL."""
 
+from __future__ import annotations
+
 from typing import Callable, FrozenSet, Set, TypeAlias
 
 from relational_structs import GroundAtom, GroundOperator, PDDLDomain, PDDLProblem
@@ -18,18 +20,33 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
 
     def __init__(
         self,
+        pddl_domain: PDDLDomain,
+        pddl_problem: PDDLProblem,
+        render_fn: Callable[[PDDLState, PDDLGoal], Image] | None = None,
+        ground_operators: Set[GroundOperator] | None = None,
+    ) -> None:
+        # Expose to the heuristics.
+        self.pddl_domain = pddl_domain
+        self.pddl_problem = pddl_problem
+        self.goal_atoms = frozenset(self.pddl_problem.goal)
+        if ground_operators is None:
+            ground_operators = all_ground_operators(
+                self.pddl_domain.operators, self.pddl_problem.objects
+            )
+        self.ground_operators = ground_operators
+        self._render_fn = render_fn
+
+    @classmethod
+    def from_strings(
+        cls,
         pddl_domain_str: str,
         pddl_problem_str: str,
         render_fn: Callable[[PDDLState, PDDLGoal], Image] | None = None,
-    ) -> None:
-        self._pddl_domain = PDDLDomain.parse(pddl_domain_str)
-        self._pddl_problem = PDDLProblem.parse(pddl_problem_str, self._pddl_domain)
-        self._render_fn = render_fn
-        # Expose the goal atoms to heuristics.
-        self.goal_atoms = frozenset(self._pddl_problem.goal)
-        self._all_ground_operators = all_ground_operators(
-            self._pddl_domain.operators, self._pddl_problem.objects
-        )
+    ) -> PDDLPlanningProblem:
+        """Create a PDDLPlanningProblem from PDDL strings."""
+        pddl_domain = PDDLDomain.parse(pddl_domain_str)
+        pddl_problem = PDDLProblem.parse(pddl_problem_str, pddl_domain)
+        return PDDLPlanningProblem(pddl_domain, pddl_problem, render_fn)
 
     @property
     def state_space(self) -> Set[PDDLState]:
@@ -37,11 +54,11 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
 
     @property
     def action_space(self) -> Set[PDDLAction]:
-        return self._all_ground_operators
+        return self.ground_operators
 
     @property
     def initial_state(self) -> PDDLState:
-        return frozenset(self._pddl_problem.init_atoms)
+        return frozenset(self.pddl_problem.init_atoms)
 
     def initiable(self, state: PDDLState, action: PDDLAction) -> bool:
         return action.preconditions.issubset(state)
@@ -60,5 +77,5 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
     def render_state(self, state: PDDLState) -> Image:
         if self._render_fn is None:
             raise NotImplementedError
-        goal = PDDLGoal(self._pddl_problem.goal)
+        goal = PDDLGoal(self.pddl_problem.goal)
         return self._render_fn(state, goal)
