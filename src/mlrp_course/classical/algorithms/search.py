@@ -167,3 +167,12 @@ def run_astar(
     """A* search."""
     get_priority = lambda n: heuristic(n.state) + n.cumulative_cost
     return _run_heuristic_search(problem, get_priority, config)
+
+
+def run_uniform_cost_search(
+    problem: ClassicalPlanningProblem[_S, _A],
+    config: HeuristicSearchHyperparameters | None = None,
+) -> Tuple[List[_S], List[_A], SearchMetrics]:
+    """Uniform-cost search."""
+    get_priority = lambda n: n.cumulative_cost
+    return _run_heuristic_search(problem, get_priority, config)

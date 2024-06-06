@@ -3,6 +3,10 @@
 import abc
 from typing import Generic, TypeVar
 
+from relational_structs import PDDLProblem
+from relational_structs.utils import all_ground_operators
+
+from mlrp_course.classical.algorithms.search import run_astar
 from mlrp_course.classical.envs.classical_problem import (
     ClassicalPlanningProblem,
     DiscreteAction,
@@ -13,6 +17,7 @@ from mlrp_course.classical.envs.pddl_problem import (
     PDDLPlanningProblem,
     PDDLState,
 )
+from mlrp_course.classical.utils import delete_relax_pddl_domain
 
 _S = TypeVar("_S", bound=DiscreteState)
 _A = TypeVar("_A", bound=DiscreteAction)
@@ -52,3 +57,33 @@ class GoalCountHeuristic(PDDLHeuristic):
 
     def _get_cost_to_go(self, state: PDDLState) -> float:
         return len(self._goal - state)
+
+
+class DeleteRelaxationHeuristic(PDDLHeuristic):
+    """Plan in the delete-relaxed version of the problem."""
+
+    def __init__(self, problem: PDDLPlanningProblem) -> None:
+        super().__init__(problem)
+        # Relax the domain.
+        self._relaxed_domain = delete_relax_pddl_domain(problem.pddl_domain)
+        self._relaxed_ground_operators = all_ground_operators(
+            self._relaxed_domain.operators, problem.pddl_problem.objects
+        )
+
+    def _get_cost_to_go(self, state: PDDLState) -> float:
+        assert isinstance(self._problem, PDDLPlanningProblem)
+        new_pddl_problem = PDDLProblem(
+            self._problem.pddl_problem.domain_name,
+            self._problem.pddl_problem.problem_name,
+            self._problem.pddl_problem.objects,
+            state,
+            self._problem.pddl_problem.goal,
+        )
+        new_problem = PDDLPlanningProblem(
+            self._relaxed_domain,
+            new_pddl_problem,
+            ground_operators=self._relaxed_ground_operators,
+        )
+        # Run astar with goal-count to get a plan in the (relaxed) problem.
+        _, actions, _ = run_astar(new_problem, GoalCountHeuristic(new_problem))
+        return len(actions)

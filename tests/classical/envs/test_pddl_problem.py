@@ -11,7 +11,7 @@ def test_pddl_problem():
     """Tests for pddl_problem.py."""
     domain_str = load_pddl_asset("blocks/domain.pddl")
     problem_str = load_pddl_asset("blocks/problem1.pddl")
-    problem = PDDLPlanningProblem(domain_str, problem_str)
+    problem = PDDLPlanningProblem.from_strings(domain_str, problem_str)
     action = next(iter(problem.action_space))
     assert isinstance(action, GroundOperator)
     s = problem.initial_state
