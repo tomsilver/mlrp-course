@@ -6,7 +6,7 @@ from typing import Generic, TypeVar
 from relational_structs import PDDLProblem
 from relational_structs.utils import all_ground_operators
 
-from mlrp_course.classical.algorithms.search import run_uniform_cost_search
+from mlrp_course.classical.algorithms.search import run_astar
 from mlrp_course.classical.envs.classical_problem import (
     ClassicalPlanningProblem,
     DiscreteAction,
@@ -84,6 +84,6 @@ class DeleteRelaxationHeuristic(PDDLHeuristic):
             new_pddl_problem,
             ground_operators=self._relaxed_ground_operators,
         )
-        # Run uniform-cost-search to get a plan in the (relaxed) problem.
-        _, actions, _ = run_uniform_cost_search(new_problem)
+        # Run astar with goal-count to get a plan in the (relaxed) problem.
+        _, actions, _ = run_astar(new_problem, GoalCountHeuristic(new_problem))
         return len(actions)

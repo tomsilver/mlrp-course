@@ -17,8 +17,8 @@ from mlrp_course.classical.envs.pddl_problem import PDDLPlanningProblem
 from mlrp_course.utils import load_pddl_asset
 
 _HEURISTICS = {
-    # "goal-count": GoalCountHeuristic,
-    # "trivial": TrivialHeuristic,
+    "goal-count": GoalCountHeuristic,
+    "trivial": TrivialHeuristic,
     "delete-relax": DeleteRelaxationHeuristic,
 }
 
@@ -40,7 +40,8 @@ def _run_single_trial(
     problem_str = load_pddl_asset(f"{domain_name}/problem{problem_idx}.pddl")
     problem = PDDLPlanningProblem.from_strings(domain_str, problem_str)
     # Create the search.
-    heuristic = _HEURISTICS[heuristic_name](problem)
+    # mypy has strange bug where it thinks heuristic is ABC
+    heuristic = _HEURISTICS[heuristic_name](problem)  # type: ignore
     search = _SEARCH[search_name]
     # Run the search.
     _, _, metrics = search(problem, heuristic)
