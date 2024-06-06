@@ -8,8 +8,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from mlrp_course.classical.algorithms.heuristics import (
-    DeleteRelaxationHeuristic,
     GoalCountHeuristic,
+    HFFHeuristic,
     TrivialHeuristic,
 )
 from mlrp_course.classical.algorithms.search import SearchMetrics, run_astar, run_gbfs
@@ -17,9 +17,9 @@ from mlrp_course.classical.envs.pddl_problem import PDDLPlanningProblem
 from mlrp_course.utils import load_pddl_asset
 
 _HEURISTICS = {
+    "hff": HFFHeuristic,
     "goal-count": GoalCountHeuristic,
     "trivial": TrivialHeuristic,
-    "delete-relax": DeleteRelaxationHeuristic,
 }
 
 _SEARCH = {
@@ -96,9 +96,11 @@ def _main(
 def _df_to_plot(
     domain_name: str, search_name: str, df: pd.DataFrame, outdir: Path
 ) -> None:
+    bar_order = list(_HEURISTICS)
+    grouped = df.groupby("Heuristic")["Num Node Evals"].agg(["mean", "sem"])
+    grouped = grouped.reindex(bar_order)
     matplotlib.rcParams.update({"font.size": 16})
     plt.figure()
-    grouped = df.groupby("Heuristic")["Num Node Evals"].agg(["mean", "sem"])
     plt.bar(grouped.index, grouped["mean"], yerr=grouped["sem"], capsize=5)
     plt.xlabel("Heuristic")
     plt.ylabel("# Node Evals")
