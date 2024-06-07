@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable, Generic
+from typing import Callable, Generic, List
 
 import numpy as np
 
@@ -64,21 +64,21 @@ def run_rrt(
 
     # Run a number of independent attempts.
     for _ in range(hyperparameters.num_attempts):
-        traj = _run_rrt_single_attempt(start, goal, mpp, rng, hyperparameters)
-        if traj is not None:
-            return traj
+        nodes = _build_rrt(start, goal, mpp, rng, hyperparameters)
+        if nodes[-1] == goal:
+            return _finish_plan(nodes[-1], hyperparameters.velocity)
 
     # No path found, fail.
     return None
 
 
-def _run_rrt_single_attempt(
+def _build_rrt(
     start: RobotConf,
     goal: RobotConf,
     mpp: MotionPlanningProblem,
     rng: np.random.Generator,
     hyperparameters: RRTHyperparameters,
-) -> RobotConfTraj[RobotConf] | None:
+) -> List[_RRTNode[RobotConf]]:
     root = _RRTNode(start)
     nodes = [root]
     for _ in range(hyperparameters.num_iters):
@@ -101,8 +101,8 @@ def _run_rrt_single_attempt(
         # Check if we reached the goal and quit early if so.
         leaf = nodes[-1]
         if leaf.conf == goal:
-            return _finish_plan(leaf, hyperparameters.velocity)
-    return None
+            break
+    return nodes
 
 
 def _try_direct_path(
