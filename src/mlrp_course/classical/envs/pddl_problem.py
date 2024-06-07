@@ -7,7 +7,7 @@ from typing import Callable, FrozenSet, Set, TypeAlias
 from relational_structs import GroundAtom, GroundOperator, PDDLDomain, PDDLProblem
 from relational_structs.utils import all_ground_operators
 
-from mlrp_course.classical.envs.classical_problem import ClassicalPlanningProblem
+from mlrp_course.classical.classical_problem import ClassicalPlanningProblem
 from mlrp_course.structs import Image
 
 PDDLState: TypeAlias = FrozenSet[GroundAtom]
@@ -77,5 +77,4 @@ class PDDLPlanningProblem(ClassicalPlanningProblem[PDDLState, PDDLAction]):
     def render_state(self, state: PDDLState) -> Image:
         if self._render_fn is None:
             raise NotImplementedError
-        goal = PDDLGoal(self.pddl_problem.goal)
-        return self._render_fn(state, goal)
+        return self._render_fn(state, self.pddl_problem.goal)
