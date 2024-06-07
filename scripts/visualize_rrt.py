@@ -14,13 +14,15 @@ from mlrp_course.motion.envs.geom2d_problem import Geom2DMotionPlanningProblem
 
 def _main(outdir: Path, fps: int) -> None:
 
-    world_x_bounds = (0, 5)
-    world_y_bounds = (0, 5)
+    world_x_bounds = (0, 10)
+    world_y_bounds = (0, 10)
     robot_init_geom = Rectangle.from_center(1, 1, 1, 1, np.pi / 4)
-    robot_goal = SE2(4, 4, 0)
+    robot_goal = SE2(9, 9, 0)
     obstacle_geoms = {
         Circle(2.5, 2.5, 1.0),
         Rectangle.from_center(0.5, 4, 1, 2, 0),
+        Rectangle.from_center(1, 8, 1, 4, np.pi / 3),
+        Rectangle.from_center(7, 7, 1, 4, -np.pi / 3),
     }
     problem = Geom2DMotionPlanningProblem(
         world_x_bounds,
