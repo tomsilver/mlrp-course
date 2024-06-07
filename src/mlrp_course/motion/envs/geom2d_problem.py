@@ -1,8 +1,9 @@
 """Motion planning problems defined with geom2d."""
 
-from typing import Any, Collection, Tuple
+from typing import Any, ClassVar, Collection, Dict, Tuple
 
 import gymnasium as gym
+import matplotlib.pyplot as plt
 import numpy as np
 from spatialmath import SE2
 from tomsgeoms2d.structs import Circle, Geom2D, Rectangle
@@ -10,6 +11,7 @@ from tomsgeoms2d.utils import geom2ds_intersect
 
 from mlrp_course.motion.motion_planning_problem import MotionPlanningProblem
 from mlrp_course.structs import Image
+from mlrp_course.utils import fig2data
 
 
 class SE2Space(gym.Space[SE2]):
@@ -44,7 +46,7 @@ class SE2Space(gym.Space[SE2]):
         return (
             self._x_bounds[0] <= x.x < self._x_bounds[1]
             and self._y_bounds[0] <= x.y < self._y_bounds[1]
-            and self._theta_bounds[0] <= x.theta < self._theta_bounds[1]
+            and self._theta_bounds[0] <= x.theta() < self._theta_bounds[1]
         )
 
     @property
@@ -69,13 +71,28 @@ def _copy_geom_with_pose(geom: Geom2D, configuration: SE2) -> Geom2D:
             configuration.y,
             geom.width,
             geom.height,
-            configuration.theta,
+            configuration.theta(),
         )
     raise NotImplementedError
 
 
 class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
     """A motion planning problem defined with geom2d."""
+
+    _render_dpi: ClassVar[int] = 150
+    _obstacle_render_kwargs: ClassVar[Dict[str, Any]] = {
+        "fc": "gray",
+        "ec": "black",
+    }
+    _robot_current_render_kwargs: ClassVar[Dict[str, Any]] = {
+        "fc": "blue",
+        "ec": "black",
+    }
+    _robot_goal_render_kwargs: ClassVar[Dict[str, Any]] = {
+        "fc": (0, 1, 0, 0.5),
+        "ec": "black",
+        "linestyle": "dashed",
+    }
 
     def __init__(
         self,
@@ -89,6 +106,7 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         self._world_y_bounds = world_y_bounds
         self._robot_init_geom = robot_init_geom
         self._robot_goal = robot_goal
+        self._robot_goal_geom = _copy_geom_with_pose(robot_init_geom, robot_goal)
         self._obstacle_geoms = obstacle_geoms
 
     @property
@@ -111,5 +129,31 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         return False
 
     def render(self, configuration: SE2 | None = None) -> Image:
-        # TODO
-        raise NotImplementedError
+        world_min_x, world_max_x = self._world_x_bounds
+        world_min_y, world_max_y = self._world_y_bounds
+
+        figsize = (
+            world_max_x - world_min_x,
+            world_max_y - world_min_y,
+        )
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=self._render_dpi)
+
+        for obstacle_geom in self._obstacle_geoms:
+            obstacle_geom.plot(ax, **self._obstacle_render_kwargs)
+        self._robot_goal_geom.plot(ax, **self._robot_goal_render_kwargs)
+        if configuration is not None:
+            robot_geom = _copy_geom_with_pose(self._robot_init_geom, configuration)
+        else:
+            robot_geom = self._robot_init_geom
+        robot_geom.plot(ax, **self._robot_current_render_kwargs)
+
+        pad_x = (world_max_x - world_min_x) / 25
+        pad_y = (world_max_y - world_min_y) / 25
+        ax.set_xlim(world_min_x - pad_x, world_max_x + pad_x)
+        ax.set_ylim(world_min_y - pad_y, world_max_y + pad_y)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.tight_layout()
+        img = fig2data(fig)
+        plt.close()
+        return img
