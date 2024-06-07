@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial
 from typing import Callable, Generic, List
 
 import numpy as np
@@ -21,7 +20,7 @@ from mlrp_course.structs import Hyperparameters
 class RRTHyperparameters(Hyperparameters):
     """Hyperparameters for RRT."""
 
-    velocity: float = 1.0
+    velocity: float = 0.1
     collision_dt: float = 0.1
     num_attempts: int = 10
     num_iters: int = 100
@@ -37,24 +36,27 @@ class _RRTNode(Generic[RobotConf]):
 
 
 def run_rrt(
-    start: RobotConf,
-    goal: RobotConf,
-    mpp: MotionPlanningProblem,
+    mpp: MotionPlanningProblem[RobotConf],
     rng: np.random.Generator,
-    hyperparameters: RRTHyperparameters,
+    hyperparameters: RRTHyperparameters | None = None,
 ) -> RobotConfTraj[RobotConf] | None:
     """Run RRT to get a collision-free path from start to goal.
 
     If none is found, returns None.
     """
+    if hyperparameters is None:
+        hyperparameters = RRTHyperparameters()
+
     # Check if the problem is obviously impossible.
-    if mpp.has_collision(start) or mpp.has_collision(goal):
+    if mpp.has_collision(mpp.initial_configuration) or mpp.has_collision(
+        mpp.goal_configuration
+    ):
         return None
 
     # Try to just take a direct path from start to goal.
     direct_path = _try_direct_path(
-        start,
-        goal,
+        mpp.initial_configuration,
+        mpp.goal_configuration,
         mpp.has_collision,
         hyperparameters.velocity,
         hyperparameters.collision_dt,
@@ -64,8 +66,8 @@ def run_rrt(
 
     # Run a number of independent attempts.
     for _ in range(hyperparameters.num_attempts):
-        nodes = _build_rrt(start, goal, mpp, rng, hyperparameters)
-        if nodes[-1] == goal:
+        nodes = _build_rrt(mpp, rng, hyperparameters)
+        if nodes[-1] == mpp.goal_configuration:
             return _finish_plan(nodes[-1], hyperparameters.velocity)
 
     # No path found, fail.
@@ -73,26 +75,25 @@ def run_rrt(
 
 
 def _build_rrt(
-    start: RobotConf,
-    goal: RobotConf,
-    mpp: MotionPlanningProblem,
+    mpp: MotionPlanningProblem[RobotConf],
     rng: np.random.Generator,
     hyperparameters: RRTHyperparameters,
 ) -> List[_RRTNode[RobotConf]]:
-    root = _RRTNode(start)
+    root = _RRTNode(mpp.initial_configuration)
     nodes = [root]
     for _ in range(hyperparameters.num_iters):
         # Try to go directly to the goal every so often.
         if rng.uniform() < hyperparameters.sample_goal_prob:
-            target = goal
+            target = mpp.goal_configuration
         # Otherwise, sample from the configuration space.
         else:
             target = mpp.configuration_space.sample()
         # Find the closest node in the tree.
-        get_distance_to_target = partial(get_robot_conf_distance, target)
-        node = min(nodes, key=get_distance_to_target)
+        node = _get_closest_node(nodes, target)
         # Extend the tree in the direction of the target until collision.
-        extension = RobotConfSegment(start, target, hyperparameters.velocity)
+        extension = RobotConfSegment(
+            mpp.initial_configuration, target, hyperparameters.velocity
+        )
         for waypoint in extension.iter(hyperparameters.collision_dt):
             if mpp.has_collision(waypoint):
                 break
@@ -100,7 +101,7 @@ def _build_rrt(
             nodes.append(node)
         # Check if we reached the goal and quit early if so.
         leaf = nodes[-1]
-        if leaf.conf == goal:
+        if leaf.conf == mpp.goal_configuration:
             break
     return nodes
 
@@ -119,7 +120,13 @@ def _try_direct_path(
     return traj
 
 
-def _finish_plan(node: _RRTNode, velocity: float) -> RobotConfTraj:
+def _get_closest_node(nodes: List[_RRTNode[RobotConf]], target: RobotConf) -> _RRTNode:
+    return min(nodes, key=lambda n: get_robot_conf_distance(n.conf, target))
+
+
+def _finish_plan(
+    node: _RRTNode[RobotConf], velocity: float
+) -> RobotConfTraj[RobotConf]:
     rev_node_sequence = [node]
     while node.parent is not None:
         node = node.parent

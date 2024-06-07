@@ -19,10 +19,10 @@ class SE2Space(gym.Space[SE2]):
 
     def __init__(
         self,
+        rng: np.random.Generator,
         x_bounds: Tuple[float, float],
         y_bounds: Tuple[float, float],
         theta_bounds: Tuple[float, float] | None = None,
-        seed: int | np.random.Generator | None = None,
     ) -> None:
         if theta_bounds is None:
             theta_bounds = (-np.pi, np.pi)
@@ -31,7 +31,7 @@ class SE2Space(gym.Space[SE2]):
         self._x_bounds = x_bounds
         self._y_bounds = y_bounds
         self._theta_bounds = theta_bounds
-        super().__init__(shape=None, dtype=None, seed=seed)
+        super().__init__(shape=None, dtype=None, seed=rng)
 
     def sample(self, mask: Any | None = None) -> SE2:
         assert mask is None
@@ -101,6 +101,7 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         robot_init_geom: Geom2D,
         robot_goal: SE2,
         obstacle_geoms: Collection[Geom2D],
+        seed: int,
     ) -> None:
         self._world_x_bounds = world_x_bounds
         self._world_y_bounds = world_y_bounds
@@ -108,10 +109,11 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         self._robot_goal = robot_goal
         self._robot_goal_geom = _copy_geom_with_pose(robot_init_geom, robot_goal)
         self._obstacle_geoms = obstacle_geoms
+        self._rng = np.random.default_rng(seed)
 
     @property
     def configuration_space(self) -> SE2Space:
-        return SE2Space(self._world_x_bounds, self._world_y_bounds)
+        return SE2Space(self._rng, self._world_x_bounds, self._world_y_bounds)
 
     @property
     def initial_configuration(self) -> SE2:
