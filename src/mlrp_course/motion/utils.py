@@ -23,12 +23,15 @@ class RobotConfTraj(Generic[RobotConf]):
     def __call__(self, time: float) -> RobotConf:
         """Get the configuration at the given time."""
 
-    def iter(self, dt: float) -> Iterator[RobotConf]:
-        """Generate confs on the trajectory."""
+    def iter(self, max_dt: float) -> Iterator[RobotConf]:
+        """Generate confs on the trajector that are at most dt apart."""
         t = 0.0
-        while t <= self.duration:
+        while t < self.duration:
             yield self(t)
-            t += dt
+            t += max_dt
+        # NOTE: important to iter this separately because the distance between
+        # the penultimate conf and this final conf might be less than dt.
+        yield self(self.duration)
 
 
 @dataclass(frozen=True)

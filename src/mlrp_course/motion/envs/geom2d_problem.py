@@ -130,7 +130,7 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
                 return True
         return False
 
-    def render(self, configuration: SE2 | None = None) -> Image:
+    def render(self, confs: Collection[SE2] | None = None) -> Image:
         world_min_x, world_max_x = self._world_x_bounds
         world_min_y, world_max_y = self._world_y_bounds
 
@@ -143,11 +143,11 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         for obstacle_geom in self._obstacle_geoms:
             obstacle_geom.plot(ax, **self._obstacle_render_kwargs)
         self._robot_goal_geom.plot(ax, **self._robot_goal_render_kwargs)
-        if configuration is not None:
-            robot_geom = _copy_geom_with_pose(self._robot_init_geom, configuration)
-        else:
-            robot_geom = self._robot_init_geom
-        robot_geom.plot(ax, **self._robot_current_render_kwargs)
+        if confs is None:
+            confs = {_geom_to_se2_pose(self._robot_init_geom)}
+        for conf in confs:
+            robot_geom = _copy_geom_with_pose(self._robot_init_geom, conf)
+            robot_geom.plot(ax, **self._robot_current_render_kwargs)
 
         pad_x = (world_max_x - world_min_x) / 25
         pad_y = (world_max_y - world_min_y) / 25

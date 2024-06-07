@@ -17,14 +17,15 @@ from mlrp_course.motion.utils import (
 from mlrp_course.structs import Hyperparameters
 
 
+@dataclass(frozen=True)
 class RRTHyperparameters(Hyperparameters):
     """Hyperparameters for RRT."""
 
-    velocity: float = 0.1
-    collision_dt: float = 0.1
+    velocity: float = 1.0
+    collision_dt: float = 1.0
     num_attempts: int = 10
     num_iters: int = 100
-    sample_goal_prob: float = 0.1
+    sample_goal_prob: float = 0.25
 
 
 @dataclass(frozen=True)
@@ -67,7 +68,7 @@ def run_rrt(
     # Run a number of independent attempts.
     for _ in range(hyperparameters.num_attempts):
         nodes = _build_rrt(mpp, rng, hyperparameters)
-        if nodes[-1] == mpp.goal_configuration:
+        if nodes[-1].conf == mpp.goal_configuration:
             return _finish_plan(nodes[-1], hyperparameters.velocity)
 
     # No path found, fail.
@@ -91,9 +92,7 @@ def _build_rrt(
         # Find the closest node in the tree.
         node = _get_closest_node(nodes, target)
         # Extend the tree in the direction of the target until collision.
-        extension = RobotConfSegment(
-            mpp.initial_configuration, target, hyperparameters.velocity
-        )
+        extension = RobotConfSegment(node.conf, target, hyperparameters.velocity)
         for waypoint in extension.iter(hyperparameters.collision_dt):
             if mpp.has_collision(waypoint):
                 break
