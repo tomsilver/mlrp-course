@@ -21,6 +21,8 @@ dependencies = [
    "pandas",
    "pandas-stubs",
    "relational_structs@git+https://github.com/tomsilver/relational-structs.git",
+   "tomsgeoms2d@git+https://github.com/tomsilver/toms-geoms-2d.git",
+   "spatialmath-python",
 ]
 
 [project.optional-dependencies]
@@ -62,5 +64,6 @@ follow_imports = "skip"
 module = [
     "matplotlib.*",
     "scipy.*",
+    "spatialmath.*",
 ]
 ignore_missing_imports = true

@@ -5,6 +5,8 @@ from typing import Generic, TypeVar
 
 import gymnasium as gym
 
+from mlrp_course.structs import Image
+
 _Configuration = TypeVar("_Configuration")  # robot configuration
 
 
@@ -29,3 +31,7 @@ class MotionPlanningProblem(Generic[_Configuration]):
     @abc.abstractmethod
     def has_collision(self, configuration: _Configuration) -> bool:
         """Collision checking."""
+
+    @abc.abstractmethod
+    def render(self, configuration: _Configuration | None = None) -> Image:
+        """Optional rendering function."""
