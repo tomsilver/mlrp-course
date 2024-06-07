@@ -15,10 +15,10 @@ def test_motion_utils():
         SE2(0, 1, -np.pi / 2),
         SE2(0, 0, 0),
     ]
-    durations = [1.0, 1.0, 1.0, 5.0]
+    velocities = [1.0, 1.0, 1.0, 1.0 / 5.0]
     segments = [
         RobotConfSegment(s, e, t)
-        for s, e, t in zip(waypoints[:-1], waypoints[1:], durations, strict=True)
+        for s, e, t in zip(waypoints[:-1], waypoints[1:], velocities, strict=True)
     ]
     traj = ConcatRobotConfTraj(segments)
 

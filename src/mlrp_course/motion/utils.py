@@ -2,9 +2,10 @@
 
 import abc
 from dataclasses import dataclass
-from functools import singledispatch
-from typing import Generic, Sequence
+from functools import cached_property, singledispatch
+from typing import Generic, Iterator, Sequence
 
+import numpy as np
 from spatialmath import SE2
 
 from mlrp_course.motion.motion_planning_problem import RobotConf
@@ -22,18 +23,26 @@ class RobotConfTraj(Generic[RobotConf]):
     def __call__(self, time: float) -> RobotConf:
         """Get the configuration at the given time."""
 
+    def iter(self, dt: float) -> Iterator[RobotConf]:
+        """Generate confs on the trajectory."""
+        t = 0.0
+        while t <= self.duration:
+            yield self(t)
+            t += dt
 
-@dataclass
+
+@dataclass(frozen=True)
 class RobotConfSegment(RobotConfTraj[RobotConf]):
     """A trajectory defined by a single start and end point."""
 
     start: RobotConf
     end: RobotConf
-    _duration: float
+    velocity: float
 
-    @property
+    @cached_property
     def duration(self) -> float:
-        return self._duration
+        dist = get_robot_conf_distance(self.start, self.end)
+        return dist / self.velocity
 
     def __call__(self, time: float) -> RobotConf:
         assert 0 <= time <= self.duration
@@ -41,13 +50,13 @@ class RobotConfSegment(RobotConfTraj[RobotConf]):
         return interpolate_robot_conf(self.start, self.end, s)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ConcatRobotConfTraj(RobotConfTraj[RobotConf]):
     """A trajectory that concatenates other trajectories."""
 
     trajs: Sequence[RobotConfTraj[RobotConf]]
 
-    @property
+    @cached_property
     def duration(self) -> float:
         return sum(t.duration for t in self.trajs)
 
@@ -74,3 +83,21 @@ def interpolate_robot_conf(start: RobotConf, end: RobotConf, s: float) -> RobotC
 @interpolate_robot_conf.register
 def _(start: SE2, end: SE2, s: float) -> SE2:
     return start.interp(end, s)
+
+
+@singledispatch
+def get_robot_conf_distance(start: RobotConf, end: RobotConf) -> float:
+    """Get the distance between two robot configurations."""
+    raise NotImplementedError
+
+
+@get_robot_conf_distance.register
+def _(start: SE2, end: SE2) -> float:
+    # Many choices are possible. Here we take the maximum of the translation
+    # distance and a scaled-down angular distance.
+    angular_scale = 0.1
+    difference = start.inv() * end
+    assert isinstance(difference, SE2)
+    translate_distance = np.sqrt(difference.x**2 + difference.y**2)
+    angular_distance = angular_scale * abs(difference.theta())
+    return max(translate_distance, angular_distance)
