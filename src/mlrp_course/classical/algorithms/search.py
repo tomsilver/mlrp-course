@@ -17,7 +17,7 @@ from typing import (
     TypeVar,
 )
 
-from mlrp_course.classical.envs.classical_problem import ClassicalPlanningProblem
+from mlrp_course.classical.classical_problem import ClassicalPlanningProblem
 from mlrp_course.structs import HashableComparable, Hyperparameters
 
 

@@ -10,7 +10,7 @@ from relational_structs import GroundAtom, GroundOperator, PDDLDomain, PDDLProbl
 from relational_structs.utils import all_ground_operators
 
 from mlrp_course.classical.algorithms.search import run_astar
-from mlrp_course.classical.envs.classical_problem import (
+from mlrp_course.classical.classical_problem import (
     ClassicalPlanningProblem,
     DiscreteAction,
     DiscreteState,
@@ -199,7 +199,7 @@ class HFFHeuristic(PDDLHeuristic):
         problem = self._construct_pddl_problem_from_state(state)
         rpg = _RelaxedPlanningGraph(problem)
         # Determine the max level that we need to consider, and check for
-        # unreachability. Also nitialize the goal levels.
+        # unreachability. Also initialize the goal levels.
         max_level = 0
         goal_levels: Dict[int, Set[GroundAtom]] = defaultdict(set)
         for goal_atom in problem.goal_atoms:
