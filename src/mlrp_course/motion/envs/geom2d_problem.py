@@ -79,16 +79,16 @@ def _copy_geom_with_pose(geom: Geom2D, configuration: SE2) -> Geom2D:
 class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
     """A motion planning problem defined with geom2d."""
 
-    _render_dpi: ClassVar[int] = 150
-    _obstacle_render_kwargs: ClassVar[Dict[str, Any]] = {
+    render_dpi: ClassVar[int] = 150
+    obstacle_render_kwargs: ClassVar[Dict[str, Any]] = {
         "fc": "gray",
         "ec": "black",
     }
-    _robot_current_render_kwargs: ClassVar[Dict[str, Any]] = {
+    robot_current_render_kwargs: ClassVar[Dict[str, Any]] = {
         "fc": "blue",
         "ec": "black",
     }
-    _robot_goal_render_kwargs: ClassVar[Dict[str, Any]] = {
+    robot_goal_render_kwargs: ClassVar[Dict[str, Any]] = {
         "fc": (0, 1, 0, 0.5),
         "ec": "black",
         "linestyle": "dashed",
@@ -130,7 +130,7 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
                 return True
         return False
 
-    def render(self, confs: Collection[SE2] | None = None) -> Image:
+    def render(self, configuration: SE2 | None = None) -> Image:
         world_min_x, world_max_x = self._world_x_bounds
         world_min_y, world_max_y = self._world_y_bounds
 
@@ -138,16 +138,16 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
             world_max_x - world_min_x,
             world_max_y - world_min_y,
         )
-        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=self._render_dpi)
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=self.render_dpi)
 
         for obstacle_geom in self._obstacle_geoms:
-            obstacle_geom.plot(ax, **self._obstacle_render_kwargs)
-        self._robot_goal_geom.plot(ax, **self._robot_goal_render_kwargs)
-        if confs is None:
-            confs = {_geom_to_se2_pose(self._robot_init_geom)}
-        for conf in confs:
-            robot_geom = _copy_geom_with_pose(self._robot_init_geom, conf)
-            robot_geom.plot(ax, **self._robot_current_render_kwargs)
+            obstacle_geom.plot(ax, **self.obstacle_render_kwargs)
+        self._robot_goal_geom.plot(ax, **self.robot_goal_render_kwargs)
+        if configuration is None:
+            robot_geom = self._robot_init_geom
+        else:
+            robot_geom = _copy_geom_with_pose(self._robot_init_geom, configuration)
+        robot_geom.plot(ax, **self.robot_current_render_kwargs)
 
         pad_x = (world_max_x - world_min_x) / 25
         pad_y = (world_max_y - world_min_y) / 25

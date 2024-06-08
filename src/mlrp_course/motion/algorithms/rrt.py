@@ -94,7 +94,9 @@ def _build_rrt(
         # Extend the tree in the direction of the target until collision.
         extension = RobotConfSegment(node.conf, target)
         for waypoint in iter_traj_with_max_distance(
-            extension, hyperparameters.collision_check_max_distance
+            extension,
+            hyperparameters.collision_check_max_distance,
+            include_start=False,
         ):
             if mpp.has_collision(waypoint):
                 break
@@ -115,7 +117,9 @@ def _try_direct_path(
 ) -> RobotConfTraj[RobotConf] | None:
     traj = RobotConfSegment.from_max_velocity(start, end, hyperparameters.max_velocity)
     for waypoint in iter_traj_with_max_distance(
-        traj, hyperparameters.collision_check_max_distance
+        traj,
+        hyperparameters.collision_check_max_distance,
+        include_start=False,
     ):
         if has_collision(waypoint):
             return None

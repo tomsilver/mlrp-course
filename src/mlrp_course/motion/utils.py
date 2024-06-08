@@ -120,10 +120,15 @@ def _(start: SE2, end: SE2) -> float:
 
 
 def iter_traj_with_max_distance(
-    traj: RobotConfTraj[RobotConf], max_distance: float
+    traj: RobotConfTraj[RobotConf],
+    max_distance: float,
+    include_start: bool = True,
 ) -> Iterator[RobotConf]:
     """Iterate through the trajectory while guaranteeing that the distance in
     each step is no more than the given max distance."""
     num_steps = int(np.ceil(traj.distance / max_distance))
-    for t in np.linspace(0, traj.duration, num=num_steps):
+    ts = np.linspace(0, traj.duration, num=num_steps)
+    if not include_start:
+        ts = ts[1:]
+    for t in ts:
         yield traj(t)

@@ -1,7 +1,7 @@
 """A general motion planning problem."""
 
 import abc
-from typing import Collection, Generic, TypeVar
+from typing import Generic, TypeVar
 
 import gymnasium as gym
 
@@ -33,5 +33,5 @@ class MotionPlanningProblem(Generic[RobotConf]):
         """Collision checking."""
 
     @abc.abstractmethod
-    def render(self, confs: Collection[RobotConf] | None = None) -> Image:
+    def render(self, configuration: RobotConf | None = None) -> Image:
         """Optional rendering function."""
