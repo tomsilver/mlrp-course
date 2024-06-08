@@ -19,10 +19,10 @@ class SE2Space(gym.Space[SE2]):
 
     def __init__(
         self,
+        rng: np.random.Generator,
         x_bounds: Tuple[float, float],
         y_bounds: Tuple[float, float],
         theta_bounds: Tuple[float, float] | None = None,
-        seed: int | np.random.Generator | None = None,
     ) -> None:
         if theta_bounds is None:
             theta_bounds = (-np.pi, np.pi)
@@ -31,7 +31,7 @@ class SE2Space(gym.Space[SE2]):
         self._x_bounds = x_bounds
         self._y_bounds = y_bounds
         self._theta_bounds = theta_bounds
-        super().__init__(shape=None, dtype=None, seed=seed)
+        super().__init__(shape=None, dtype=None, seed=rng)
 
     def sample(self, mask: Any | None = None) -> SE2:
         assert mask is None
@@ -58,7 +58,7 @@ def _geom_to_se2_pose(geom: Geom2D) -> SE2:
     if isinstance(geom, Circle):
         return SE2(geom.x, geom.y, 0.0)
     if isinstance(geom, Rectangle):
-        return SE2(geom.x, geom.y, geom.theta)
+        return SE2(geom.center[0], geom.center[1], geom.theta)
     raise NotImplementedError
 
 
@@ -66,7 +66,7 @@ def _copy_geom_with_pose(geom: Geom2D, configuration: SE2) -> Geom2D:
     if isinstance(geom, Circle):
         return Circle(configuration.x, configuration.y, geom.radius)
     if isinstance(geom, Rectangle):
-        return Rectangle(
+        return Rectangle.from_center(
             configuration.x,
             configuration.y,
             geom.width,
@@ -79,16 +79,16 @@ def _copy_geom_with_pose(geom: Geom2D, configuration: SE2) -> Geom2D:
 class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
     """A motion planning problem defined with geom2d."""
 
-    _render_dpi: ClassVar[int] = 150
-    _obstacle_render_kwargs: ClassVar[Dict[str, Any]] = {
+    render_dpi: ClassVar[int] = 50
+    obstacle_render_kwargs: ClassVar[Dict[str, Any]] = {
         "fc": "gray",
         "ec": "black",
     }
-    _robot_current_render_kwargs: ClassVar[Dict[str, Any]] = {
+    robot_current_render_kwargs: ClassVar[Dict[str, Any]] = {
         "fc": "blue",
         "ec": "black",
     }
-    _robot_goal_render_kwargs: ClassVar[Dict[str, Any]] = {
+    robot_goal_render_kwargs: ClassVar[Dict[str, Any]] = {
         "fc": (0, 1, 0, 0.5),
         "ec": "black",
         "linestyle": "dashed",
@@ -101,6 +101,7 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         robot_init_geom: Geom2D,
         robot_goal: SE2,
         obstacle_geoms: Collection[Geom2D],
+        seed: int,
     ) -> None:
         self._world_x_bounds = world_x_bounds
         self._world_y_bounds = world_y_bounds
@@ -108,10 +109,11 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         self._robot_goal = robot_goal
         self._robot_goal_geom = _copy_geom_with_pose(robot_init_geom, robot_goal)
         self._obstacle_geoms = obstacle_geoms
+        self._rng = np.random.default_rng(seed)
 
     @property
     def configuration_space(self) -> SE2Space:
-        return SE2Space(self._world_x_bounds, self._world_y_bounds)
+        return SE2Space(self._rng, self._world_x_bounds, self._world_y_bounds)
 
     @property
     def initial_configuration(self) -> SE2:
@@ -136,16 +138,16 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
             world_max_x - world_min_x,
             world_max_y - world_min_y,
         )
-        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=self._render_dpi)
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=self.render_dpi)
 
         for obstacle_geom in self._obstacle_geoms:
-            obstacle_geom.plot(ax, **self._obstacle_render_kwargs)
-        self._robot_goal_geom.plot(ax, **self._robot_goal_render_kwargs)
-        if configuration is not None:
-            robot_geom = _copy_geom_with_pose(self._robot_init_geom, configuration)
-        else:
+            obstacle_geom.plot(ax, **self.obstacle_render_kwargs)
+        self._robot_goal_geom.plot(ax, **self.robot_goal_render_kwargs)
+        if configuration is None:
             robot_geom = self._robot_init_geom
-        robot_geom.plot(ax, **self._robot_current_render_kwargs)
+        else:
+            robot_geom = _copy_geom_with_pose(self._robot_init_geom, configuration)
+        robot_geom.plot(ax, **self.robot_current_render_kwargs)
 
         pad_x = (world_max_x - world_min_x) / 25
         pad_y = (world_max_y - world_min_y) / 25

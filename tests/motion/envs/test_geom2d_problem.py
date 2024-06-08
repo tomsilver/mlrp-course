@@ -23,6 +23,7 @@ def test_geom2d_problem():
         robot_init_geom,
         robot_goal,
         obstacle_geoms,
+        seed=123,
     )
     assert not problem.has_collision(problem.initial_configuration)
     assert not problem.has_collision(robot_goal)
