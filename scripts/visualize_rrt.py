@@ -6,10 +6,14 @@ import imageio.v2 as iio
 import numpy as np
 from matplotlib import pyplot as plt
 from spatialmath import SE2
-from tomsgeoms2d.structs import Circle, Rectangle
+from tomsgeoms2d.structs import Circle, LineSegment, Rectangle
 from tqdm import tqdm
 
-from mlrp_course.motion.algorithms.rrt import RRTHyperparameters, _build_rrt
+from mlrp_course.motion.algorithms.rrt import (
+    RRTHyperparameters,
+    _build_rrt,
+    _finish_plan,
+)
 from mlrp_course.motion.envs.geom2d_problem import (
     Geom2DMotionPlanningProblem,
     _copy_geom_with_pose,
@@ -38,11 +42,13 @@ def _main(outdir: Path, fps: int) -> None:
         seed=123,
     )
     rng = np.random.default_rng(123)
-    hyperparameters = RRTHyperparameters()
+    hyperparameters = RRTHyperparameters(
+        collision_check_max_distance=0.5, num_iters=1000
+    )
     nodes = _build_rrt(problem, rng, hyperparameters)
-    imgs = []
 
-    print("Creating video...")
+    print("Creating RRT video...")
+    imgs = []
     world_min_x, world_max_x = world_x_bounds
     world_min_y, world_max_y = world_y_bounds
 
@@ -51,7 +57,10 @@ def _main(outdir: Path, fps: int) -> None:
         world_max_y - world_min_y,
     )
     fig, ax = plt.subplots(
-        1, 1, figsize=figsize, dpi=Geom2DMotionPlanningProblem.render_dpi
+        1,
+        1,
+        figsize=figsize,
+        dpi=50,
     )
     pad_x = (world_max_x - world_min_x) / 25
     pad_y = (world_max_y - world_min_y) / 25
@@ -70,10 +79,32 @@ def _main(outdir: Path, fps: int) -> None:
     for node in tqdm(nodes):
         geom = _copy_geom_with_pose(robot_init_geom, node.conf)
         geom.plot(ax, fc=(0.7, 0.1, 0.9, 0.5), ec=(0.3, 0.3, 0.3))
+        # Draw a node and edge for the tree itself.
+        node_geom = Circle(node.conf.x, node.conf.y, 0.1)
+        node_geom.plot(ax, color="black")
+        if node.parent is not None:
+            parent_conf = node.parent.conf
+            line_segment_geom = LineSegment(
+                parent_conf.x, parent_conf.y, node.conf.x, node.conf.y
+            )
+            line_segment_geom.plot(ax, color="black", linewidth=1.0)
+
         img = fig2data(fig)
         imgs.append(img)
 
+    plt.close()
     outfile = outdir / "rrt.gif"
+    iio.mimsave(outfile, imgs, fps=fps)
+    print(f"Wrote out to {outfile}")
+
+    print("Creating plan video...")
+    imgs = []
+    plan = _finish_plan(nodes[-1], hyperparameters.max_velocity)
+    for t in tqdm(np.linspace(0, plan.duration, num=100, endpoint=True)):
+        conf = plan(t)
+        img = problem.render(conf)
+        imgs.append(img)
+    outfile = outdir / "rrt_traj.gif"
     iio.mimsave(outfile, imgs, fps=fps)
     print(f"Wrote out to {outfile}")
 

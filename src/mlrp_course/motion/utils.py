@@ -57,7 +57,8 @@ class RobotConfSegment(RobotConfTraj[RobotConf]):
         return get_robot_conf_distance(self.start, self.end)
 
     def __call__(self, time: float) -> RobotConf:
-        assert 0 <= time <= self.duration
+        # Avoid numerical issues.
+        time = np.clip(time, 0, self.duration)
         s = time / self.duration
         return interpolate_robot_conf(self.start, self.end, s)
 

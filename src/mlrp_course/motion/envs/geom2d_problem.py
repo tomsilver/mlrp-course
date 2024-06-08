@@ -58,7 +58,7 @@ def _geom_to_se2_pose(geom: Geom2D) -> SE2:
     if isinstance(geom, Circle):
         return SE2(geom.x, geom.y, 0.0)
     if isinstance(geom, Rectangle):
-        return SE2(geom.x, geom.y, geom.theta)
+        return SE2(geom.center[0], geom.center[1], geom.theta)
     raise NotImplementedError
 
 
@@ -66,7 +66,7 @@ def _copy_geom_with_pose(geom: Geom2D, configuration: SE2) -> Geom2D:
     if isinstance(geom, Circle):
         return Circle(configuration.x, configuration.y, geom.radius)
     if isinstance(geom, Rectangle):
-        return Rectangle(
+        return Rectangle.from_center(
             configuration.x,
             configuration.y,
             geom.width,
