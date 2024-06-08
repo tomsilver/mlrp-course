@@ -1,5 +1,7 @@
 """Utilities for motion planning."""
 
+from __future__ import annotations
+
 import abc
 from dataclasses import dataclass
 from functools import cached_property, singledispatch
@@ -17,21 +19,16 @@ class RobotConfTraj(Generic[RobotConf]):
     @property
     @abc.abstractmethod
     def duration(self) -> float:
-        """The length of the trajectory."""
+        """The length of the trajectory in time."""
+
+    @property
+    @abc.abstractmethod
+    def distance(self) -> float:
+        """The length of the trajectory in distance."""
 
     @abc.abstractmethod
     def __call__(self, time: float) -> RobotConf:
         """Get the configuration at the given time."""
-
-    def iter(self, max_dt: float) -> Iterator[RobotConf]:
-        """Generate confs on the trajector that are at most dt apart."""
-        t = 0.0
-        while t < self.duration:
-            yield self(t)
-            t += max_dt
-        # NOTE: important to iter this separately because the distance between
-        # the penultimate conf and this final conf might be less than dt.
-        yield self(self.duration)
 
 
 @dataclass(frozen=True)
@@ -40,12 +37,24 @@ class RobotConfSegment(RobotConfTraj[RobotConf]):
 
     start: RobotConf
     end: RobotConf
-    velocity: float
+    _duration: float = 1.0
+
+    @classmethod
+    def from_max_velocity(
+        cls, start: RobotConf, end: RobotConf, max_velocity: float
+    ) -> RobotConfSegment:
+        """Create a segment from a given max velocity."""
+        distance = get_robot_conf_distance(start, end)
+        duration = distance / max_velocity
+        return RobotConfSegment(start, end, duration)
 
     @cached_property
     def duration(self) -> float:
-        dist = get_robot_conf_distance(self.start, self.end)
-        return dist / self.velocity
+        return self._duration
+
+    @cached_property
+    def distance(self) -> float:
+        return get_robot_conf_distance(self.start, self.end)
 
     def __call__(self, time: float) -> RobotConf:
         assert 0 <= time <= self.duration
@@ -62,6 +71,10 @@ class ConcatRobotConfTraj(RobotConfTraj[RobotConf]):
     @cached_property
     def duration(self) -> float:
         return sum(t.duration for t in self.trajs)
+
+    @cached_property
+    def distance(self) -> float:
+        return sum(t.distance for t in self.trajs)
 
     def __call__(self, time: float) -> RobotConf:
         start_time = 0.0
@@ -104,3 +117,13 @@ def _(start: SE2, end: SE2) -> float:
     translate_distance = np.sqrt(difference.x**2 + difference.y**2)
     angular_distance = angular_scale * abs(difference.theta())
     return max(translate_distance, angular_distance)
+
+
+def iter_traj_with_max_distance(
+    traj: RobotConfTraj[RobotConf], max_distance: float
+) -> Iterator[RobotConf]:
+    """Iterate through the trajectory while guaranteeing that the distance in
+    each step is no more than the given max distance."""
+    num_steps = int(np.ceil(traj.distance / max_distance))
+    for t in np.linspace(0, traj.duration, num=num_steps):
+        yield traj(t)

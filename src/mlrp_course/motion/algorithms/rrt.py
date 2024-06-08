@@ -13,6 +13,7 @@ from mlrp_course.motion.utils import (
     RobotConfSegment,
     RobotConfTraj,
     get_robot_conf_distance,
+    iter_traj_with_max_distance,
 )
 from mlrp_course.structs import Hyperparameters
 
@@ -21,8 +22,8 @@ from mlrp_course.structs import Hyperparameters
 class RRTHyperparameters(Hyperparameters):
     """Hyperparameters for RRT."""
 
-    velocity: float = 1.0
-    collision_dt: float = 1.0
+    max_velocity: float = 1.0
+    collision_check_max_distance: float = 1.0
     num_attempts: int = 10
     num_iters: int = 100
     sample_goal_prob: float = 0.25
@@ -59,8 +60,7 @@ def run_rrt(
         mpp.initial_configuration,
         mpp.goal_configuration,
         mpp.has_collision,
-        hyperparameters.velocity,
-        hyperparameters.collision_dt,
+        hyperparameters,
     )
     if direct_path is not None:
         return direct_path
@@ -69,7 +69,7 @@ def run_rrt(
     for _ in range(hyperparameters.num_attempts):
         nodes = _build_rrt(mpp, rng, hyperparameters)
         if nodes[-1].conf == mpp.goal_configuration:
-            return _finish_plan(nodes[-1], hyperparameters.velocity)
+            return _finish_plan(nodes[-1], hyperparameters.max_velocity)
 
     # No path found, fail.
     return None
@@ -92,8 +92,10 @@ def _build_rrt(
         # Find the closest node in the tree.
         node = _get_closest_node(nodes, target)
         # Extend the tree in the direction of the target until collision.
-        extension = RobotConfSegment(node.conf, target, hyperparameters.velocity)
-        for waypoint in extension.iter(hyperparameters.collision_dt):
+        extension = RobotConfSegment(node.conf, target)
+        for waypoint in iter_traj_with_max_distance(
+            extension, hyperparameters.collision_check_max_distance
+        ):
             if mpp.has_collision(waypoint):
                 break
             node = _RRTNode(waypoint, parent=node)
@@ -109,11 +111,12 @@ def _try_direct_path(
     start: RobotConf,
     end: RobotConf,
     has_collision: Callable[[RobotConf], bool],
-    velocity: float,
-    collision_dt: float,
+    hyperparameters: RRTHyperparameters,
 ) -> RobotConfTraj[RobotConf] | None:
-    traj = RobotConfSegment(start, end, velocity)
-    for waypoint in traj.iter(collision_dt):
+    traj = RobotConfSegment.from_max_velocity(start, end, hyperparameters.max_velocity)
+    for waypoint in iter_traj_with_max_distance(
+        traj, hyperparameters.collision_check_max_distance
+    ):
         if has_collision(waypoint):
             return None
     return traj
@@ -124,7 +127,7 @@ def _get_closest_node(nodes: List[_RRTNode[RobotConf]], target: RobotConf) -> _R
 
 
 def _finish_plan(
-    node: _RRTNode[RobotConf], velocity: float
+    node: _RRTNode[RobotConf], max_velocity: float
 ) -> RobotConfTraj[RobotConf]:
     rev_node_sequence = [node]
     while node.parent is not None:
@@ -134,6 +137,8 @@ def _finish_plan(
     conf_sequence = [n.conf for n in node_sequence]
     segments = []
     for t in range(len(node_sequence) - 1):
-        seg = RobotConfSegment(conf_sequence[t], conf_sequence[t + 1], velocity)
+        seg = RobotConfSegment.from_max_velocity(
+            conf_sequence[t], conf_sequence[t + 1], max_velocity
+        )
         segments.append(seg)
     return ConcatRobotConfTraj(segments)
