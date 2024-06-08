@@ -79,7 +79,7 @@ def _copy_geom_with_pose(geom: Geom2D, configuration: SE2) -> Geom2D:
 class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
     """A motion planning problem defined with geom2d."""
 
-    render_dpi: ClassVar[int] = 150
+    render_dpi: ClassVar[int] = 50
     obstacle_render_kwargs: ClassVar[Dict[str, Any]] = {
         "fc": "gray",
         "ec": "black",
