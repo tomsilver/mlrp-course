@@ -29,7 +29,7 @@ class PRMHyperparameters(MotionPlanningHyperparameters):
     """Hyperparameters for PRM."""
 
     num_iters: int = 100
-    neighbor_distance_thresh: float = 1.0
+    neighbor_distance_thresh: float = 10.0
 
 
 # Give nodes unique IDs.

@@ -42,7 +42,7 @@ def _main(outdir: Path, fps: int) -> None:
         obstacle_geoms,
         seed=123,
     )
-    hyperparameters = PRMHyperparameters(collision_check_max_distance=0.5)
+    hyperparameters = PRMHyperparameters(collision_check_max_distance=0.5, num_iters=25)
     graph = _build_prm(problem, hyperparameters)
 
     print("Creating PRM video...")
@@ -74,7 +74,7 @@ def _main(outdir: Path, fps: int) -> None:
     robot_init_geom.plot(ax, **Geom2DMotionPlanningProblem.robot_current_render_kwargs)
     plt.tight_layout()
 
-    for t, node in tqdm(enumerate(graph.nodes)):
+    for t, node in enumerate(tqdm(graph.nodes)):
         geom = _copy_geom_with_pose(robot_init_geom, node.conf)
         geom.plot(ax, fc=(0.7, 0.1, 0.9, 0.5), ec=(0.3, 0.3, 0.3))
         node_geom = Circle(node.conf.x, node.conf.y, 0.1)
@@ -117,6 +117,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", default="results", type=Path)
-    parser.add_argument("--fps", default=30)
+    parser.add_argument("--fps", default=10)
     args = parser.parse_args()
     _main(args.outdir, args.fps)
