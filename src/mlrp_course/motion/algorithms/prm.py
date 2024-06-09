@@ -84,7 +84,7 @@ def run_prm(
         return direct_path
 
     # Build the PRM.
-    graph = _build_nodes(mpp, hyperparameters)
+    graph = _build_prm(mpp, hyperparameters)
 
     # Check if there is a path from start to goal.
     node_path = _find_node_path(graph)
@@ -100,7 +100,7 @@ def run_prm(
     )
 
 
-def _build_nodes(
+def _build_prm(
     mpp: MotionPlanningProblem[RobotConf],
     hyperparameters: PRMHyperparameters,
 ) -> _PRMGraph[RobotConf]:
