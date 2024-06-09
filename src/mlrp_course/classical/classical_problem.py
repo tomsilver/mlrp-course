@@ -43,7 +43,7 @@ class ClassicalPlanningProblem(Generic[_S, _A]):
         """The transition function."""
 
     @abc.abstractmethod
-    def check_goal(self, _S) -> bool:
+    def check_goal(self, state: _S) -> bool:
         """The goal function."""
 
     @abc.abstractmethod

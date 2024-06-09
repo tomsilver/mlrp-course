@@ -7,23 +7,22 @@ from typing import Callable, Generic, List
 
 import numpy as np
 
+from mlrp_course.motion.algorithms.direct_path import run_direct_path_motion_planning
 from mlrp_course.motion.motion_planning_problem import MotionPlanningProblem, RobotConf
 from mlrp_course.motion.utils import (
-    ConcatRobotConfTraj,
+    MotionPlanningHyperparameters,
     RobotConfSegment,
     RobotConfTraj,
     get_robot_conf_distance,
     iter_traj_with_max_distance,
+    robot_conf_sequence_to_trajectory,
 )
-from mlrp_course.structs import Hyperparameters
 
 
 @dataclass(frozen=True)
-class RRTHyperparameters(Hyperparameters):
+class RRTHyperparameters(MotionPlanningHyperparameters):
     """Hyperparameters for RRT."""
 
-    max_velocity: float = 1.0
-    collision_check_max_distance: float = 1.0
     num_attempts: int = 10
     num_iters: int = 100
     sample_goal_prob: float = 0.25
@@ -56,12 +55,7 @@ def run_rrt(
         return None
 
     # Try to just take a direct path from start to goal.
-    direct_path = _try_direct_path(
-        mpp.initial_configuration,
-        mpp.goal_configuration,
-        mpp.has_collision,
-        hyperparameters,
-    )
+    direct_path = run_direct_path_motion_planning(mpp, hyperparameters)
     if direct_path is not None:
         return direct_path
 
@@ -109,23 +103,6 @@ def _build_rrt(
     return nodes
 
 
-def _try_direct_path(
-    start: RobotConf,
-    end: RobotConf,
-    has_collision: Callable[[RobotConf], bool],
-    hyperparameters: RRTHyperparameters,
-) -> RobotConfTraj[RobotConf] | None:
-    traj = RobotConfSegment.from_max_velocity(start, end, hyperparameters.max_velocity)
-    for waypoint in iter_traj_with_max_distance(
-        traj,
-        hyperparameters.collision_check_max_distance,
-        include_start=False,
-    ):
-        if has_collision(waypoint):
-            return None
-    return traj
-
-
 def _get_closest_node(nodes: List[_RRTNode[RobotConf]], target: RobotConf) -> _RRTNode:
     return min(nodes, key=lambda n: get_robot_conf_distance(n.conf, target))
 
@@ -139,10 +116,4 @@ def _finish_plan(
         rev_node_sequence.append(node)
     node_sequence = rev_node_sequence[::-1]
     conf_sequence = [n.conf for n in node_sequence]
-    segments = []
-    for t in range(len(node_sequence) - 1):
-        seg = RobotConfSegment.from_max_velocity(
-            conf_sequence[t], conf_sequence[t + 1], max_velocity
-        )
-        segments.append(seg)
-    return ConcatRobotConfTraj(segments)
+    return robot_conf_sequence_to_trajectory(conf_sequence, max_velocity)
