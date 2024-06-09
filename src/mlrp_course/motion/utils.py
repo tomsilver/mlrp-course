@@ -5,12 +5,21 @@ from __future__ import annotations
 import abc
 from dataclasses import dataclass
 from functools import cached_property, singledispatch
-from typing import Generic, Iterator, Sequence
+from typing import Generic, Iterator, List, Sequence
 
 import numpy as np
 from spatialmath import SE2
 
 from mlrp_course.motion.motion_planning_problem import RobotConf
+from mlrp_course.structs import Hyperparameters
+
+
+@dataclass(frozen=True)
+class MotionPlanningHyperparameters(Hyperparameters):
+    """Common hyperparameters for motion planning."""
+
+    max_velocity: float = 1.0
+    collision_check_max_distance: float = 1.0
 
 
 class RobotConfTraj(Generic[RobotConf]):
@@ -124,6 +133,7 @@ def iter_traj_with_max_distance(
     traj: RobotConfTraj[RobotConf],
     max_distance: float,
     include_start: bool = True,
+    include_end: bool = True,
 ) -> Iterator[RobotConf]:
     """Iterate through the trajectory while guaranteeing that the distance in
     each step is no more than the given max distance."""
@@ -131,5 +141,20 @@ def iter_traj_with_max_distance(
     ts = np.linspace(0, traj.duration, num=num_steps)
     if not include_start:
         ts = ts[1:]
+    if not include_end:
+        ts = ts[:-1]
     for t in ts:
         yield traj(t)
+
+
+def robot_conf_sequence_to_trajectory(
+    conf_sequence: List[RobotConf], max_velocity: float
+) -> RobotConfTraj[RobotConf]:
+    """Convert a sequence of motion planning nodes to a trajectory."""
+    segments = []
+    for t in range(len(conf_sequence) - 1):
+        seg = RobotConfSegment.from_max_velocity(
+            conf_sequence[t], conf_sequence[t + 1], max_velocity
+        )
+        segments.append(seg)
+    return ConcatRobotConfTraj(segments)
