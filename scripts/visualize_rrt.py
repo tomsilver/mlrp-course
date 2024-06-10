@@ -9,7 +9,7 @@ from spatialmath import SE2
 from tomsgeoms2d.structs import Circle, LineSegment, Rectangle
 from tqdm import tqdm
 
-from mlrp_course.motion.algorithms.birrt import _build_birrt
+from mlrp_course.motion.algorithms.birrt import _birrt_nodes_to_trajectory, _build_birrt
 from mlrp_course.motion.algorithms.rrt import (
     RRTHyperparameters,
     _build_rrt,
@@ -51,11 +51,20 @@ def _main(
         num_iters=1000,
         num_shortcut_attempts=num_shortcut_attempts,
     )
+    print("Running planning...")
     if bidirectional:
         init_nodes, goal_nodes = _build_birrt(problem, hyperparameters)
         nodes = sorted(init_nodes + goal_nodes, key=lambda n: n.node_id)
+        plan = _birrt_nodes_to_trajectory(
+            init_nodes, goal_nodes, problem, hyperparameters.max_velocity
+        )
     else:
         nodes = _build_rrt(problem, rng, hyperparameters)
+        plan = _finish_plan(nodes[-1], hyperparameters.max_velocity)
+
+    assert plan is not None
+    print("Finding shortcuts...")
+    plan = find_trajectory_shortcuts(plan, rng, problem, hyperparameters)
 
     print("Creating RRT video...")
     imgs = []
@@ -107,10 +116,6 @@ def _main(
     outfile = outdir / f"{file_prefix}.gif"
     iio.mimsave(outfile, imgs, fps=fps)
     print(f"Wrote out to {outfile}")
-
-    print("Finding shortcuts...")
-    plan = _finish_plan(nodes[-1], hyperparameters.max_velocity)
-    plan = find_trajectory_shortcuts(plan, rng, problem, hyperparameters)
 
     print("Creating plan video...")
     imgs = []

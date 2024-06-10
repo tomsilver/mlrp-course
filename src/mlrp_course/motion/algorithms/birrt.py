@@ -49,18 +49,10 @@ def run_birrt(
     # Run a number of independent attempts.
     for _ in range(hyperparameters.num_attempts):
         nodes_from_init, nodes_from_goal = _build_birrt(mpp, hyperparameters)
-        assert nodes_from_init[0].conf == mpp.initial_configuration
-        assert nodes_from_goal[0].conf == mpp.goal_configuration
-        if nodes_from_init[-1].conf == nodes_from_goal[-1].conf:
-            # Combine the two trajectories.
-            traj_from_init = _finish_plan(
-                nodes_from_init[-1], hyperparameters.max_velocity
-            )
-            traj_from_goal = _finish_plan(
-                nodes_from_goal[-1], hyperparameters.max_velocity
-            )
-            traj_to_goal = traj_from_goal.reverse()
-            traj = concatenate_robot_conf_trajectories([traj_from_init, traj_to_goal])
+        traj = _birrt_nodes_to_trajectory(
+            nodes_from_init, nodes_from_goal, mpp, hyperparameters.max_velocity
+        )
+        if traj is not None:
             # Smooth the trajectory before returning.
             return find_trajectory_shortcuts(traj, rng, mpp, hyperparameters)
 
@@ -94,3 +86,20 @@ def _build_birrt(
         if connection_achieved:
             return nodes_from_init, nodes_from_goal
     return nodes_from_init, nodes_from_goal
+
+
+def _birrt_nodes_to_trajectory(
+    nodes_from_init: List[_RRTNode[RobotConf]],
+    nodes_from_goal: List[_RRTNode[RobotConf]],
+    mpp: MotionPlanningProblem,
+    max_velocity: float,
+) -> RobotConfTraj[RobotConf] | None:
+    assert nodes_from_init[0].conf == mpp.initial_configuration
+    assert nodes_from_goal[0].conf == mpp.goal_configuration
+    if nodes_from_init[-1].conf != nodes_from_goal[-1].conf:
+        return None
+    # Combine the two trajectories.
+    traj_from_init = _finish_plan(nodes_from_init[-1], max_velocity)
+    traj_from_goal = _finish_plan(nodes_from_goal[-1], max_velocity)
+    traj_to_goal = traj_from_goal.reverse()
+    return concatenate_robot_conf_trajectories([traj_from_init, traj_to_goal])
