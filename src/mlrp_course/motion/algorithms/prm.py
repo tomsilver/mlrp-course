@@ -6,6 +6,8 @@ import itertools
 from dataclasses import dataclass, field
 from typing import Any, Generic, Iterator, List, Set, Tuple
 
+import numpy as np
+
 from mlrp_course.classical.algorithms.search import (
     SearchFailure,
     run_uniform_cost_search,
@@ -17,6 +19,7 @@ from mlrp_course.motion.utils import (
     MotionPlanningHyperparameters,
     RobotConfSegment,
     RobotConfTraj,
+    find_trajectory_shortcuts,
     get_robot_conf_distance,
     iter_traj_with_max_distance,
     robot_conf_sequence_to_trajectory,
@@ -63,6 +66,7 @@ class _PRMGraph(Generic[RobotConf]):
 
 def run_prm(
     mpp: MotionPlanningProblem[RobotConf],
+    rng: np.random.Generator,
     hyperparameters: PRMHyperparameters | None = None,
 ) -> RobotConfTraj[RobotConf] | None:
     """Create a PRM to find a collision-free path from start to goal.
@@ -95,9 +99,12 @@ def run_prm(
 
     # Convert the node path into a trajectory.
     conf_sequence = [node.conf for node in node_path]
-    return robot_conf_sequence_to_trajectory(
+    traj = robot_conf_sequence_to_trajectory(
         conf_sequence, hyperparameters.max_velocity
     )
+
+    # Smooth the trajectory before returning.
+    return find_trajectory_shortcuts(traj, rng, mpp, hyperparameters)
 
 
 def _build_prm(

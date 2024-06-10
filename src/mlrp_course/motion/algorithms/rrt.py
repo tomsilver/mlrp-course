@@ -13,6 +13,7 @@ from mlrp_course.motion.utils import (
     MotionPlanningHyperparameters,
     RobotConfSegment,
     RobotConfTraj,
+    find_trajectory_shortcuts,
     get_robot_conf_distance,
     iter_traj_with_max_distance,
     robot_conf_sequence_to_trajectory,
@@ -63,7 +64,9 @@ def run_rrt(
     for _ in range(hyperparameters.num_attempts):
         nodes = _build_rrt(mpp, rng, hyperparameters)
         if nodes[-1].conf == mpp.goal_configuration:
-            return _finish_plan(nodes[-1], hyperparameters.max_velocity)
+            traj = _finish_plan(nodes[-1], hyperparameters.max_velocity)
+            # Smooth the trajectory before returning.
+            return find_trajectory_shortcuts(traj, rng, mpp, hyperparameters)
 
     # No path found, fail.
     return None

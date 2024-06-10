@@ -18,10 +18,11 @@ from mlrp_course.motion.envs.geom2d_problem import (
     Geom2DMotionPlanningProblem,
     _copy_geom_with_pose,
 )
+from mlrp_course.motion.utils import find_trajectory_shortcuts
 from mlrp_course.utils import fig2data
 
 
-def _main(outdir: Path, fps: int) -> None:
+def _main(outdir: Path, fps: int, seed: int, num_shortcut_attempts: int) -> None:
 
     world_x_bounds = (0, 10)
     world_y_bounds = (0, 10)
@@ -39,11 +40,13 @@ def _main(outdir: Path, fps: int) -> None:
         robot_init_geom,
         robot_goal,
         obstacle_geoms,
-        seed=123,
+        seed=seed,
     )
-    rng = np.random.default_rng(123)
+    rng = np.random.default_rng(seed)
     hyperparameters = RRTHyperparameters(
-        collision_check_max_distance=0.5, num_iters=1000
+        collision_check_max_distance=0.5,
+        num_iters=1000,
+        num_shortcut_attempts=num_shortcut_attempts,
     )
     nodes = _build_rrt(problem, rng, hyperparameters)
 
@@ -97,9 +100,12 @@ def _main(outdir: Path, fps: int) -> None:
     iio.mimsave(outfile, imgs, fps=fps)
     print(f"Wrote out to {outfile}")
 
+    print("Finding shortcuts...")
+    plan = _finish_plan(nodes[-1], hyperparameters.max_velocity)
+    plan = find_trajectory_shortcuts(plan, rng, problem, hyperparameters)
+
     print("Creating plan video...")
     imgs = []
-    plan = _finish_plan(nodes[-1], hyperparameters.max_velocity)
     for t in tqdm(np.linspace(0, plan.duration, num=100, endpoint=True)):
         conf = plan(t)
         img = problem.render(conf)
@@ -115,5 +121,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", default="results", type=Path)
     parser.add_argument("--fps", default=30)
+    parser.add_argument("--seed", default=0, type=int)
+    parser.add_argument("--num_shortcut_attempts", default=0, type=int)
     args = parser.parse_args()
-    _main(args.outdir, args.fps)
+    _main(args.outdir, args.fps, args.seed, args.num_shortcut_attempts)

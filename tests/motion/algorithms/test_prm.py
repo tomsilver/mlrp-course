@@ -25,7 +25,8 @@ def test_prm():
         obstacle_geoms,
         seed=123,
     )
-    solution = run_prm(problem)
+    rng = np.random.default_rng(123)
+    solution = run_prm(problem, rng)
     assert solution is not None
     # It should be a straight line.
     assert isinstance(solution, RobotConfSegment)
@@ -43,7 +44,8 @@ def test_prm():
         obstacle_geoms,
         seed=123,
     )
-    solution = run_prm(problem)
+    rng = np.random.default_rng(123)
+    solution = run_prm(problem, rng)
     assert solution is not None
     # It should not be a straight line.
     assert not isinstance(solution, RobotConfSegment)
