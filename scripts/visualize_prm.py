@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", default="results", type=Path)
-    parser.add_argument("--fps", default=10)
+    parser.add_argument("--fps", default=10, type=int)
     parser.add_argument("--seed", default=0, type=int)
     args = parser.parse_args()
     _main(args.outdir, args.fps, args.seed)

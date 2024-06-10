@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import itertools
+from dataclasses import dataclass, field
 from typing import Generic, List
 
 import numpy as np
@@ -29,12 +30,17 @@ class RRTHyperparameters(MotionPlanningHyperparameters):
     sample_goal_prob: float = 0.25
 
 
+# Give nodes unique IDs.
+_NODE_ID_COUNT = itertools.count()
+
+
 @dataclass(frozen=True)
 class _RRTNode(Generic[RobotConf]):
     """A node for RRT."""
 
     conf: RobotConf
     parent: _RRTNode[RobotConf] | None = None
+    node_id: int = field(default_factory=lambda: next(_NODE_ID_COUNT))
 
 
 def run_rrt(
