@@ -56,6 +56,10 @@ class RobotConfTraj(Generic[RobotConf]):
     ) -> RobotConfTraj[RobotConf]:
         """Create a new trajectory with time re-indexed."""
 
+    @abc.abstractmethod
+    def reverse(self) -> RobotConfTraj[RobotConf]:
+        """Create a new trajectory with time re-indexed."""
+
 
 @dataclass(frozen=True)
 class RobotConfSegment(RobotConfTraj[RobotConf]):
@@ -95,6 +99,9 @@ class RobotConfSegment(RobotConfTraj[RobotConf]):
         frac = elapsed_time / self.duration
         new_duration = frac * self.duration
         return RobotConfSegment(self(start_time), self(end_time), new_duration)
+
+    def reverse(self) -> RobotConfTraj[RobotConf]:
+        return RobotConfSegment(self.end, self.start, self.duration)
 
 
 @dataclass(frozen=True)
@@ -149,6 +156,9 @@ class ConcatRobotConfTraj(RobotConfTraj[RobotConf]):
                 new_trajs.append(traj)
             st = et
         return concatenate_robot_conf_trajectories(new_trajs)
+
+    def reverse(self) -> RobotConfTraj[RobotConf]:
+        return ConcatRobotConfTraj([t.reverse() for t in self.trajs][::-1])
 
 
 def concatenate_robot_conf_trajectories(
