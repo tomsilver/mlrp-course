@@ -20,7 +20,7 @@ class MotionPlanningHyperparameters(Hyperparameters):
 
     max_velocity: float = 1.0
     collision_check_max_distance: float = 1.0
-    num_shortcut_attempts: int = 10
+    num_shortcut_attempts: int = 100
 
 
 class RobotConfTraj(Generic[RobotConf]):
@@ -204,8 +204,8 @@ def iter_traj_with_max_distance(
 ) -> Iterator[RobotConf]:
     """Iterate through the trajectory while guaranteeing that the distance in
     each step is no more than the given max distance."""
-    num_steps = int(np.ceil(traj.distance / max_distance))
-    ts = np.linspace(0, traj.duration, num=num_steps)
+    num_steps = int(np.ceil(traj.distance / max_distance)) + 1
+    ts = np.linspace(0, traj.duration, num=num_steps, endpoint=True)
     if not include_start:
         ts = ts[1:]
     if not include_end:
