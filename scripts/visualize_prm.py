@@ -22,7 +22,7 @@ from mlrp_course.motion.utils import robot_conf_sequence_to_trajectory
 from mlrp_course.utils import fig2data
 
 
-def _main(outdir: Path, fps: int) -> None:
+def _main(outdir: Path, fps: int, seed: int) -> None:
 
     world_x_bounds = (0, 10)
     world_y_bounds = (0, 10)
@@ -40,7 +40,7 @@ def _main(outdir: Path, fps: int) -> None:
         robot_init_geom,
         robot_goal,
         obstacle_geoms,
-        seed=123,
+        seed=seed,
     )
     hyperparameters = PRMHyperparameters(collision_check_max_distance=0.5, num_iters=25)
     graph = _build_prm(problem, hyperparameters)
@@ -118,5 +118,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", default="results", type=Path)
     parser.add_argument("--fps", default=10)
+    parser.add_argument("--seed", default=0, type=int)
     args = parser.parse_args()
-    _main(args.outdir, args.fps)
+    _main(args.outdir, args.fps, args.seed)
