@@ -148,7 +148,20 @@ class ConcatRobotConfTraj(RobotConfTraj[RobotConf]):
             if keep_traj:
                 new_trajs.append(traj)
             st = et
-        return ConcatRobotConfTraj(new_trajs)
+        return concatenate_robot_conf_trajectories(new_trajs)
+
+
+def concatenate_robot_conf_trajectories(
+    trajectories: Sequence[RobotConfTraj[RobotConf]],
+) -> RobotConfTraj[RobotConf]:
+    """Concatenate one or more robot conf trajectories."""
+    inner_trajs: List[RobotConfTraj[RobotConf]] = []
+    for traj in trajectories:
+        if isinstance(traj, ConcatRobotConfTraj):
+            inner_trajs.extend(traj.trajs)
+        else:
+            inner_trajs.append(traj)
+    return ConcatRobotConfTraj(inner_trajs)
 
 
 @singledispatch
@@ -211,7 +224,7 @@ def robot_conf_sequence_to_trajectory(
             conf_sequence[t], conf_sequence[t + 1], max_velocity
         )
         segments.append(seg)
-    return ConcatRobotConfTraj(segments)
+    return concatenate_robot_conf_trajectories(segments)
 
 
 def try_direct_path_motion_plan(
@@ -255,5 +268,7 @@ def find_trajectory_shortcuts(
         if direct_path is None:
             continue
         # Direct path works, so update the trajectory.
-        traj = ConcatRobotConfTraj([traj[:start_t], direct_path, traj[end_t:]])
+        traj = concatenate_robot_conf_trajectories(
+            [traj[:start_t], direct_path, traj[end_t:]]
+        )
     return traj
