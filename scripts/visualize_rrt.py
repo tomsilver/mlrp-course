@@ -9,6 +9,7 @@ from spatialmath import SE2
 from tomsgeoms2d.structs import Circle, LineSegment, Rectangle
 from tqdm import tqdm
 
+from mlrp_course.motion.algorithms.birrt import _birrt_nodes_to_trajectory, _build_birrt
 from mlrp_course.motion.algorithms.rrt import (
     RRTHyperparameters,
     _build_rrt,
@@ -22,7 +23,9 @@ from mlrp_course.motion.utils import find_trajectory_shortcuts
 from mlrp_course.utils import fig2data
 
 
-def _main(outdir: Path, fps: int, seed: int, num_shortcut_attempts: int) -> None:
+def _main(
+    outdir: Path, fps: int, seed: int, num_shortcut_attempts: int, bidirectional: bool
+) -> None:
 
     world_x_bounds = (0, 10)
     world_y_bounds = (0, 10)
@@ -48,7 +51,20 @@ def _main(outdir: Path, fps: int, seed: int, num_shortcut_attempts: int) -> None
         num_iters=1000,
         num_shortcut_attempts=num_shortcut_attempts,
     )
-    nodes = _build_rrt(problem, rng, hyperparameters)
+    print("Running planning...")
+    if bidirectional:
+        init_nodes, goal_nodes = _build_birrt(problem, hyperparameters)
+        nodes = sorted(init_nodes + goal_nodes, key=lambda n: n.node_id)
+        plan = _birrt_nodes_to_trajectory(
+            init_nodes, goal_nodes, problem, hyperparameters.max_velocity
+        )
+    else:
+        nodes = _build_rrt(problem, rng, hyperparameters)
+        plan = _finish_plan(nodes[-1], hyperparameters.max_velocity)
+
+    assert plan is not None
+    print("Finding shortcuts...")
+    plan = find_trajectory_shortcuts(plan, rng, problem, hyperparameters)
 
     print("Creating RRT video...")
     imgs = []
@@ -95,14 +111,11 @@ def _main(outdir: Path, fps: int, seed: int, num_shortcut_attempts: int) -> None
         img = fig2data(fig)
         imgs.append(img)
 
+    file_prefix = "birrt" if bidirectional else "rrt"
     plt.close()
-    outfile = outdir / "rrt.gif"
+    outfile = outdir / f"{file_prefix}.gif"
     iio.mimsave(outfile, imgs, fps=fps)
     print(f"Wrote out to {outfile}")
-
-    print("Finding shortcuts...")
-    plan = _finish_plan(nodes[-1], hyperparameters.max_velocity)
-    plan = find_trajectory_shortcuts(plan, rng, problem, hyperparameters)
 
     print("Creating plan video...")
     imgs = []
@@ -110,7 +123,7 @@ def _main(outdir: Path, fps: int, seed: int, num_shortcut_attempts: int) -> None
         conf = plan(t)
         img = problem.render(conf)
         imgs.append(img)
-    outfile = outdir / "rrt_traj.gif"
+    outfile = outdir / f"{file_prefix}_traj.gif"
     iio.mimsave(outfile, imgs, fps=fps)
     print(f"Wrote out to {outfile}")
 
@@ -120,8 +133,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--outdir", default="results", type=Path)
-    parser.add_argument("--fps", default=30)
+    parser.add_argument("--fps", default=30, type=int)
     parser.add_argument("--seed", default=0, type=int)
     parser.add_argument("--num_shortcut_attempts", default=0, type=int)
+    parser.add_argument("--bidirectional", action="store_true")
     args = parser.parse_args()
-    _main(args.outdir, args.fps, args.seed, args.num_shortcut_attempts)
+    _main(
+        args.outdir, args.fps, args.seed, args.num_shortcut_attempts, args.bidirectional
+    )
