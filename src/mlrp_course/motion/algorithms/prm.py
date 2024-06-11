@@ -59,9 +59,7 @@ class _PRMNode(Generic[RobotConf]):
 class _PRMGraph(Generic[RobotConf]):
     """A PRM."""
 
-    start_node: _PRMNode[RobotConf]
-    goal_node: _PRMNode[RobotConf]
-    nodes: List[_PRMNode[RobotConf]]
+    nodes: List[_PRMNode[RobotConf]] = field(default_factory=list)
 
 
 def run_prm(
@@ -90,18 +88,12 @@ def run_prm(
     # Build the PRM.
     graph = _build_prm(mpp, hyperparameters)
 
-    # Check if there is a path from start to goal.
-    node_path = _find_node_path(graph)
-
-    # No path found, fail.
-    if node_path is None:
-        return None
-
-    # Convert the node path into a trajectory.
-    conf_sequence = [node.conf for node in node_path]
-    traj = robot_conf_sequence_to_trajectory(
-        conf_sequence, hyperparameters.max_velocity
+    # Query the PRM.
+    traj = _query_prm(
+        mpp.initial_configuration, mpp.goal_configuration, graph, mpp, hyperparameters
     )
+    if traj is None:
+        return traj
 
     # Smooth the trajectory before returning.
     return find_trajectory_shortcuts(traj, rng, mpp, hyperparameters)
@@ -111,9 +103,8 @@ def _build_prm(
     mpp: MotionPlanningProblem[RobotConf],
     hyperparameters: PRMHyperparameters,
 ) -> _PRMGraph[RobotConf]:
-    start_node = _PRMNode(mpp.initial_configuration, [])
-    goal_node = _PRMNode(mpp.goal_configuration, [])
-    nodes = [start_node, goal_node]
+    """Initialize a PRM, ignoring for now the initial state and goal."""
+    graph: _PRMGraph[RobotConf] = _PRMGraph()
     for _ in range(hyperparameters.num_iters):
         # Sample from the configuration space.
         new_conf = mpp.configuration_space.sample()
@@ -121,19 +112,50 @@ def _build_prm(
         if mpp.has_collision(new_conf):
             continue
         # Add to the graph.
-        new_node = _PRMNode(new_conf, [])
-        for node in nodes:
-            dist = get_robot_conf_distance(node.conf, new_conf)
-            if dist > hyperparameters.neighbor_distance_thresh:
-                continue
-            # Add edge if the path is clear.
-            if not _path_has_collision(
-                node.conf, new_conf, mpp, hyperparameters.collision_check_max_distance
-            ):
-                new_node.neighbors.append(node)
-                node.neighbors.append(new_node)
-        nodes.append(new_node)
-    return _PRMGraph(start_node, goal_node, nodes)
+        _update_prm(new_conf, graph, mpp, hyperparameters)
+    return graph
+
+
+def _update_prm(
+    conf: RobotConf,
+    graph: _PRMGraph[RobotConf],
+    mpp: MotionPlanningProblem[RobotConf],
+    hyperparameters: PRMHyperparameters,
+) -> _PRMNode[RobotConf]:
+    new_node = _PRMNode(conf, [])
+    for node in graph.nodes:
+        dist = get_robot_conf_distance(node.conf, conf)
+        if dist > hyperparameters.neighbor_distance_thresh:
+            continue
+        # Add edge if the path is clear.
+        if not _path_has_collision(
+            node.conf, conf, mpp, hyperparameters.collision_check_max_distance
+        ):
+            new_node.neighbors.append(node)
+            node.neighbors.append(new_node)
+    graph.nodes.append(new_node)
+    return new_node
+
+
+def _query_prm(
+    init_conf: RobotConf,
+    goal_conf: RobotConf,
+    graph: _PRMGraph[RobotConf],
+    mpp: MotionPlanningProblem[RobotConf],
+    hyperparameters: PRMHyperparameters,
+) -> RobotConfTraj[RobotConf] | None:
+    init_node = _update_prm(init_conf, graph, mpp, hyperparameters)
+    goal_node = _update_prm(goal_conf, graph, mpp, hyperparameters)
+    # Check if there is a path from start to goal.
+    node_path = _find_node_path(graph, init_node, goal_node)
+    # No path found, fail.
+    if node_path is None:
+        return None
+    # Convert the node path into a trajectory.
+    conf_sequence = [node.conf for node in node_path]
+    return robot_conf_sequence_to_trajectory(
+        conf_sequence, hyperparameters.max_velocity
+    )
 
 
 def _path_has_collision(
@@ -158,8 +180,17 @@ class _PRMGraphSearchProblem(
     ClassicalPlanningProblem[_PRMNode[RobotConf], _PRMNode[RobotConf]]
 ):
 
-    def __init__(self, prm_graph: _PRMGraph[RobotConf]) -> None:
+    def __init__(
+        self,
+        prm_graph: _PRMGraph[RobotConf],
+        init_node: _PRMNode[RobotConf],
+        goal_node: _PRMNode[RobotConf],
+    ) -> None:
+        assert init_node in prm_graph.nodes
+        assert goal_node in prm_graph.nodes
         self._prm_graph = prm_graph
+        self._init_node = init_node
+        self._goal_node = goal_node
         super().__init__()
 
     @property
@@ -173,7 +204,7 @@ class _PRMGraphSearchProblem(
 
     @property
     def initial_state(self) -> _PRMNode[RobotConf]:
-        return self._prm_graph.start_node
+        return self._init_node
 
     def initiable(
         self, state: _PRMNode[RobotConf], action: _PRMNode[RobotConf]
@@ -195,7 +226,7 @@ class _PRMGraphSearchProblem(
         return action
 
     def check_goal(self, state: _PRMNode[RobotConf]) -> bool:
-        return state is self._prm_graph.goal_node
+        return state is self._goal_node
 
     def render_state(self, state: _PRMNode[RobotConf]) -> Image:
         raise NotImplementedError
@@ -207,8 +238,12 @@ class _PRMGraphSearchProblem(
             yield (neighbor, neighbor, self.get_cost(state, neighbor, neighbor))
 
 
-def _find_node_path(graph: _PRMGraph[RobotConf]) -> List[_PRMNode[RobotConf]] | None:
-    graph_search_problem = _PRMGraphSearchProblem(graph)
+def _find_node_path(
+    graph: _PRMGraph[RobotConf],
+    init_node: _PRMNode[RobotConf],
+    goal_node: _PRMNode[RobotConf],
+) -> List[_PRMNode[RobotConf]] | None:
+    graph_search_problem = _PRMGraphSearchProblem(graph, init_node, goal_node)
     try:
         states, _, _ = run_uniform_cost_search(graph_search_problem)
     except SearchFailure:

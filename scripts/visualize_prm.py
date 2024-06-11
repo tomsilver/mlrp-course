@@ -12,13 +12,12 @@ from tqdm import tqdm
 from mlrp_course.motion.algorithms.prm import (
     PRMHyperparameters,
     _build_prm,
-    _find_node_path,
+    _query_prm,
 )
 from mlrp_course.motion.envs.geom2d_problem import (
     Geom2DMotionPlanningProblem,
     _copy_geom_with_pose,
 )
-from mlrp_course.motion.utils import robot_conf_sequence_to_trajectory
 from mlrp_course.utils import fig2data
 
 
@@ -42,8 +41,18 @@ def _main(outdir: Path, fps: int, seed: int) -> None:
         obstacle_geoms,
         seed=seed,
     )
-    hyperparameters = PRMHyperparameters(collision_check_max_distance=0.5, num_iters=25)
+    hyperparameters = PRMHyperparameters(
+        collision_check_max_distance=0.5, num_iters=100
+    )
     graph = _build_prm(problem, hyperparameters)
+    plan = _query_prm(
+        problem.initial_configuration,
+        problem.goal_configuration,
+        graph,
+        problem,
+        hyperparameters,
+    )
+    assert plan is not None
 
     print("Creating PRM video...")
     imgs = []
@@ -97,12 +106,6 @@ def _main(outdir: Path, fps: int, seed: int) -> None:
 
     print("Creating plan video...")
     imgs = []
-    node_path = _find_node_path(graph)
-    assert node_path is not None
-    conf_sequence = [node.conf for node in node_path]
-    plan = robot_conf_sequence_to_trajectory(
-        conf_sequence, hyperparameters.max_velocity
-    )
     for t in tqdm(np.linspace(0, plan.duration, num=100, endpoint=True)):
         conf = plan(t)
         img = problem.render(conf)
