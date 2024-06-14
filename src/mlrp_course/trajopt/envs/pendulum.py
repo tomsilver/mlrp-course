@@ -3,6 +3,7 @@
 Reference: https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/envs/classic_control/pendulum.py  # pylint: disable=line-too-long
 """
 
+from functools import cached_property
 from typing import ClassVar
 
 import numpy as np
@@ -42,7 +43,7 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     def horizon(self) -> int:
         return 200
 
-    @property
+    @cached_property
     def state_space(self) -> Box:
         # theta and theta_dot.
         return Box(
@@ -50,7 +51,7 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
             high=np.array([np.pi, self._max_speed]),
         )
 
-    @property
+    @cached_property
     def action_space(self) -> Box:
         # torque.
         return Box(low=np.array([-self._max_torque]), high=np.array([self._max_torque]))
@@ -62,8 +63,6 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     def get_next_state(
         self, state: TrajOptState, action: TrajOptAction
     ) -> TrajOptState:
-        assert self.state_space.contains(state)
-        assert self.action_space.contains(action)
 
         g = self._gravity
         m = self._mass

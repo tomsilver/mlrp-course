@@ -1,5 +1,7 @@
 """A discrete-time finite-horizon trajectory optimization problem."""
 
+from __future__ import annotations
+
 import abc
 from dataclasses import dataclass
 from typing import TypeAlias
@@ -23,6 +25,10 @@ class TrajOptTraj:
 
     def __post_init__(self) -> None:
         assert len(self.states) == len(self.actions) + 1
+
+    def copy(self) -> TrajOptTraj:
+        """Copy the trajectory."""
+        return TrajOptTraj(self.states.copy(), self.actions.copy())
 
 
 class UnconstrainedTrajOptProblem(abc.ABC):
