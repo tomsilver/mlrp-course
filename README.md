@@ -4,6 +4,8 @@
 
 Code for course on Machine Learning for Robot Planning.
 
+TEST
+
 ## Requirements
 
 - Python 3.10+
