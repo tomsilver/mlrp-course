@@ -5,20 +5,21 @@ from dataclasses import dataclass
 from typing import TypeAlias
 
 import numpy as np
+from gymnasium.spaces import Box
 from numpy.typing import NDArray
 
 from mlrp_course.structs import Image
 
-TrajOptState: TypeAlias = NDArray[np.float64]
-TrajOptAction: TypeAlias = NDArray[np.float64]
+TrajOptState: TypeAlias = NDArray[np.float32]
+TrajOptAction: TypeAlias = NDArray[np.float32]
 
 
 @dataclass
 class TrajOptTraj:
     """A trajectory of states and actions."""
 
-    states: NDArray[np.float64]  # array of TrajOptState
-    actions: NDArray[np.float64]  # array of TrajOptAction
+    states: NDArray[np.float32]  # array of TrajOptState
+    actions: NDArray[np.float32]  # array of TrajOptAction
 
     def __post_init__(self) -> None:
         assert len(self.states) == len(self.actions) + 1
@@ -34,13 +35,13 @@ class UnconstrainedTrajOptProblem(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def state_dim(self) -> int:
-        """The dimension of the state vector."""
+    def state_space(self) -> Box:
+        """The vector state space."""
 
     @property
     @abc.abstractmethod
-    def action_dim(self) -> int:
-        """The dimension of the action vector."""
+    def action_space(self) -> Box:
+        """The vector action space."""
 
     @property
     @abc.abstractmethod

@@ -6,6 +6,7 @@ Reference: https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/en
 from typing import ClassVar
 
 import numpy as np
+from gymnasium.spaces import Box
 
 from mlrp_course.structs import Image
 from mlrp_course.trajopt.trajopt_problem import (
@@ -35,28 +36,36 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         return 200
 
     @property
-    def state_dim(self) -> int:
-        return 2  # theta and theta_dot
+    def state_space(self) -> Box:
+        # theta and theta_dot.
+        return Box(
+            low=np.array([-np.pi, -self._max_speed]),
+            high=np.array([np.pi, self._max_speed]),
+        )
 
     @property
-    def action_dim(self) -> int:
-        return 1  # torque
+    def action_space(self) -> Box:
+        # torque.
+        return Box(low=np.array([-self._max_torque]), high=np.array([self._max_torque]))
 
     @property
     def initial_state(self) -> TrajOptState:
-        return np.array([np.pi, 1.0])  # down and slightly swinging
+        return np.array([np.pi, 1.0], dtype=np.float32)  # down and swinging
 
     def get_next_state(
         self, state: TrajOptState, action: TrajOptAction
     ) -> TrajOptState:
-        theta, theta_dot = state
+        assert self.state_space.contains(state)
+        assert self.action_space.contains(action)
 
         g = self._gravity
         m = self._mass
         l = self._length
         dt = self._dt
 
-        u = np.clip(action, -self._max_torque, self._max_torque)
+        theta, theta_dot = state
+
+        u = np.clip(action[0], -self._max_torque, self._max_torque)
 
         next_theta_dot = (
             theta_dot + (3 * g / (2 * l) * np.sin(theta) + 3.0 / (m * l**2) * u) * dt
@@ -64,7 +73,7 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         next_theta_dot = np.clip(next_theta_dot, -self._max_speed, self._max_speed)
         next_theta = theta + next_theta_dot * dt
 
-        return np.array([next_theta, next_theta_dot])
+        return np.array([next_theta, next_theta_dot], dtype=np.float32)
 
     def get_traj_cost(self, traj: TrajOptTraj) -> float:
         # Get states costs.
