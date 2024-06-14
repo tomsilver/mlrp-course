@@ -7,6 +7,8 @@ from typing import ClassVar
 
 import numpy as np
 from gymnasium.spaces import Box
+from matplotlib import pyplot as plt
+from tomsgeoms2d.structs import Circle, Rectangle
 
 from mlrp_course.structs import Image
 from mlrp_course.trajopt.trajopt_problem import (
@@ -15,7 +17,7 @@ from mlrp_course.trajopt.trajopt_problem import (
     TrajOptTraj,
     UnconstrainedTrajOptProblem,
 )
-from mlrp_course.utils import wrap_angle
+from mlrp_course.utils import fig2data, wrap_angle
 
 
 class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
@@ -97,4 +99,22 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         )
 
     def render_state(self, state: TrajOptState) -> Image:
-        raise NotImplementedError
+        theta, _ = state
+        rot = wrap_angle(theta + np.pi / 2)
+        width = self._length / 8
+        rect = Rectangle(0, 0, self._length, width, 0.0)
+        rect = rect.rotate_about_point(0, width / 2, rot)
+        circ = Circle(0, width / 2, width / 8)
+        figsize = (5, 5)
+        fig, ax = plt.subplots(1, 1, figsize=figsize)
+        pad_scale = 1.25
+        ax.set_xlim(-pad_scale * self._length, pad_scale * self._length)
+        ax.set_ylim(-pad_scale * self._length, pad_scale * self._length)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        rect.plot(ax, fc="gray", ec="black")
+        circ.plot(ax, fc="black", ec="black")
+        plt.tight_layout()
+        img = fig2data(fig)
+        plt.close()
+        return img
