@@ -25,7 +25,7 @@ from mlrp_course.utils import (
     Trajectory,
     TrajectorySegment,
     get_trajectory_state_distance,
-    state_sequence_to_trajectory,
+    point_sequence_to_trajectory,
 )
 
 
@@ -155,7 +155,7 @@ def _query_prm(
         return None
     # Convert the node path into a trajectory.
     conf_sequence = [node.conf for node in node_path]
-    return state_sequence_to_trajectory(conf_sequence, hyperparameters.max_velocity)
+    return point_sequence_to_trajectory(conf_sequence, hyperparameters.max_velocity)
 
 
 def _path_has_collision(

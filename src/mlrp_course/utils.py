@@ -116,10 +116,10 @@ def wrap_angle(angle: float) -> float:
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
-TrajectoryState = TypeVar("TrajectoryState")
+TrajectoryPoint = TypeVar("TrajectoryPoint")
 
 
-class Trajectory(Generic[TrajectoryState]):
+class Trajectory(Generic[TrajectoryPoint]):
     """A continuous-time trajectory."""
 
     @property
@@ -133,7 +133,7 @@ class Trajectory(Generic[TrajectoryState]):
         """The length of the trajectory in distance."""
 
     @abc.abstractmethod
-    def __call__(self, time: float) -> TrajectoryState:
+    def __call__(self, time: float) -> TrajectoryPoint:
         """Get the state at the given time."""
 
     def __getitem__(self, key: float | slice):
@@ -149,25 +149,25 @@ class Trajectory(Generic[TrajectoryState]):
     @abc.abstractmethod
     def get_sub_trajectory(
         self, start_time: float, end_time: float
-    ) -> Trajectory[TrajectoryState]:
+    ) -> Trajectory[TrajectoryPoint]:
         """Create a new trajectory with time re-indexed."""
 
     @abc.abstractmethod
-    def reverse(self) -> Trajectory[TrajectoryState]:
+    def reverse(self) -> Trajectory[TrajectoryPoint]:
         """Create a new trajectory with time re-indexed."""
 
 
 @dataclass(frozen=True)
-class TrajectorySegment(Trajectory[TrajectoryState]):
+class TrajectorySegment(Trajectory[TrajectoryPoint]):
     """A trajectory defined by a single start and end point."""
 
-    start: TrajectoryState
-    end: TrajectoryState
+    start: TrajectoryPoint
+    end: TrajectoryPoint
     _duration: float = 1.0
 
     @classmethod
     def from_max_velocity(
-        cls, start: TrajectoryState, end: TrajectoryState, max_velocity: float
+        cls, start: TrajectoryPoint, end: TrajectoryPoint, max_velocity: float
     ) -> TrajectorySegment:
         """Create a segment from a given max velocity."""
         distance = get_trajectory_state_distance(start, end)
@@ -182,7 +182,7 @@ class TrajectorySegment(Trajectory[TrajectoryState]):
     def distance(self) -> float:
         return get_trajectory_state_distance(self.start, self.end)
 
-    def __call__(self, time: float) -> TrajectoryState:
+    def __call__(self, time: float) -> TrajectoryPoint:
         # Avoid numerical issues.
         time = np.clip(time, 0, self.duration)
         s = time / self.duration
@@ -190,21 +190,21 @@ class TrajectorySegment(Trajectory[TrajectoryState]):
 
     def get_sub_trajectory(
         self, start_time: float, end_time: float
-    ) -> Trajectory[TrajectoryState]:
+    ) -> Trajectory[TrajectoryPoint]:
         elapsed_time = end_time - start_time
         frac = elapsed_time / self.duration
         new_duration = frac * self.duration
         return TrajectorySegment(self(start_time), self(end_time), new_duration)
 
-    def reverse(self) -> Trajectory[TrajectoryState]:
+    def reverse(self) -> Trajectory[TrajectoryPoint]:
         return TrajectorySegment(self.end, self.start, self.duration)
 
 
 @dataclass(frozen=True)
-class ConcatTrajectory(Trajectory[TrajectoryState]):
+class ConcatTrajectory(Trajectory[TrajectoryPoint]):
     """A trajectory that concatenates other trajectories."""
 
-    trajs: Sequence[Trajectory[TrajectoryState]]
+    trajs: Sequence[Trajectory[TrajectoryPoint]]
 
     @cached_property
     def duration(self) -> float:
@@ -214,7 +214,7 @@ class ConcatTrajectory(Trajectory[TrajectoryState]):
     def distance(self) -> float:
         return sum(t.distance for t in self.trajs)
 
-    def __call__(self, time: float) -> TrajectoryState:
+    def __call__(self, time: float) -> TrajectoryPoint:
         # Avoid numerical issues.
         time = np.clip(time, 0, self.duration)
         start_time = 0.0
@@ -228,7 +228,7 @@ class ConcatTrajectory(Trajectory[TrajectoryState]):
 
     def get_sub_trajectory(
         self, start_time: float, end_time: float
-    ) -> Trajectory[TrajectoryState]:
+    ) -> Trajectory[TrajectoryPoint]:
         new_trajs = []
         st = 0.0
         keep_traj = False
@@ -253,15 +253,15 @@ class ConcatTrajectory(Trajectory[TrajectoryState]):
             st = et
         return concatenate_trajectories(new_trajs)
 
-    def reverse(self) -> Trajectory[TrajectoryState]:
+    def reverse(self) -> Trajectory[TrajectoryPoint]:
         return ConcatTrajectory([t.reverse() for t in self.trajs][::-1])
 
 
 def concatenate_trajectories(
-    trajectories: Sequence[Trajectory[TrajectoryState]],
-) -> Trajectory[TrajectoryState]:
+    trajectories: Sequence[Trajectory[TrajectoryPoint]],
+) -> Trajectory[TrajectoryPoint]:
     """Concatenate one or more trajectories."""
-    inner_trajs: List[Trajectory[TrajectoryState]] = []
+    inner_trajs: List[Trajectory[TrajectoryPoint]] = []
     for traj in trajectories:
         if isinstance(traj, ConcatTrajectory):
             inner_trajs.extend(traj.trajs)
@@ -272,8 +272,8 @@ def concatenate_trajectories(
 
 @singledispatch
 def interpolate_trajectory_states(
-    start: TrajectoryState, end: TrajectoryState, s: float
-) -> TrajectoryState:
+    start: TrajectoryPoint, end: TrajectoryPoint, s: float
+) -> TrajectoryPoint:
     """Get a point on the interpolated path between start and end.
 
     The argument is a value between 0 and 1.
@@ -288,7 +288,7 @@ def _(start: SE2, end: SE2, s: float) -> SE2:
 
 @singledispatch
 def get_trajectory_state_distance(
-    start: TrajectoryState, end: TrajectoryState
+    start: TrajectoryPoint, end: TrajectoryPoint
 ) -> float:
     """Get the distance between two trajectory states."""
     raise NotImplementedError
@@ -307,11 +307,11 @@ def _(start: SE2, end: SE2) -> float:
 
 
 def iter_traj_with_max_distance(
-    traj: Trajectory[TrajectoryState],
+    traj: Trajectory[TrajectoryPoint],
     max_distance: float,
     include_start: bool = True,
     include_end: bool = True,
-) -> Iterator[TrajectoryState]:
+) -> Iterator[TrajectoryPoint]:
     """Iterate through the trajectory while guaranteeing that the distance in
     each step is no more than the given max distance."""
     num_steps = int(np.ceil(traj.distance / max_distance)) + 1
@@ -324,23 +324,23 @@ def iter_traj_with_max_distance(
         yield traj(t)
 
 
-def state_sequence_to_trajectory(
-    state_sequence: List[TrajectoryState],
+def point_sequence_to_trajectory(
+    point_sequence: List[TrajectoryPoint],
     max_velocity: float | None = None,
     dt: float | None = None,
-) -> Trajectory[TrajectoryState]:
+) -> Trajectory[TrajectoryPoint]:
     """Convert a sequence of states to a trajectory."""
     assert (max_velocity is None) + (
         dt is None
     ) == 1, "Exactly one of (max_velocity, dt) should be provided"
     segments = []
-    for t in range(len(state_sequence) - 1):
-        s_t = state_sequence[t]
-        s_t1 = state_sequence[t + 1]
+    for t in range(len(point_sequence) - 1):
+        start = point_sequence[t]
+        end = point_sequence[t + 1]
         if max_velocity is not None:
-            seg = TrajectorySegment.from_max_velocity(s_t, s_t1, max_velocity)
+            seg = TrajectorySegment.from_max_velocity(start, end, max_velocity)
         else:
             assert dt is not None and dt > 0
-            seg = TrajectorySegment(s_t, s_t1, dt)
+            seg = TrajectorySegment(start, end, dt)
         segments.append(seg)
     return concatenate_trajectories(segments)

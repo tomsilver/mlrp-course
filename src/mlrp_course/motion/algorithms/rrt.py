@@ -19,7 +19,7 @@ from mlrp_course.utils import (
     Trajectory,
     TrajectorySegment,
     get_trajectory_state_distance,
-    state_sequence_to_trajectory,
+    point_sequence_to_trajectory,
 )
 
 
@@ -127,4 +127,4 @@ def _finish_plan(
         rev_node_sequence.append(node)
     node_sequence = rev_node_sequence[::-1]
     conf_sequence = [n.conf for n in node_sequence]
-    return state_sequence_to_trajectory(conf_sequence, max_velocity)
+    return point_sequence_to_trajectory(conf_sequence, max_velocity)
