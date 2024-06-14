@@ -17,14 +17,16 @@ from mlrp_course.motion.algorithms.direct_path import run_direct_path_motion_pla
 from mlrp_course.motion.motion_planning_problem import MotionPlanningProblem, RobotConf
 from mlrp_course.motion.utils import (
     MotionPlanningHyperparameters,
-    RobotConfSegment,
-    RobotConfTraj,
     find_trajectory_shortcuts,
-    get_robot_conf_distance,
     iter_traj_with_max_distance,
-    robot_conf_sequence_to_trajectory,
 )
 from mlrp_course.structs import Image
+from mlrp_course.utils import (
+    Trajectory,
+    TrajectorySegment,
+    get_trajectory_state_distance,
+    state_sequence_to_trajectory,
+)
 
 
 @dataclass(frozen=True)
@@ -66,7 +68,7 @@ def run_prm(
     mpp: MotionPlanningProblem[RobotConf],
     rng: np.random.Generator,
     hyperparameters: PRMHyperparameters | None = None,
-) -> RobotConfTraj[RobotConf] | None:
+) -> Trajectory[RobotConf] | None:
     """Create a PRM to find a collision-free path from start to goal.
 
     If none is found, returns None.
@@ -124,7 +126,7 @@ def _update_prm(
 ) -> _PRMNode[RobotConf]:
     new_node = _PRMNode(conf, [])
     for node in graph.nodes:
-        dist = get_robot_conf_distance(node.conf, conf)
+        dist = get_trajectory_state_distance(node.conf, conf)
         if dist > hyperparameters.neighbor_distance_thresh:
             continue
         # Add edge if the path is clear.
@@ -143,7 +145,7 @@ def _query_prm(
     graph: _PRMGraph[RobotConf],
     mpp: MotionPlanningProblem[RobotConf],
     hyperparameters: PRMHyperparameters,
-) -> RobotConfTraj[RobotConf] | None:
+) -> Trajectory[RobotConf] | None:
     init_node = _update_prm(init_conf, graph, mpp, hyperparameters)
     goal_node = _update_prm(goal_conf, graph, mpp, hyperparameters)
     # Check if there is a path from start to goal.
@@ -153,9 +155,7 @@ def _query_prm(
         return None
     # Convert the node path into a trajectory.
     conf_sequence = [node.conf for node in node_path]
-    return robot_conf_sequence_to_trajectory(
-        conf_sequence, hyperparameters.max_velocity
-    )
+    return state_sequence_to_trajectory(conf_sequence, hyperparameters.max_velocity)
 
 
 def _path_has_collision(
@@ -164,7 +164,7 @@ def _path_has_collision(
     mpp: MotionPlanningProblem,
     collision_check_max_distance: float,
 ) -> bool:
-    extension = RobotConfSegment(start, end)
+    extension = TrajectorySegment(start, end)
     for waypoint in iter_traj_with_max_distance(
         extension,
         collision_check_max_distance,
@@ -218,7 +218,7 @@ class _PRMGraphSearchProblem(
         next_state: _PRMNode[RobotConf],
     ) -> float:
         assert action is next_state
-        return get_robot_conf_distance(state.conf, next_state.conf)
+        return get_trajectory_state_distance(state.conf, next_state.conf)
 
     def get_next_state(
         self, state: _PRMNode[RobotConf], action: _PRMNode[RobotConf]

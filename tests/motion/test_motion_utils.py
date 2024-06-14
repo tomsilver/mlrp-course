@@ -3,7 +3,7 @@
 import numpy as np
 from spatialmath import SE2
 
-from mlrp_course.motion.utils import ConcatRobotConfTraj, RobotConfSegment
+from mlrp_course.utils import TrajectorySegment, concatenate_trajectories
 
 
 def test_motion_utils():
@@ -17,10 +17,10 @@ def test_motion_utils():
     ]
     durations = [1.0, 1.0, 1.0, 5.0]
     segments = [
-        RobotConfSegment(s, e, t)
+        TrajectorySegment(s, e, t)
         for s, e, t in zip(waypoints[:-1], waypoints[1:], durations, strict=True)
     ]
-    traj = ConcatRobotConfTraj(segments)
+    traj = concatenate_trajectories(segments)
 
     assert np.isclose(traj(0).x, 0)
     assert np.isclose(traj(0).y, 0)

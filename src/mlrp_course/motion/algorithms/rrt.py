@@ -12,12 +12,14 @@ from mlrp_course.motion.algorithms.direct_path import run_direct_path_motion_pla
 from mlrp_course.motion.motion_planning_problem import MotionPlanningProblem, RobotConf
 from mlrp_course.motion.utils import (
     MotionPlanningHyperparameters,
-    RobotConfSegment,
-    RobotConfTraj,
     find_trajectory_shortcuts,
-    get_robot_conf_distance,
     iter_traj_with_max_distance,
-    robot_conf_sequence_to_trajectory,
+)
+from mlrp_course.utils import (
+    Trajectory,
+    TrajectorySegment,
+    get_trajectory_state_distance,
+    state_sequence_to_trajectory,
 )
 
 
@@ -47,7 +49,7 @@ def run_rrt(
     mpp: MotionPlanningProblem[RobotConf],
     rng: np.random.Generator,
     hyperparameters: RRTHyperparameters | None = None,
-) -> RobotConfTraj[RobotConf] | None:
+) -> Trajectory[RobotConf] | None:
     """Run RRT to get a collision-free path from start to goal.
 
     If none is found, returns None.
@@ -95,7 +97,7 @@ def _build_rrt(
         # Find the closest node in the tree.
         node = _get_closest_node(nodes, target)
         # Extend the tree in the direction of the target until collision.
-        extension = RobotConfSegment(node.conf, target)
+        extension = TrajectorySegment(node.conf, target)
         for waypoint in iter_traj_with_max_distance(
             extension,
             hyperparameters.collision_check_max_distance,
@@ -113,16 +115,16 @@ def _build_rrt(
 
 
 def _get_closest_node(nodes: List[_RRTNode[RobotConf]], target: RobotConf) -> _RRTNode:
-    return min(nodes, key=lambda n: get_robot_conf_distance(n.conf, target))
+    return min(nodes, key=lambda n: get_trajectory_state_distance(n.conf, target))
 
 
 def _finish_plan(
     node: _RRTNode[RobotConf], max_velocity: float
-) -> RobotConfTraj[RobotConf]:
+) -> Trajectory[RobotConf]:
     rev_node_sequence = [node]
     while node.parent is not None:
         node = node.parent
         rev_node_sequence.append(node)
     node_sequence = rev_node_sequence[::-1]
     conf_sequence = [n.conf for n in node_sequence]
-    return robot_conf_sequence_to_trajectory(conf_sequence, max_velocity)
+    return state_sequence_to_trajectory(conf_sequence, max_velocity)
