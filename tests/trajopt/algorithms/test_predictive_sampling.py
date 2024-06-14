@@ -1,0 +1,37 @@
+"""Tests for predictive_sampling.py."""
+
+import numpy as np
+
+from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
+from mlrp_course.trajopt.algorithms.predictive_sampling import PredictiveSamplingSolver
+from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
+from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
+
+
+def test_predictive_sampling():
+    """Tests for predictive_sampling.py."""
+    solver = PredictiveSamplingSolver(123)
+    mpc = MPCWrapper(solver)
+    env = PendulumTrajOptProblem(seed=123)
+    mpc.reset(env)
+    # Run MPC to solve the problem.
+    initial_state = env.initial_state
+    states = [initial_state]
+    state = initial_state
+    actions = []
+    for t in range(env.horizon):
+        print(t)  # TODO
+        action = mpc.step(state)
+        state = env.get_next_state(state, action)
+        states.append(state)
+        actions.append(action)
+    traj = TrajOptTraj(np.array(states), np.array(actions))
+    cost = env.get_traj_cost(traj)
+    assert cost > 0
+
+    # Uncomment to visualize.
+    # TODO
+    import imageio.v2 as iio
+
+    imgs = [env.render_state(s) for s in states]
+    iio.mimsave("mpc_ps_pendulum.mp4", imgs, fps=10)

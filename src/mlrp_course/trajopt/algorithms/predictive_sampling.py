@@ -51,9 +51,9 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
             nominal = self._get_initialization(horizon)
         sample_list.append(nominal)
         # Sample new candidates around the nominal trajectory.
-        for _ in range(self._config.num_rollouts - len(sample_list)):
-            sample = self._sample_from_nominal(nominal)
-            sample_list.append(sample)
+        num_samples = self._config.num_rollouts - len(sample_list)
+        new_samples = self._sample_from_nominal(nominal, num_samples)
+        sample_list.extend(new_samples)
         # Pick the best one.
         return min(
             sample_list, key=lambda s: self._score_sample(s, initial_state, horizon)
@@ -69,18 +69,31 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
         return traj
 
     def _sample_from_nominal(
-        self, nominal: Trajectory[TrajOptAction]
-    ) -> Trajectory[TrajOptAction]:
+        self,
+        nominal: Trajectory[TrajOptAction],
+        num_samples: int,
+    ) -> List[Trajectory[TrajOptAction]]:
+        assert self._problem is not None
         # Sample by adding Gaussian noise around the nominal trajectory.
-        actions = [
-            self._rng.normal(loc=nominal(t), scale=self._config.noise_scale)
-            for t in np.arange(
-                0,
-                nominal.duration + self._config.control_interval + 1,
-                step=self._config.control_interval,
-            )
+        duration = nominal.duration
+        control_times = np.arange(
+            0,
+            duration + self._config.control_interval + 1,
+            step=self._config.control_interval,
+        )
+        nominal_control_points = np.array([nominal(t) for t in control_times])
+        noise_shape = self._problem.action_space.shape + (
+            len(control_times),
+            num_samples,
+        )
+        noise = self._rng.normal(
+            loc=0, scale=self._config.noise_scale, size=noise_shape
+        )
+        new_control_points = (nominal_control_points + noise).T
+        return [
+            self._action_samples_to_trajectory(actions, duration)
+            for actions in new_control_points
         ]
-        return self._action_samples_to_trajectory(actions, nominal.duration)
 
     def _action_samples_to_trajectory(
         self, actions: List[TrajOptAction], duration: float
