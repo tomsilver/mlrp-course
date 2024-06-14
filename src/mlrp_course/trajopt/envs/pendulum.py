@@ -31,6 +31,11 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     _theta_dot_cost_weight: ClassVar[float] = 0.1
     _torque_cost_weight: ClassVar[float] = 0.001
 
+    def __init__(self, seed: int) -> None:
+        self._seed = seed
+        self.action_space.seed(seed)
+        super().__init__()
+
     @property
     def horizon(self) -> int:
         return 200
