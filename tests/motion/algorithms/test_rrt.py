@@ -6,7 +6,7 @@ from tomsgeoms2d.structs import Circle, Rectangle
 
 from mlrp_course.motion.algorithms.rrt import run_rrt
 from mlrp_course.motion.envs.geom2d_problem import Geom2DMotionPlanningProblem
-from mlrp_course.motion.utils import RobotConfSegment
+from mlrp_course.utils import TrajectorySegment
 
 
 def test_rrt():
@@ -29,7 +29,7 @@ def test_rrt():
     solution = run_rrt(problem, rng)
     assert solution is not None
     # It should be a straight line.
-    assert isinstance(solution, RobotConfSegment)
+    assert isinstance(solution, TrajectorySegment)
 
     # Test a case with obstacles, where a straight line will not work.
     obstacle_geoms = {
@@ -48,4 +48,4 @@ def test_rrt():
     solution = run_rrt(problem, rng)
     assert solution is not None
     # It should not be a straight line.
-    assert not isinstance(solution, RobotConfSegment)
+    assert not isinstance(solution, TrajectorySegment)

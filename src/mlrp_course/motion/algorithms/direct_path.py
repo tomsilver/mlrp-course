@@ -3,15 +3,15 @@
 from mlrp_course.motion.motion_planning_problem import MotionPlanningProblem, RobotConf
 from mlrp_course.motion.utils import (
     MotionPlanningHyperparameters,
-    RobotConfTraj,
     try_direct_path_motion_plan,
 )
+from mlrp_course.utils import Trajectory
 
 
 def run_direct_path_motion_planning(
     mpp: MotionPlanningProblem[RobotConf],
     hyperparameters: MotionPlanningHyperparameters | None = None,
-) -> RobotConfTraj[RobotConf] | None:
+) -> Trajectory[RobotConf] | None:
     """Attempt to construct a trajectory directly from start to goal.
 
     If none is found, returns None.
