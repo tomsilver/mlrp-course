@@ -29,11 +29,12 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
 
     def __init__(
         self,
+        seed: int,
         config: PredictiveSamplingHyperparameters | None = None,
         warm_start: bool = True,
     ) -> None:
         self._config = config or PredictiveSamplingHyperparameters()
-        super().__init__(warm_start)
+        super().__init__(seed, warm_start)
 
     def _solve(
         self,
@@ -46,23 +47,44 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
             assert isinstance(self._last_solution, Trajectory)
             assert np.isclose(self._last_solution.duration, horizon + 1)
             nominal = self._last_solution.get_sub_trajectory(1, horizon + 1)
-            sample_list.append(nominal)
-        # Sample new candidates.
+        else:
+            nominal = self._get_initialization(horizon)
+        sample_list.append(nominal)
+        # Sample new candidates around the nominal trajectory.
         for _ in range(self._config.num_rollouts - len(sample_list)):
-            sample = self._sample_plan(horizon)
+            sample = self._sample_from_nominal(nominal)
             sample_list.append(sample)
         # Pick the best one.
         return min(
             sample_list, key=lambda s: self._score_sample(s, initial_state, horizon)
         )
 
-    def _sample_plan(self, horizon: int) -> Trajectory[TrajOptAction]:
+    def _get_initialization(self, horizon: int) -> Trajectory[TrajOptAction]:
         assert self._problem is not None
         num_control_points = int(np.ceil(horizon / self._config.control_interval))
         actions = [
             self._problem.action_space.sample() for _ in range(num_control_points)
         ]
         dt = horizon / len(actions)
+        return point_sequence_to_trajectory(actions, dt=dt)
+
+    def _sample_from_nominal(
+        self, nominal: Trajectory[TrajOptAction]
+    ) -> Trajectory[TrajOptAction]:
+        assert self._problem is not None
+        # Sample by adding Gaussian noise around the nominal trajectory.
+        actions = [
+            self._rng.multivariate_normal(mean=nominal(t), cov=self._config.noise_scale)
+            for t in np.arange(
+                0, nominal.duration + 1, step=self._config.control_interval
+            )
+        ]
+        # Clip to obey action limits.
+        low = self._problem.action_space.low
+        high = self._problem.action_space.high
+        actions = [np.clip(a, low, high) for a in actions]
+        # Interpolate the control points to create a final trajectory.
+        dt = nominal.duration / len(actions)
         return point_sequence_to_trajectory(actions, dt=dt)
 
     def _score_sample(
