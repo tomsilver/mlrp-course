@@ -77,6 +77,7 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         )
         next_theta_dot = np.clip(next_theta_dot, -self._max_speed, self._max_speed)
         next_theta = theta + next_theta_dot * dt
+        next_theta = wrap_angle(next_theta)
 
         return np.array([next_theta, next_theta_dot], dtype=np.float32)
 
