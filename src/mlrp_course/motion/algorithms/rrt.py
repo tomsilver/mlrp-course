@@ -18,7 +18,7 @@ from mlrp_course.motion.utils import (
 from mlrp_course.utils import (
     Trajectory,
     TrajectorySegment,
-    get_trajectory_state_distance,
+    get_trajectory_point_distance,
     point_sequence_to_trajectory,
 )
 
@@ -115,7 +115,7 @@ def _build_rrt(
 
 
 def _get_closest_node(nodes: List[_RRTNode[RobotConf]], target: RobotConf) -> _RRTNode:
-    return min(nodes, key=lambda n: get_trajectory_state_distance(n.conf, target))
+    return min(nodes, key=lambda n: get_trajectory_point_distance(n.conf, target))
 
 
 def _finish_plan(

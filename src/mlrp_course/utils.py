@@ -134,7 +134,7 @@ class Trajectory(Generic[TrajectoryPoint]):
 
     @abc.abstractmethod
     def __call__(self, time: float) -> TrajectoryPoint:
-        """Get the state at the given time."""
+        """Get the point at the given time."""
 
     def __getitem__(self, key: float | slice):
         """Shorthand for indexing or sub-trajectory creation."""
@@ -170,7 +170,7 @@ class TrajectorySegment(Trajectory[TrajectoryPoint]):
         cls, start: TrajectoryPoint, end: TrajectoryPoint, max_velocity: float
     ) -> TrajectorySegment:
         """Create a segment from a given max velocity."""
-        distance = get_trajectory_state_distance(start, end)
+        distance = get_trajectory_point_distance(start, end)
         duration = distance / max_velocity
         return TrajectorySegment(start, end, duration)
 
@@ -180,13 +180,13 @@ class TrajectorySegment(Trajectory[TrajectoryPoint]):
 
     @cached_property
     def distance(self) -> float:
-        return get_trajectory_state_distance(self.start, self.end)
+        return get_trajectory_point_distance(self.start, self.end)
 
     def __call__(self, time: float) -> TrajectoryPoint:
         # Avoid numerical issues.
         time = np.clip(time, 0, self.duration)
         s = time / self.duration
-        return interpolate_trajectory_states(self.start, self.end, s)
+        return interpolate_trajectory_points(self.start, self.end, s)
 
     def get_sub_trajectory(
         self, start_time: float, end_time: float
@@ -271,7 +271,7 @@ def concatenate_trajectories(
 
 
 @singledispatch
-def interpolate_trajectory_states(
+def interpolate_trajectory_points(
     start: TrajectoryPoint, end: TrajectoryPoint, s: float
 ) -> TrajectoryPoint:
     """Get a point on the interpolated path between start and end.
@@ -281,20 +281,20 @@ def interpolate_trajectory_states(
     raise NotImplementedError
 
 
-@interpolate_trajectory_states.register
+@interpolate_trajectory_points.register
 def _(start: SE2, end: SE2, s: float) -> SE2:
     return start.interp(end, s)
 
 
 @singledispatch
-def get_trajectory_state_distance(
+def get_trajectory_point_distance(
     start: TrajectoryPoint, end: TrajectoryPoint
 ) -> float:
-    """Get the distance between two trajectory states."""
+    """Get the distance between two trajectory points."""
     raise NotImplementedError
 
 
-@get_trajectory_state_distance.register
+@get_trajectory_point_distance.register
 def _(start: SE2, end: SE2) -> float:
     # Many choices are possible. Here we take the maximum of the translation
     # distance and a scaled-down angular distance.
@@ -329,7 +329,7 @@ def point_sequence_to_trajectory(
     max_velocity: float | None = None,
     dt: float | None = None,
 ) -> Trajectory[TrajectoryPoint]:
-    """Convert a sequence of states to a trajectory."""
+    """Convert a sequence of points to a trajectory."""
     assert (max_velocity is None) + (
         dt is None
     ) == 1, "Exactly one of (max_velocity, dt) should be provided"

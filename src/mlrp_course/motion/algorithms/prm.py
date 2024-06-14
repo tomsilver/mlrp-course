@@ -24,7 +24,7 @@ from mlrp_course.structs import Image
 from mlrp_course.utils import (
     Trajectory,
     TrajectorySegment,
-    get_trajectory_state_distance,
+    get_trajectory_point_distance,
     point_sequence_to_trajectory,
 )
 
@@ -126,7 +126,7 @@ def _update_prm(
 ) -> _PRMNode[RobotConf]:
     new_node = _PRMNode(conf, [])
     for node in graph.nodes:
-        dist = get_trajectory_state_distance(node.conf, conf)
+        dist = get_trajectory_point_distance(node.conf, conf)
         if dist > hyperparameters.neighbor_distance_thresh:
             continue
         # Add edge if the path is clear.
@@ -218,7 +218,7 @@ class _PRMGraphSearchProblem(
         next_state: _PRMNode[RobotConf],
     ) -> float:
         assert action is next_state
-        return get_trajectory_state_distance(state.conf, next_state.conf)
+        return get_trajectory_point_distance(state.conf, next_state.conf)
 
     def get_next_state(
         self, state: _PRMNode[RobotConf], action: _PRMNode[RobotConf]
