@@ -15,19 +15,17 @@ from mlrp_course.motion.algorithms.rrt import (
 )
 from mlrp_course.motion.motion_planning_problem import MotionPlanningProblem, RobotConf
 from mlrp_course.motion.utils import (
-    RobotConfSegment,
-    RobotConfTraj,
-    concatenate_robot_conf_trajectories,
     find_trajectory_shortcuts,
     iter_traj_with_max_distance,
 )
+from mlrp_course.utils import Trajectory, TrajectorySegment, concatenate_trajectories
 
 
 def run_birrt(
     mpp: MotionPlanningProblem[RobotConf],
     rng: np.random.Generator,
     hyperparameters: RRTHyperparameters | None = None,
-) -> RobotConfTraj[RobotConf] | None:
+) -> Trajectory[RobotConf] | None:
     """Run BiRRT to get two trees, one from init and one from goal.
 
     If none is found, returns None.
@@ -72,7 +70,7 @@ def _build_birrt(
         connection_achieved = True
         for nodes in [nodes_from_init, nodes_from_goal]:
             node = _get_closest_node(nodes, target)
-            extension = RobotConfSegment(node.conf, target)
+            extension = TrajectorySegment(node.conf, target)
             for waypoint in iter_traj_with_max_distance(
                 extension,
                 hyperparameters.collision_check_max_distance,
@@ -93,7 +91,7 @@ def _birrt_nodes_to_trajectory(
     nodes_from_goal: List[_RRTNode[RobotConf]],
     mpp: MotionPlanningProblem,
     max_velocity: float,
-) -> RobotConfTraj[RobotConf] | None:
+) -> Trajectory[RobotConf] | None:
     assert nodes_from_init[0].conf == mpp.initial_configuration
     assert nodes_from_goal[0].conf == mpp.goal_configuration
     if nodes_from_init[-1].conf != nodes_from_goal[-1].conf:
@@ -102,4 +100,4 @@ def _birrt_nodes_to_trajectory(
     traj_from_init = _finish_plan(nodes_from_init[-1], max_velocity)
     traj_from_goal = _finish_plan(nodes_from_goal[-1], max_velocity)
     traj_to_goal = traj_from_goal.reverse()
-    return concatenate_robot_conf_trajectories([traj_from_init, traj_to_goal])
+    return concatenate_trajectories([traj_from_init, traj_to_goal])
