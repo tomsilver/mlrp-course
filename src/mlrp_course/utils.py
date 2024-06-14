@@ -235,13 +235,13 @@ class ConcatTrajectory(Trajectory[TrajectoryPoint]):
         for traj in self.trajs:
             et = st + traj.duration
             # Start keeping trajectories.
-            if st <= start_time <= et:
+            if st <= start_time < et:
                 keep_traj = True
                 # Shorten the current trajectory so it starts at start_time.
                 traj = traj.get_sub_trajectory(start_time - st, traj.duration)
                 st = start_time
             # Stop keeping trajectories.
-            if st <= end_time <= et:
+            if st < end_time <= et:
                 # Shorten the current trajectory so it ends at end_time.
                 traj = traj.get_sub_trajectory(0, end_time - st)
                 # Finish.
@@ -284,6 +284,11 @@ def interpolate_trajectory_points(
 @interpolate_trajectory_points.register
 def _(start: SE2, end: SE2, s: float) -> SE2:
     return start.interp(end, s)
+
+
+@interpolate_trajectory_points.register
+def _(start: np.ndarray, end: np.ndarray, s: float) -> NDArray:  # type: ignore
+    return start + (end - start) * s
 
 
 @singledispatch

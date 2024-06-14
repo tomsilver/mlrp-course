@@ -1,5 +1,6 @@
 """Motion planning problems defined with geom2d."""
 
+from functools import cached_property
 from typing import Any, ClassVar, Collection, Dict, Tuple
 
 import gymnasium as gym
@@ -111,7 +112,7 @@ class Geom2DMotionPlanningProblem(MotionPlanningProblem[SE2]):
         self._obstacle_geoms = obstacle_geoms
         self._rng = np.random.default_rng(seed)
 
-    @property
+    @cached_property
     def configuration_space(self) -> SE2Space:
         return SE2Space(self._rng, self._world_x_bounds, self._world_y_bounds)
 

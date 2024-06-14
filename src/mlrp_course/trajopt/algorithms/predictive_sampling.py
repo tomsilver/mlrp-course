@@ -61,30 +61,37 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
 
     def _get_initialization(self, horizon: int) -> Trajectory[TrajOptAction]:
         assert self._problem is not None
-        num_control_points = int(np.ceil(horizon / self._config.control_interval))
+        num_control_points = int(np.ceil(horizon / self._config.control_interval)) + 1
         actions = [
             self._problem.action_space.sample() for _ in range(num_control_points)
         ]
-        dt = horizon / len(actions)
-        return point_sequence_to_trajectory(actions, dt=dt)
+        traj = self._action_samples_to_trajectory(actions, horizon)
+        return traj
 
     def _sample_from_nominal(
         self, nominal: Trajectory[TrajOptAction]
     ) -> Trajectory[TrajOptAction]:
-        assert self._problem is not None
         # Sample by adding Gaussian noise around the nominal trajectory.
         actions = [
-            self._rng.multivariate_normal(mean=nominal(t), cov=self._config.noise_scale)
+            self._rng.normal(loc=nominal(t), scale=self._config.noise_scale)
             for t in np.arange(
-                0, nominal.duration + 1, step=self._config.control_interval
+                0,
+                nominal.duration + self._config.control_interval + 1,
+                step=self._config.control_interval,
             )
         ]
+        return self._action_samples_to_trajectory(actions, nominal.duration)
+
+    def _action_samples_to_trajectory(
+        self, actions: List[TrajOptAction], duration: float
+    ) -> Trajectory[TrajOptAction]:
+        assert self._problem is not None
         # Clip to obey action limits.
         low = self._problem.action_space.low
         high = self._problem.action_space.high
-        actions = [np.clip(a, low, high) for a in actions]
+        actions = [np.clip(a, low, high).astype(np.float32) for a in actions]
         # Interpolate the control points to create a final trajectory.
-        dt = nominal.duration / len(actions)
+        dt = duration / (len(actions) - 1)
         return point_sequence_to_trajectory(actions, dt=dt)
 
     def _score_sample(
