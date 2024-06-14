@@ -86,16 +86,17 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         # Get states costs.
         thetas, theta_dots = traj.states.T
         norm_thetas = np.vectorize(wrap_angle)(thetas)
-        theta_cost = sum(norm_thetas**2)
-        theta_dot_cost = sum(theta_dots**2)
+        theta_cost = (norm_thetas**2).sum()
+        theta_dot_cost = (theta_dots**2).sum()
         # Get action costs.
-        torque_cost = sum(traj.actions**2)
+        torque_cost = (traj.actions**2).sum()
         # Combine.
-        return (
+        cost = (
             self._theta_cost_weight * theta_cost
             + self._theta_dot_cost_weight * theta_dot_cost
             + self._torque_cost_weight * torque_cost
         )
+        return cost
 
     def render_state(self, state: TrajOptState) -> Image:
         theta, _ = state
