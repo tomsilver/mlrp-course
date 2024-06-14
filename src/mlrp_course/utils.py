@@ -325,13 +325,22 @@ def iter_traj_with_max_distance(
 
 
 def state_sequence_to_trajectory(
-    state_sequence: List[TrajectoryState], max_velocity: float
+    state_sequence: List[TrajectoryState],
+    max_velocity: float | None = None,
+    dt: float | None = None,
 ) -> Trajectory[TrajectoryState]:
     """Convert a sequence of states to a trajectory."""
+    assert (max_velocity is None) + (
+        dt is None
+    ) == 1, "Exactly one of (max_velocity, dt) should be provided"
     segments = []
     for t in range(len(state_sequence) - 1):
-        seg = TrajectorySegment.from_max_velocity(
-            state_sequence[t], state_sequence[t + 1], max_velocity
-        )
+        s_t = state_sequence[t]
+        s_t1 = state_sequence[t + 1]
+        if max_velocity is not None:
+            seg = TrajectorySegment.from_max_velocity(s_t, s_t1, max_velocity)
+        else:
+            assert dt is not None and dt > 0
+            seg = TrajectorySegment(s_t, s_t1, dt)
         segments.append(seg)
     return concatenate_trajectories(segments)
