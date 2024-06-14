@@ -63,8 +63,6 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     def get_next_state(
         self, state: TrajOptState, action: TrajOptAction
     ) -> TrajOptState:
-        assert self.state_space.contains(state)
-        assert self.action_space.contains(action)
 
         g = self._gravity
         m = self._mass
