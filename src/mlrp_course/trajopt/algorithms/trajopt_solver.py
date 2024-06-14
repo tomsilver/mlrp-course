@@ -7,7 +7,9 @@ from mlrp_course.trajopt.trajopt_problem import (
     TrajOptTraj,
     UnconstrainedTrajOptProblem,
 )
+from typing import TypeAlias, Any
 
+_TrajOptSolution: TypeAlias = Any  # intermediate representation of a solution
 
 class UnconstrainedTrajOptSolver(abc.ABC):
     """A solver for an unconstrained trajectory optimization problem."""
@@ -33,7 +35,8 @@ class UnconstrainedTrajOptSolver(abc.ABC):
             horizon = problem.horizon
         solution = self._solve(problem, initial_state, horizon)
         self._last_solution = solution
-        return solution.copy()
+        traj = self._solution_to_trajectory(solution, problem, initial_state, horizon)
+        return traj
 
     @abc.abstractmethod
     def _solve(
@@ -41,6 +44,14 @@ class UnconstrainedTrajOptSolver(abc.ABC):
         problem: UnconstrainedTrajOptProblem,
         initial_state: TrajOptState,
         horizon: int,
-    ) -> TrajOptTraj:
+    ) -> _TrajOptSolution:
         """The main logic for the solver."""
+        raise NotImplementedError
+    
+    @abc.abstractmethod
+    def _solution_to_trajectory(self, solution: _TrajOptSolution,        problem: UnconstrainedTrajOptProblem,
+        initial_state: TrajOptState,
+        horizon: int,
+) -> TrajOptTraj:
+        """Different solvers have different intermediate representations."""
         raise NotImplementedError
