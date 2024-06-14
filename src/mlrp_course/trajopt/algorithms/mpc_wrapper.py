@@ -11,23 +11,22 @@ from mlrp_course.trajopt.trajopt_problem import (
 class MPCWrapper:
     """Re-run a given trajectory optimization solver at every timestep."""
 
-    def __init__(
-        self, problem: UnconstrainedTrajOptProblem, solver: UnconstrainedTrajOptSolver
-    ) -> None:
-        self._problem = problem
+    def __init__(self, solver: UnconstrainedTrajOptSolver) -> None:
         self._solver = solver
+        self._problem: UnconstrainedTrajOptProblem | None = None
         self._timestep = 0
 
-    def reset(self) -> None:
+    def reset(self, problem: UnconstrainedTrajOptProblem) -> None:
         """Reset the timestep to 0."""
         self._timestep = 0
-        self._solver.reset()
+        self._problem = problem
+        self._solver.reset(problem)
 
     def step(self, state: TrajOptState) -> TrajOptAction:
         """Get the most recent state and return an action."""
+        assert self._problem is not None, "Call reset() before step()"
         # Run the solver.
         traj = self._solver.solve(
-            problem=self._problem,
             initial_state=state,
             horizon=(self._problem.horizon - self._timestep),
         )
