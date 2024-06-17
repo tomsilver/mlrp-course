@@ -7,7 +7,7 @@ from mlrp_course.trajopt.algorithms.gradient_descent import (
     GradientDescentSolver,
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
-from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
+from mlrp_course.trajopt.envs.double_integrator import DoubleIntegratorProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 
@@ -18,7 +18,7 @@ def test_gradient_descent():
     )
     solver = GradientDescentSolver(123, config=config)
     mpc = MPCWrapper(solver)
-    env = PendulumTrajOptProblem(seed=123, horizon=10)
+    env = DoubleIntegratorProblem(seed=123, horizon=5)
     mpc.reset(env)
     # Run MPC to solve the problem.
     initial_state = env.initial_state
@@ -37,4 +37,4 @@ def test_gradient_descent():
     # Uncomment to visualize.
     # import imageio.v2 as iio
     # imgs = [env.render_state(s) for s in states]
-    # iio.mimsave("mpc_gd_pendulum.mp4", imgs, fps=10)
+    # iio.mimsave("mpc_gd_double_integrator.mp4", imgs, fps=10)
