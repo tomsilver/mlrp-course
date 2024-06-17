@@ -17,7 +17,7 @@ def test_predictive_sampling():
     config = PredictiveSamplingHyperparameters(num_rollouts=5, num_control_points=3)
     solver = PredictiveSamplingSolver(123, config=config)
     mpc = MPCWrapper(solver)
-    env = PendulumTrajOptProblem(seed=123)
+    env = PendulumTrajOptProblem(seed=123, horizon=10)
     mpc.reset(env)
     # Run MPC to solve the problem.
     initial_state = env.initial_state
