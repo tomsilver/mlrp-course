@@ -12,6 +12,10 @@ from mlrp_course.trajopt.trajopt_problem import (
     TrajOptState,
     TrajOptTraj,
 )
+from mlrp_course.trajopt.utils import (
+    sample_spline_from_box_space,
+    spline_to_trajopt_trajectory,
+)
 from mlrp_course.utils import Trajectory, point_sequence_to_trajectory
 
 
@@ -21,7 +25,7 @@ class PredictiveSamplingHyperparameters(Hyperparameters):
 
     num_rollouts: int = 100
     noise_scale: float = 1.0
-    control_interval: int = 10  # 1 + number of steps in between control points
+    num_control_points: int = 10
 
 
 class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
@@ -61,12 +65,9 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
 
     def _get_initialization(self, horizon: int) -> Trajectory[TrajOptAction]:
         assert self._problem is not None
-        num_control_points = int(np.ceil(horizon / self._config.control_interval)) + 1
-        actions = [
-            self._problem.action_space.sample() for _ in range(num_control_points)
-        ]
-        traj = self._action_samples_to_trajectory(actions, horizon)
-        return traj
+        return sample_spline_from_box_space(
+            self._problem.action_space, self._config.num_control_points, horizon
+        )
 
     def _sample_from_nominal(
         self,
@@ -75,11 +76,11 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
     ) -> List[Trajectory[TrajOptAction]]:
         assert self._problem is not None
         # Sample by adding Gaussian noise around the nominal trajectory.
-        duration = nominal.duration
-        control_times = np.arange(
+        control_times = np.linspace(
             0,
-            duration + self._config.control_interval + 1,
-            step=self._config.control_interval,
+            nominal.duration,
+            num=self._config.num_control_points,
+            endpoint=True,
         )
         nominal_control_points = np.array([nominal(t) for t in control_times])
         noise_shape = self._problem.action_space.shape + (
@@ -90,22 +91,19 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
             loc=0, scale=self._config.noise_scale, size=noise_shape
         )
         new_control_points = (nominal_control_points + noise).T
-        return [
-            self._action_samples_to_trajectory(actions, duration)
-            for actions in new_control_points
-        ]
-
-    def _action_samples_to_trajectory(
-        self, actions: List[TrajOptAction], duration: float
-    ) -> Trajectory[TrajOptAction]:
-        assert self._problem is not None
-        # Clip to obey action limits.
+        # Clip to obey bounds.
         low = self._problem.action_space.low
         high = self._problem.action_space.high
-        actions = [np.clip(a, low, high).astype(np.float32) for a in actions]
-        # Interpolate the control points to create a final trajectory.
-        dt = duration / (len(actions) - 1)
-        return point_sequence_to_trajectory(actions, dt=dt)
+        clipped_control_points = [
+            [np.clip(a, low, high).astype(np.float32) for a in actions]
+            for actions in new_control_points
+        ]
+        # Convert to trajectories.
+        dt = control_times[1] - control_times[0]
+        return [
+            point_sequence_to_trajectory(actions, dt=dt)
+            for actions in clipped_control_points
+        ]
 
     def _score_sample(
         self,
@@ -124,15 +122,6 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
         horizon: int,
     ) -> TrajOptTraj:
         assert self._problem is not None
-        assert np.isclose(solution.duration, horizon)
-        state_list = [initial_state]
-        state = initial_state
-        action_list: List[TrajOptAction] = []
-        for t in range(horizon):
-            action = solution(t)
-            action_list.append(action)
-            state = self._problem.get_next_state(state, action)
-            state_list.append(state)
-        state_arr = np.array(state_list, dtype=np.float32)
-        action_arr = np.array(action_list, dtype=np.float32)
-        return TrajOptTraj(state_arr, action_arr)
+        return spline_to_trajopt_trajectory(
+            self._problem, solution, initial_state, horizon
+        )
