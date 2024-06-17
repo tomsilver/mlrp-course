@@ -3,8 +3,9 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-import jax
 import jax.numpy as jnp
+from jax import grad
+from numpy.typing import NDArray
 
 from mlrp_course.structs import Hyperparameters
 from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
@@ -26,7 +27,7 @@ class GradientDescentHyperparameters(Hyperparameters):
 
     num_control_points: int = 10
     num_descent_steps: int = 1
-    learning_rates: Tuple[float] = (1e-3, 1e-2, 1e-1, 1.0, 10.0)
+    learning_rates: Tuple[float, ...] = (1e-3, 1e-2, 1e-1, 1.0, 10.0)
 
 
 class GradientDescentSolver(UnconstrainedTrajOptSolver):
@@ -62,6 +63,7 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
         horizon: int,
     ) -> Trajectory[TrajOptAction]:
         assert self._problem is not None
+        _get_traj_cost = self._problem.get_traj_cost
 
         # Extract optimization parameter initialization.
         dt = horizon / (self._config.num_control_points - 1)
@@ -69,12 +71,12 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
             [init_traj(t) for t in self._get_control_times(horizon)]
         )
 
-        def _objective(params):
+        def _objective(params: NDArray[jnp.float32]) -> float:
             spline = point_sequence_to_trajectory(params, dt=dt)
             traj = self._solution_to_trajectory(spline, initial_state, horizon)
-            return self._problem.get_traj_cost(traj)
+            return _get_traj_cost(traj)
 
-        grad_objective = jax.grad(_objective)
+        grad_objective = grad(_objective)
 
         best_params = init_params
         best_loss = _objective(init_params)
