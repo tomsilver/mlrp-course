@@ -38,6 +38,7 @@ def _main(start_seed: int, num_seeds: int, outdir: Path, load: bool) -> None:
         for solver in _SOLVERS:
             print(f"Starting {solver=}")
             result = _run_single(seed, solver)
+            print(f"Result: {result}")
             results.append((seed, solver, result))
     df = pd.DataFrame(results, columns=columns)
     df.to_csv(csv_file)

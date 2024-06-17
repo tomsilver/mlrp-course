@@ -14,18 +14,12 @@ from mlrp_course.trajopt.trajopt_problem import (
     TrajOptState,
     TrajOptTraj,
 )
-from mlrp_course.trajopt.utils import (
-    sample_spline_from_box_space,
-    spline_to_trajopt_trajectory,
-)
-from mlrp_course.utils import Trajectory, point_sequence_to_trajectory
 
 
 @dataclass(frozen=True)
 class GradientDescentHyperparameters(Hyperparameters):
     """Hyperparameters for gradient descent."""
 
-    num_control_points: int = 10
     num_descent_steps: int = 1
     learning_rates: Tuple[float, ...] = (1e-3, 1e-2, 1e-1, 1.0)
 
@@ -46,11 +40,10 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
         self,
         initial_state: TrajOptState,
         horizon: int,
-    ) -> Trajectory[TrajOptAction]:
+    ) -> List[TrajOptAction]:
         # Warm start by advancing the last solution by one step.
         if self._warm_start and self._last_solution is not None:
-            assert isinstance(self._last_solution, Trajectory)
-            nominal = self._last_solution.get_sub_trajectory(1, horizon + 1)
+            nominal = self._last_solution[1:]
         else:
             nominal = self._get_initialization(horizon)
         # Optimize.
@@ -58,26 +51,20 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
 
     def _optimize_trajectory(
         self,
-        init_traj: Trajectory[TrajOptAction],
+        init_traj: List[TrajOptAction],
         initial_state: TrajOptState,
         horizon: int,
-    ) -> Trajectory[TrajOptAction]:
+    ) -> List[TrajOptAction]:
         assert self._problem is not None
         _get_traj_cost = self._problem.get_traj_cost
 
-        # Extract optimization parameter initialization.
-        dt = horizon / (self._config.num_control_points - 1)
-        init_params = jnp.array(
-            [init_traj(t) for t in self._get_control_times(horizon)]
-        )
-
         def _objective(params: NDArray[jnp.float32]) -> float:
-            spline = point_sequence_to_trajectory(params, dt=dt)
-            traj = self._solution_to_trajectory(spline, initial_state, horizon)
+            traj = self._solution_to_trajectory(params, initial_state, horizon)
             return _get_traj_cost(traj)
 
         grad_objective = grad(_objective)
 
+        init_params = jnp.array(init_traj)
         best_params = init_params
         best_loss = _objective(init_params)
         for learning_rate in self._config.learning_rates:
@@ -90,30 +77,25 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
                     best_params = jnp.copy(params)
                     best_loss = loss
 
-        return point_sequence_to_trajectory(best_params, dt=dt)
+        return list(best_params)
 
-    def _get_control_times(self, horizon: float) -> List[float]:
-        control_times = jnp.linspace(
-            0,
-            horizon,
-            num=self._config.num_control_points,
-            endpoint=True,
-        )
-        return list(control_times)
-
-    def _get_initialization(self, horizon: int) -> Trajectory[TrajOptAction]:
+    def _get_initialization(self, horizon: int) -> List[TrajOptAction]:
         assert self._problem is not None
-        return sample_spline_from_box_space(
-            self._problem.action_space, self._config.num_control_points, horizon
-        )
+        return [self._problem.action_space.sample() for _ in range(horizon)]
 
     def _solution_to_trajectory(
         self,
-        solution: Trajectory[TrajOptAction],
+        solution: List[TrajOptAction],
         initial_state: TrajOptState,
         horizon: int,
     ) -> TrajOptTraj:
         assert self._problem is not None
-        return spline_to_trajopt_trajectory(
-            self._problem, solution, initial_state, horizon
-        )
+        assert len(solution) == horizon
+        state_list = [initial_state]
+        state = initial_state
+        for action in solution:
+            state = self._problem.get_next_state(state, action)
+            state_list.append(state)
+        state_arr = jnp.array(state_list, dtype=jnp.float32)
+        action_arr = jnp.array(solution, dtype=jnp.float32)
+        return TrajOptTraj(state_arr, action_arr)

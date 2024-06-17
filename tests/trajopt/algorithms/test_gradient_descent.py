@@ -14,7 +14,7 @@ from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 def test_gradient_descent():
     """Tests for gradient_descent.py."""
     config = GradientDescentHyperparameters(
-        num_control_points=3, learning_rates=[1e-3, 1e-2]
+        learning_rates=[1e-3, 1e-2]
     )
     solver = GradientDescentSolver(123, config=config)
     mpc = MPCWrapper(solver)
