@@ -20,8 +20,8 @@ from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 _SOLVERS = {
-    "Predictive Sampling": PredictiveSamplingSolver,
     "Gradient Descent": GradientDescentSolver,
+    "Predictive Sampling": PredictiveSamplingSolver,
 }
 
 
@@ -33,10 +33,10 @@ def _main(start_seed: int, num_seeds: int, outdir: Path, load: bool) -> None:
         return _df_to_plot(df, outdir)
     columns = ["Seed", "Solver", "Cost"]
     results: List[Tuple[int, str, float]] = []
-    for solver in _SOLVERS:
-        print(f"Starting {solver=}")
-        for seed in range(start_seed, start_seed + num_seeds):
-            print(f"Starting {seed=}")
+    for seed in range(start_seed, start_seed + num_seeds):
+        print(f"Starting {seed=}")
+        for solver in _SOLVERS:
+            print(f"Starting {solver=}")
             result = _run_single(seed, solver)
             results.append((seed, solver, result))
     df = pd.DataFrame(results, columns=columns)
@@ -68,7 +68,7 @@ def _df_to_plot(df: pd.DataFrame, outdir: Path) -> None:
     outfile = outdir / "trajopt_experiment.png"
 
     bar_order = list(_SOLVERS)
-    grouped = df.groupby("Solver")["Num Node Evals"].agg(["mean", "sem"])
+    grouped = df.groupby("Solver")["Cost"].agg(["mean", "sem"])
     grouped = grouped.reindex(bar_order)
     matplotlib.rcParams.update({"font.size": 16})
     plt.figure()
