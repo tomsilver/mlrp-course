@@ -6,6 +6,7 @@ Reference: https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/en
 from functools import cached_property
 from typing import ClassVar
 
+import jax.numpy as jnp
 import numpy as np
 from gymnasium.spaces import Box
 from matplotlib import pyplot as plt
@@ -34,14 +35,15 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     _theta_dot_cost_weight: ClassVar[float] = 0.1
     _torque_cost_weight: ClassVar[float] = 0.001
 
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, horizon: int = 200) -> None:
         self._seed = seed
+        self._horizon = horizon
         self.action_space.seed(seed)
         super().__init__()
 
     @property
     def horizon(self) -> int:
-        return 200
+        return self._horizon
 
     @cached_property
     def state_space(self) -> Box:
@@ -58,7 +60,7 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
 
     @property
     def initial_state(self) -> TrajOptState:
-        return np.array([np.pi, 1.0], dtype=np.float32)  # down and swinging
+        return jnp.array([np.pi, 1.0], dtype=jnp.float32)  # down and swinging
 
     def get_next_state(
         self, state: TrajOptState, action: TrajOptAction
@@ -71,21 +73,21 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
 
         theta, theta_dot = state
 
-        u = np.clip(action[0], -self._max_torque, self._max_torque)
+        u = jnp.clip(action[0], -self._max_torque, self._max_torque)
 
         next_theta_dot = (
-            theta_dot + (3 * g / (2 * l) * np.sin(theta) + 3.0 / (m * l**2) * u) * dt
+            theta_dot + (3 * g / (2 * l) * jnp.sin(theta) + 3.0 / (m * l**2) * u) * dt
         )
-        next_theta_dot = np.clip(next_theta_dot, -self._max_speed, self._max_speed)
+        next_theta_dot = jnp.clip(next_theta_dot, -self._max_speed, self._max_speed)
         next_theta = theta + next_theta_dot * dt
         next_theta = wrap_angle(next_theta)
 
-        return np.array([next_theta, next_theta_dot], dtype=np.float32)
+        return jnp.array([next_theta, next_theta_dot], dtype=jnp.float32)
 
     def get_traj_cost(self, traj: TrajOptTraj) -> float:
         # Get states costs.
         thetas, theta_dots = traj.states.T
-        norm_thetas = np.vectorize(wrap_angle)(thetas)
+        norm_thetas = jnp.vectorize(wrap_angle)(thetas)
         theta_cost = (norm_thetas**2).sum()
         theta_dot_cost = (theta_dots**2).sum()
         # Get action costs.

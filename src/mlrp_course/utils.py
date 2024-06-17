@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Generic, Iterator, List, Sequence, Tuple, TypeVar
 
 import gymnasium as gym
+import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
@@ -113,7 +114,7 @@ def fig2data(fig: plt.Figure) -> Image:
 
 def wrap_angle(angle: float) -> float:
     """Wrap angles between -np.pi and np.pi."""
-    return np.arctan2(np.sin(angle), np.cos(angle))
+    return ((angle + np.pi) % (2 * np.pi)) - np.pi
 
 
 TrajectoryPoint = TypeVar("TrajectoryPoint")
@@ -288,6 +289,11 @@ def _(start: SE2, end: SE2, s: float) -> SE2:
 
 @interpolate_trajectory_points.register
 def _(start: np.ndarray, end: np.ndarray, s: float) -> NDArray:  # type: ignore
+    return start + (end - start) * s
+
+
+@interpolate_trajectory_points.register
+def _(start: jnp.ndarray, end: jnp.ndarray, s: float) -> NDArray:  # type: ignore
     return start + (end - start) * s
 
 
