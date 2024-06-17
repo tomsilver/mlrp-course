@@ -27,7 +27,7 @@ class GradientDescentHyperparameters(Hyperparameters):
 
     num_control_points: int = 10
     num_descent_steps: int = 1
-    learning_rates: Tuple[float, ...] = (1e-3, 1e-2, 1e-1, 1.0, 10.0)
+    learning_rates: Tuple[float, ...] = (1e-3, 1e-2, 1e-1, 1.0)
 
 
 class GradientDescentSolver(UnconstrainedTrajOptSolver):
