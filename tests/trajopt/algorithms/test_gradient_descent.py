@@ -1,21 +1,22 @@
-"""Tests for predictive_sampling.py."""
+"""Tests for gradient_descent.py."""
 
 import numpy as np
 
-from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
-from mlrp_course.trajopt.algorithms.predictive_sampling import (
-    PredictiveSamplingHyperparameters,
-    PredictiveSamplingSolver,
+from mlrp_course.trajopt.algorithms.gradient_descent import (
+    GradientDescentHyperparameters,
+    GradientDescentSolver,
 )
+from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 
-def test_predictive_sampling():
-    """Tests for predictive_sampling.py."""
-    # Use small number of rollouts for faster unit test.
-    config = PredictiveSamplingHyperparameters(num_rollouts=5, num_control_points=3)
-    solver = PredictiveSamplingSolver(123, config=config)
+def test_gradient_descent():
+    """Tests for gradient_descent.py."""
+    config = GradientDescentHyperparameters(
+        num_control_points=3, learning_rates=[1e-3, 1e-2]
+    )
+    solver = GradientDescentSolver(123, config=config)
     mpc = MPCWrapper(solver)
     env = PendulumTrajOptProblem(seed=123, horizon=10)
     mpc.reset(env)
@@ -36,4 +37,4 @@ def test_predictive_sampling():
     # Uncomment to visualize.
     # import imageio.v2 as iio
     # imgs = [env.render_state(s) for s in states]
-    # iio.mimsave("mpc_ps_pendulum.mp4", imgs, fps=10)
+    # iio.mimsave("mpc_gd_pendulum.mp4", imgs, fps=10)

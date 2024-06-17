@@ -1,4 +1,4 @@
-"""Analyze number of samples vs predictive sampling performance."""
+"""Compare different trajopt solvers."""
 
 from pathlib import Path
 from typing import List, Tuple
@@ -7,38 +7,45 @@ import matplotlib
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from tqdm import tqdm
 
+from mlrp_course.trajopt.algorithms.gradient_descent import (
+    GradientDescentSolver,
+)
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.algorithms.predictive_sampling import (
-    PredictiveSamplingHyperparameters,
     PredictiveSamplingSolver,
 )
 from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
+_SOLVERS = {
+    "Gradient Descent": GradientDescentSolver,
+    "Predictive Sampling": PredictiveSamplingSolver,
+}
+
 
 def _main(start_seed: int, num_seeds: int, outdir: Path, load: bool) -> None:
-    csv_file = outdir / "predictive_sampling_experiments.csv"
+    csv_file = outdir / "trajopt_experiment.csv"
     if load:
         assert csv_file.exists()
         df = pd.read_csv(csv_file)
         return _df_to_plot(df, outdir)
-    columns = ["Seed", "Num Samples", "Cost"]
-    results: List[Tuple[int, int, float]] = []
-    for num_samples in [1, 10, 100]:
-        print(f"Starting {num_samples=}")
-        for seed in range(start_seed, start_seed + num_seeds):
-            print(f"Starting {seed=}")
-            result = _run_single(seed, num_samples)
-            results.append((seed, num_samples, result))
+    columns = ["Seed", "Solver", "Cost"]
+    results: List[Tuple[int, str, float]] = []
+    for seed in range(start_seed, start_seed + num_seeds):
+        print(f"Starting {seed=}")
+        for solver in _SOLVERS:
+            print(f"Starting {solver=}")
+            result = _run_single(seed, solver)
+            results.append((seed, solver, result))
     df = pd.DataFrame(results, columns=columns)
     df.to_csv(csv_file)
     return _df_to_plot(df, outdir)
 
 
-def _run_single(seed: int, num_samples: int) -> float:
-    config = PredictiveSamplingHyperparameters(num_rollouts=num_samples)
-    solver = PredictiveSamplingSolver(seed, config=config)
+def _run_single(seed: int, solver_name: str) -> float:
+    solver = _SOLVERS[solver_name](seed)
     mpc = MPCWrapper(solver)
     env = PendulumTrajOptProblem(seed=seed)
     mpc.reset(env)
@@ -46,7 +53,7 @@ def _run_single(seed: int, num_samples: int) -> float:
     states = [initial_state]
     state = initial_state
     actions = []
-    for _ in range(env.horizon):
+    for _ in tqdm(range(env.horizon)):
         action = mpc.step(state)
         state = env.get_next_state(state, action)
         states.append(state)
@@ -58,29 +65,21 @@ def _run_single(seed: int, num_samples: int) -> float:
 
 def _df_to_plot(df: pd.DataFrame, outdir: Path) -> None:
     matplotlib.rcParams.update({"font.size": 20})
-    fig_file = outdir / "predictive_sampling_experiments.png"
+    outfile = outdir / "trajopt_experiment.png"
 
-    grouped = df.groupby(["Num Samples"]).agg({"Cost": ["mean", "sem"]})
-    grouped.columns = grouped.columns.droplevel(0)
-    grouped = grouped.rename(columns={"mean": "Cost_mean", "sem": "Cost_sem"})
-    grouped = grouped.reset_index()
-    plt.figure(figsize=(10, 6))
-
-    plt.plot(grouped["Num Samples"], grouped["Cost_mean"])
-    plt.fill_between(
-        grouped["Num Samples"],
-        grouped["Cost_mean"] - grouped["Cost_sem"],
-        grouped["Cost_mean"] + grouped["Cost_sem"],
-        alpha=0.2,
-    )
-
-    plt.xlabel("Num Samples")
-    plt.ylabel("Trajectory Cost")
-    plt.title("Predictive Sampling (Pendulum)")
-    plt.grid(True)
+    bar_order = list(_SOLVERS)
+    grouped = df.groupby("Solver")["Cost"].agg(["mean", "sem"])
+    grouped = grouped.reindex(bar_order)
+    matplotlib.rcParams.update({"font.size": 16})
+    plt.figure()
+    plt.bar(grouped.index, grouped["mean"], yerr=grouped["sem"], capsize=5)
+    plt.xlabel("Solver")
+    plt.ylabel("Cost")
+    plt.title("Pendulum TrajOpt")
+    plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(fig_file, dpi=150)
-    print(f"Wrote out to {fig_file}")
+    plt.savefig(outfile, dpi=350)
+    print(f"Wrote out to {outfile}")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 from typing import List
 
-import numpy as np
+import jax.numpy as jnp
 from gymnasium.spaces import Box
 from numpy.typing import NDArray
 
@@ -22,7 +22,6 @@ def spline_to_trajopt_trajectory(
     horizon: int,
 ) -> TrajOptTraj:
     """Roll out a spline to create a trajectory."""
-    assert np.isclose(solution.duration, horizon)
     state_list = [initial_state]
     state = initial_state
     action_list: List[TrajOptAction] = []
@@ -31,14 +30,14 @@ def spline_to_trajopt_trajectory(
         action_list.append(action)
         state = problem.get_next_state(state, action)
         state_list.append(state)
-    state_arr = np.array(state_list, dtype=np.float32)
-    action_arr = np.array(action_list, dtype=np.float32)
+    state_arr = jnp.array(state_list, dtype=jnp.float32)
+    action_arr = jnp.array(action_list, dtype=jnp.float32)
     return TrajOptTraj(state_arr, action_arr)
 
 
 def sample_spline_from_box_space(
     box: Box, num_points: int, horizon: int
-) -> Trajectory[NDArray[np.float32]]:
+) -> Trajectory[NDArray[jnp.float32]]:
     """Sample a spline by sampling points and interpolating."""
     points = [box.sample() for _ in range(num_points)]
     dt = horizon / (len(points) - 1)
