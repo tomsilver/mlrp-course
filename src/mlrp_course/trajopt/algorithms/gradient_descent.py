@@ -26,7 +26,7 @@ class GradientDescentHyperparameters(Hyperparameters):
     """Hyperparameters for gradient descent."""
 
     num_control_points: int = 10
-    num_descent_steps: int = 10
+    num_descent_steps: int = 1
     learning_rates: Tuple[float, ...] = (1e-3, 1e-2, 1e-1, 1.0)
 
 
