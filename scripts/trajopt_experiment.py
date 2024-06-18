@@ -9,8 +9,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from mlrp_course.trajopt.algorithms.gradient_descent import (
-    GradientDescentSolver,
+from mlrp_course.trajopt.algorithms.jaxopt_solver import (
+    JaxOptTrajOptSolver,
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.algorithms.predictive_sampling import (
@@ -20,7 +20,7 @@ from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProble
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 _SOLVERS = {
-    "Gradient Descent": GradientDescentSolver,
+    "Gradient Descent": JaxOptTrajOptSolver,
     "Predictive Sampling": PredictiveSamplingSolver,
 }
 

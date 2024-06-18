@@ -1,10 +1,10 @@
-"""A gradient-descent solver for unconstrained trajopt problems."""
+"""A solver that uses a jaxopt optimizer for unconstrained trajopt problems."""
 
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import Any, Dict, List, Type
 
 import jax.numpy as jnp
-from jax import grad
+from jaxopt._src.base import Solver as JaxOptSolver
 from numpy.typing import NDArray
 
 from mlrp_course.structs import Hyperparameters
@@ -22,24 +22,26 @@ from mlrp_course.utils import Trajectory, point_sequence_to_trajectory
 
 
 @dataclass(frozen=True)
-class GradientDescentHyperparameters(Hyperparameters):
-    """Hyperparameters for gradient descent."""
+class JaxOptTrajOptSolverHyperparameters(Hyperparameters):
+    """Hyperparameters for JaxOptTrajOptSolver."""
 
     num_control_points: int = 10
-    num_descent_steps: int = 1
-    learning_rates: Tuple[float, ...] = (1e-3, 1e-2, 1e-1, 1.0)
 
 
-class GradientDescentSolver(UnconstrainedTrajOptSolver):
-    """A gradient-descent solver for unconstrained trajopt problems."""
+class JaxOptTrajOptSolver(UnconstrainedTrajOptSolver):
+    """A jaxopt-based solver for unconstrained trajopt problems."""
 
     def __init__(
         self,
+        solver_cls: Type[JaxOptSolver],
+        solver_kwargs: Dict[str, Any],
         seed: int,
-        config: GradientDescentHyperparameters | None = None,
+        config: JaxOptTrajOptSolverHyperparameters | None = None,
         warm_start: bool = True,
     ) -> None:
-        self._config = config or GradientDescentHyperparameters()
+        self._solver_cls = solver_cls
+        self._solver_kwargs = solver_kwargs
+        self._config = config or JaxOptTrajOptSolverHyperparameters()
         super().__init__(seed, warm_start)
 
     def _solve(
@@ -62,35 +64,28 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
         initial_state: TrajOptState,
         horizon: int,
     ) -> Trajectory[TrajOptAction]:
+        # Create optimization objective.
         assert self._problem is not None
         _get_traj_cost = self._problem.get_traj_cost
-
-        # Extract optimization parameter initialization.
-        dt = horizon / (self._config.num_control_points - 1)
-        init_params = jnp.array(
-            [init_traj(t) for t in self._get_control_times(horizon)]
-        )
 
         def _objective(params: NDArray[jnp.float32]) -> float:
             spline = point_sequence_to_trajectory(params, dt=dt)
             traj = self._solution_to_trajectory(spline, initial_state, horizon)
             return _get_traj_cost(traj)
 
-        grad_objective = grad(_objective)
+        # Create initialization.
+        dt = horizon / (self._config.num_control_points - 1)
+        init_params = jnp.array(
+            [init_traj(t) for t in self._get_control_times(horizon)]
+        )
 
-        best_params = init_params
-        best_loss = _objective(init_params)
-        for learning_rate in self._config.learning_rates:
-            params = jnp.copy(init_params)
-            for _ in range(self._config.num_descent_steps):
-                gradients = grad_objective(params)
-                params = params - learning_rate * gradients
-                loss = _objective(params)
-                if loss < best_loss:
-                    best_params = jnp.copy(params)
-                    best_loss = loss
+        # Create solver.
+        solver = self._solver_cls(fun=_objective, **self._solver_kwargs)
 
-        return point_sequence_to_trajectory(best_params, dt=dt)
+        # Solve.
+        params, _ = solver.run(init_params)
+
+        return point_sequence_to_trajectory(params, dt=dt)
 
     def _get_control_times(self, horizon: float) -> List[float]:
         control_times = jnp.linspace(
