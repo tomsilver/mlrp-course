@@ -24,6 +24,7 @@ def _policy(
     current_energy = 0.5 * m * l**2 * theta_dot**2 - m * g * l * np.cos(theta)
     k = 100.0
     u = -k * theta_dot * (current_energy - desired_energy)
+    u = np.clip(u, -2.0, 2.0)  # to make this nontrivial
     return np.array([u], dtype=np.float32)
 
 

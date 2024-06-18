@@ -59,7 +59,7 @@ def _run_single(seed: int, solver_name: str) -> float:
         states.append(state)
         actions.append(action)
     traj = TrajOptTraj(np.array(states), np.array(actions))
-    cost = env.get_traj_cost(traj)
+    cost = float(env.get_traj_cost(traj))
     return cost
 
 
