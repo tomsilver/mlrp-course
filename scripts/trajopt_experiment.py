@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from mlrp_course.trajopt.algorithms.jaxopt_solver import (
-    JaxOptTrajOptSolver,
+    GradientDescentTrajOptSolver,
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.algorithms.predictive_sampling import (
@@ -20,7 +20,7 @@ from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProble
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 _SOLVERS = {
-    "Gradient Descent": JaxOptTrajOptSolver,
+    "Gradient Descent": GradientDescentTrajOptSolver,
     "Predictive Sampling": PredictiveSamplingSolver,
 }
 

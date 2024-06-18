@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Type
 
 import jax.numpy as jnp
+from jaxopt import GradientDescent
 from jaxopt._src.base import Solver as JaxOptSolver
 from numpy.typing import NDArray
 
@@ -33,14 +34,14 @@ class JaxOptTrajOptSolver(UnconstrainedTrajOptSolver):
 
     def __init__(
         self,
+        seed: int,
         solver_cls: Type[JaxOptSolver],
         solver_kwargs: Dict[str, Any],
-        seed: int,
         config: JaxOptTrajOptSolverHyperparameters | None = None,
         warm_start: bool = True,
     ) -> None:
-        self._solver_cls = solver_cls
-        self._solver_kwargs = solver_kwargs
+        self._solver_cls = solver_cls or GradientDescent
+        self._solver_kwargs = solver_kwargs or {}
         self._config = config or JaxOptTrajOptSolverHyperparameters()
         super().__init__(seed, warm_start)
 
@@ -113,3 +114,19 @@ class JaxOptTrajOptSolver(UnconstrainedTrajOptSolver):
         return spline_to_trajopt_trajectory(
             self._problem, solution, initial_state, horizon
         )
+
+
+class GradientDescentTrajOptSolver(JaxOptTrajOptSolver):
+    """Gradient descent trajopt solver."""
+
+    def __init__(
+        self,
+        seed: int,
+        maxiter: int = 500,
+        jit: bool = True,
+        config: JaxOptTrajOptSolverHyperparameters | None = None,
+        warm_start: bool = True,
+    ) -> None:
+        solver_cls = GradientDescent
+        solver_kwargs = {"maxiter": maxiter, "jit": jit}
+        super().__init__(seed, solver_cls, solver_kwargs, config, warm_start)

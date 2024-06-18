@@ -4,8 +4,8 @@ import numpy as np
 from jaxopt import GradientDescent
 
 from mlrp_course.trajopt.algorithms.jaxopt_solver import (
-    JaxOptTrajOptSolverHyperparameters,
     JaxOptTrajOptSolver,
+    JaxOptTrajOptSolverHyperparameters,
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.envs.double_integrator import (
@@ -21,9 +21,8 @@ def test_jaxopt_solver_trajopt():
     )
     optimizer_cls = GradientDescent
     optimizer_kwargs = {"maxiter": 10}
-    solver = JaxOptTrajOptSolver(
-        optimizer_cls, optimizer_kwargs, seed=123, config=config
-    )
+    seed = 123
+    solver = JaxOptTrajOptSolver(seed, optimizer_cls, optimizer_kwargs, config=config)
     mpc = MPCWrapper(solver)
     env = UnconstrainedDoubleIntegratorProblem(horizon=5)
     mpc.reset(env)
