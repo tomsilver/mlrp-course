@@ -1,10 +1,11 @@
-"""Tests for gradient_descent.py."""
+"""Tests for jaxopt_solver.py."""
 
 import numpy as np
+from jaxopt import GradientDescent
 
-from mlrp_course.trajopt.algorithms.gradient_descent import (
-    GradientDescentHyperparameters,
-    GradientDescentSolver,
+from mlrp_course.trajopt.algorithms.jaxopt_solver import (
+    JaxOptTrajOptSolver,
+    JaxOptTrajOptSolverHyperparameters,
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.envs.double_integrator import (
@@ -13,12 +14,15 @@ from mlrp_course.trajopt.envs.double_integrator import (
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 
-def test_gradient_descent():
-    """Tests for gradient_descent.py."""
-    config = GradientDescentHyperparameters(
-        num_control_points=3, learning_rates=[1e-3, 1e-2]
+def test_jaxopt_solver_trajopt():
+    """Tests for jaxopt_solver.py."""
+    config = JaxOptTrajOptSolverHyperparameters(
+        num_control_points=3,
     )
-    solver = GradientDescentSolver(123, config=config)
+    optimizer_cls = GradientDescent
+    optimizer_kwargs = {"maxiter": 10}
+    seed = 123
+    solver = JaxOptTrajOptSolver(seed, optimizer_cls, optimizer_kwargs, config=config)
     mpc = MPCWrapper(solver)
     env = UnconstrainedDoubleIntegratorProblem(horizon=5)
     mpc.reset(env)
