@@ -26,6 +26,9 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
 
     _max_torque: ClassVar[float] = 1.0
     _dt: ClassVar[float] = 0.1
+    _x_cost_weight: ClassVar[float] = 1.0
+    _x_dot_cost_weight: ClassVar[float] = 0.1
+    _torque_cost_weight: ClassVar[float] = 0.001
 
     def __init__(self, seed: int, horizon: int = 25) -> None:
         self._seed = seed
@@ -86,6 +89,10 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         return self._get_traj_cost(
             xs,
             x_dots,
+            traj.actions,
+            self._x_cost_weight,
+            self._x_dot_cost_weight,
+            self._torque_cost_weight,
         )
 
     @staticmethod
@@ -93,10 +100,19 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     def _get_traj_cost(
         xs: NDArray[jnp.float32],
         x_dots: NDArray[jnp.float32],
+        actions: NDArray[jnp.float32],
+        x_cost_weight: float,
+        x_dot_cost_weight: float,
+        torque_cost_weight: float,
     ) -> float:
         final_x = xs[-1]
         final_xdot = x_dots[-1]
-        return final_x**2 + final_xdot**2
+        torque_cost = (actions**2).sum()
+        return (
+            x_cost_weight * final_x**2
+            + x_dot_cost_weight * final_xdot**2
+            + torque_cost_weight * torque_cost
+        )
 
     def render_state(self, state: TrajOptState) -> Image:
         x, _ = state

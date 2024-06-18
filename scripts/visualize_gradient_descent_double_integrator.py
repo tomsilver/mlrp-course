@@ -77,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument("--outdir", default=Path("results"), type=Path)
     parser.add_argument("--fps", default=20, type=int)
     parser.add_argument("--num_control_points", default=3, type=int)
-    parser.add_argument("--learning_rate", default=1e-2, type=float)
+    parser.add_argument("--learning_rate", default=1e-1, type=float)
     parser.add_argument("--num_descent_steps", default=100, type=int)
     args = parser.parse_args()
     _main(
