@@ -40,6 +40,8 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
         warm_start: bool = True,
     ) -> None:
         self._config = config or GradientDescentHyperparameters()
+        # Keep the most recent parameter, objective history for debugging.
+        self._optimization_history: List[Tuple[NDArray, float]] = []
         super().__init__(seed, warm_start)
 
     def _solve(
@@ -64,6 +66,7 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
     ) -> Trajectory[TrajOptAction]:
         assert self._problem is not None
         _get_traj_cost = self._problem.get_traj_cost
+        self._optimization_history = []
 
         # Extract optimization parameter initialization.
         dt = horizon / (self._config.num_control_points - 1)
@@ -80,12 +83,14 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
 
         best_params = init_params
         best_loss = _objective(init_params)
+        self._optimization_history.append((best_params, best_loss))
         for learning_rate in self._config.learning_rates:
             params = jnp.copy(init_params)
             for _ in range(self._config.num_descent_steps):
                 gradients = grad_objective(params)
                 params = params - learning_rate * gradients
                 loss = _objective(params)
+                self._optimization_history.append((params, loss))
                 if loss < best_loss:
                     best_params = jnp.copy(params)
                     best_loss = loss
