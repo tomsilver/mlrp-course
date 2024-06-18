@@ -24,15 +24,13 @@ from mlrp_course.trajopt.trajopt_problem import (
 from mlrp_course.utils import fig2data, wrap_angle
 
 
-class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
+class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     """Classic pendulum swing-up trajopt problem."""
 
     _gravity: ClassVar[float] = 10
     _mass: ClassVar[float] = 1.0
     _length: ClassVar[float] = 1.0
     _dt: ClassVar[float] = 0.05
-    _max_torque: ClassVar[float] = 2.0
-    _max_speed: ClassVar[float] = 8.0
     _theta_cost_weight: ClassVar[float] = 1.0
     _theta_dot_cost_weight: ClassVar[float] = 0.1
     _torque_cost_weight: ClassVar[float] = 0.001
@@ -51,14 +49,14 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     def state_space(self) -> Box:
         # theta and theta_dot.
         return Box(
-            low=np.array([-np.pi, -self._max_speed]),
-            high=np.array([np.pi, self._max_speed]),
+            low=np.array([-np.pi, -np.inf]),
+            high=np.array([np.pi, np.inf]),
         )
 
     @cached_property
     def action_space(self) -> Box:
         # torque.
-        return Box(low=np.array([-self._max_torque]), high=np.array([self._max_torque]))
+        return Box(low=np.array([-np.inf]), high=np.array([np.inf]))
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -92,8 +90,7 @@ class PendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     ) -> TrajOptState:
 
         theta, theta_dot = state
-
-        u = jnp.clip(action[0], -max_torque, max_torque)
+        u = action[0]
 
         next_theta_dot = (
             theta_dot + (3 * g / (2 * l) * jnp.sin(theta) + 3.0 / (m * l**2) * u) * dt

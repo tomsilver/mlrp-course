@@ -37,26 +37,42 @@ def _main(
     history = solver._optimization_history
 
     # Plot history.
-    fig, ax = plt.subplots(figsize=(5, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    ax0, ax1 = axes.flat
+    ts = np.arange(max_horizon + 1)
     params, loss = history[0]
+    fig.suptitle(f"Iter = 0, Loss = {loss:.3f}")
+    
     traj = point_sequence_to_trajectory(params, dt=dt)
-    xs = np.linspace(0, max_horizon, num=100, endpoint=True)
-    ys = [traj(x) for x in xs]
-    (line,) = ax.plot(xs, ys)
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Control")
-    ax.set_ylim(-1.1 * env._max_torque, 1.1 * env._max_torque)
-    ax.set_title(f"Loss = {loss:.3f}")
+    us = [np.clip(traj(t), -env._max_torque, env._max_torque) for t in ts]
+    (control_line,) = ax0.plot(ts, us)
+    ax0.set_xlabel("Time")
+    ax0.set_ylabel("Control")
+    ax0.set_ylim(-1.1 * env._max_torque, 1.1 * env._max_torque)
+    
+    states = [env.initial_state]
+    for u in us[:-1]:
+        states.append(env.get_next_state(states[-1], u))
+    xs = np.array(states)[:, 0]
+    (state_line,) = ax1.plot(ts, xs)
+    ax1.set_xlabel("Time")
+    ax1.set_ylabel("Position")
+    ax1.set_ylim(-2, 2)
+
     plt.tight_layout()
 
     def update(frame):
         params, loss = history[frame]
+        fig.suptitle(f"Iter = {frame}, Loss = {loss:.3f}")
         traj = point_sequence_to_trajectory(params, dt=dt)
-        ys = [traj(x) for x in xs]
-        line.set_xdata(xs)
-        line.set_ydata(ys)
-        ax.set_title(f"Loss = {loss:.3f}")
-        return (line,)
+        us = [np.clip(traj(t), -env._max_torque, env._max_torque) for t in ts]
+        control_line.set_ydata(us)
+        states = [env.initial_state]
+        for u in us[:-1]:
+            states.append(env.get_next_state(states[-1], u))
+        xs = np.array(states)[:, 0]
+        state_line.set_ydata(xs)
+        return (control_line, state_line)
 
     frames = len(history)
     interval = 1000 / fps

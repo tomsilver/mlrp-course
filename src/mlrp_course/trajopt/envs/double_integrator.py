@@ -21,14 +21,13 @@ from mlrp_course.trajopt.trajopt_problem import (
 from mlrp_course.utils import fig2data
 
 
-class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
+class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     """Extremely simple testing environment."""
 
-    _max_torque: ClassVar[float] = 1.0
     _dt: ClassVar[float] = 0.1
     _x_cost_weight: ClassVar[float] = 1.0
-    _x_dot_cost_weight: ClassVar[float] = 0.1
-    _torque_cost_weight: ClassVar[float] = 0.001
+    _x_dot_cost_weight: ClassVar[float] = 0.0
+    _torque_cost_weight: ClassVar[float] = 1e-1
 
     def __init__(self, seed: int, horizon: int = 25) -> None:
         self._seed = seed
@@ -51,7 +50,7 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     @cached_property
     def action_space(self) -> Box:
         # torque.
-        return Box(low=np.array([-self._max_torque]), high=np.array([self._max_torque]))
+        return Box(low=np.array([-np.inf]), high=np.array([np.inf]))
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -64,7 +63,6 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
             state,
             action,
             self._dt,
-            self._max_torque,
         )
 
     @staticmethod
@@ -73,15 +71,11 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         state: TrajOptState,
         action: TrajOptAction,
         dt: float,
-        max_torque: float,
     ) -> TrajOptState:
-
         x, x_dot = state
-        u = jnp.clip(action[0], -max_torque, max_torque)
-
+        u = action[0]
         next_x_dot = x_dot + u * dt
         next_x = x + next_x_dot * dt
-
         return jnp.array([next_x, next_x_dot], dtype=jnp.float32)
 
     def get_traj_cost(self, traj: TrajOptTraj) -> float:
@@ -105,12 +99,12 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         x_dot_cost_weight: float,
         torque_cost_weight: float,
     ) -> float:
-        final_x = xs[-1]
-        final_xdot = x_dots[-1]
+        x_cost = (xs**2).sum()
+        x_dot_cost = (x_dots).sum()
         torque_cost = (actions**2).sum()
         return (
-            x_cost_weight * final_x**2
-            + x_dot_cost_weight * final_xdot**2
+            x_cost_weight * x_cost
+            + x_dot_cost_weight * x_dot_cost
             + torque_cost_weight * torque_cost
         )
 

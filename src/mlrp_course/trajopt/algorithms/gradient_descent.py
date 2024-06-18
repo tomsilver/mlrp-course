@@ -6,6 +6,7 @@ from typing import List, Tuple
 import jax.numpy as jnp
 from jax import grad
 from numpy.typing import NDArray
+import jaxopt
 
 from mlrp_course.structs import Hyperparameters
 from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
@@ -27,6 +28,7 @@ class GradientDescentHyperparameters(Hyperparameters):
 
     num_control_points: int = 10
     num_descent_steps: int = 1
+    # TODO update if keeping optax
     learning_rates: Tuple[float, ...] = (1e-3, 1e-2, 1e-1, 1.0)
 
 
@@ -81,21 +83,40 @@ class GradientDescentSolver(UnconstrainedTrajOptSolver):
 
         grad_objective = grad(_objective)
 
-        best_params = init_params
-        best_loss = _objective(init_params)
-        self._optimization_history.append((best_params, best_loss))
-        for learning_rate in self._config.learning_rates:
-            params = jnp.copy(init_params)
-            for _ in range(self._config.num_descent_steps):
-                gradients = grad_objective(params)
-                params = params - learning_rate * gradients
-                loss = _objective(params)
-                self._optimization_history.append((params, loss))
-                if loss < best_loss:
-                    best_params = jnp.copy(params)
-                    best_loss = loss
+        params = init_params
+        self._optimization_history.append((params, _objective(params)))
 
-        return point_sequence_to_trajectory(best_params, dt=dt)
+        # optimizer = optax.lbfgs(learning_rate=1e-1)
+        # opt_state = optimizer.init(init_params)
+
+        # for _ in range(self._config.num_descent_steps):
+        #     grads = grad_objective(params)
+        #     updates, opt_state = optimizer.update(grads, opt_state)
+        #     params = optax.apply_updates(params, updates)
+        #     self._optimization_history.append((params, _objective(params)))
+
+        # TODO: account for bounds on actions?
+        # TODO: move out functionality so we can still visualize iterative solvers
+        # but don't need to commit to iterative solvers here
+
+        optimizer = jaxopt.BFGS(fun=_objective, linesearch="backtracking")
+        optimizer_state = optimizer.init_state(params)
+        for _ in range(self._config.num_descent_steps):
+            params, optimizer_state = optimizer.update(params, optimizer_state)
+            self._optimization_history.append((params, _objective(params)))
+
+        # for learning_rate in self._config.learning_rates:
+        #     params = jnp.copy(init_params)
+        #     for _ in range(self._config.num_descent_steps):
+        #         gradients = grad_objective(params)
+        #         params = params - learning_rate * gradients
+        #         loss = _objective(params)
+        #         self._optimization_history.append((params, loss))
+        #         if loss < best_loss:
+        #             best_params = jnp.copy(params)
+        #             best_loss = loss
+
+        return point_sequence_to_trajectory(params, dt=dt)
 
     def _get_control_times(self, horizon: float) -> List[float]:
         control_times = jnp.linspace(
