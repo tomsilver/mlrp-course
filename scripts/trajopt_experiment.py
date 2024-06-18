@@ -16,7 +16,7 @@ from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.algorithms.predictive_sampling import (
     PredictiveSamplingSolver,
 )
-from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
+from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 _SOLVERS = {
@@ -47,7 +47,7 @@ def _main(start_seed: int, num_seeds: int, outdir: Path, load: bool) -> None:
 def _run_single(seed: int, solver_name: str) -> float:
     solver = _SOLVERS[solver_name](seed)
     mpc = MPCWrapper(solver)
-    env = PendulumTrajOptProblem(seed=seed)
+    env = UnconstrainedPendulumTrajOptProblem()
     mpc.reset(env)
     initial_state = env.initial_state
     states = [initial_state]
@@ -59,7 +59,7 @@ def _run_single(seed: int, solver_name: str) -> float:
         states.append(state)
         actions.append(action)
     traj = TrajOptTraj(np.array(states), np.array(actions))
-    cost = env.get_traj_cost(traj)
+    cost = float(env.get_traj_cost(traj))
     return cost
 
 

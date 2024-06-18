@@ -21,16 +21,16 @@ from mlrp_course.trajopt.trajopt_problem import (
 from mlrp_course.utils import fig2data
 
 
-class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
+class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     """Extremely simple testing environment."""
 
-    _max_torque: ClassVar[float] = 1.0
     _dt: ClassVar[float] = 0.1
+    _x_cost_weight: ClassVar[float] = 1.0
+    _x_dot_cost_weight: ClassVar[float] = 0.1
+    _torque_cost_weight: ClassVar[float] = 0.001
 
-    def __init__(self, seed: int, horizon: int = 25) -> None:
-        self._seed = seed
+    def __init__(self, horizon: int = 25) -> None:
         self._horizon = horizon
-        self.action_space.seed(seed)
         super().__init__()
 
     @property
@@ -48,7 +48,7 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     @cached_property
     def action_space(self) -> Box:
         # torque.
-        return Box(low=np.array([-self._max_torque]), high=np.array([self._max_torque]))
+        return Box(low=np.array([-np.inf]), high=np.array([np.inf]))
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -61,7 +61,6 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
             state,
             action,
             self._dt,
-            self._max_torque,
         )
 
     @staticmethod
@@ -70,11 +69,10 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         state: TrajOptState,
         action: TrajOptAction,
         dt: float,
-        max_torque: float,
     ) -> TrajOptState:
 
         x, x_dot = state
-        u = jnp.clip(action[0], -max_torque, max_torque)
+        u = action[0]
 
         next_x_dot = x_dot + u * dt
         next_x = x + next_x_dot * dt
@@ -86,6 +84,10 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         return self._get_traj_cost(
             xs,
             x_dots,
+            traj.actions,
+            self._x_cost_weight,
+            self._x_dot_cost_weight,
+            self._torque_cost_weight,
         )
 
     @staticmethod
@@ -93,10 +95,18 @@ class DoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     def _get_traj_cost(
         xs: NDArray[jnp.float32],
         x_dots: NDArray[jnp.float32],
+        actions: NDArray[jnp.float32],
+        x_cost_weight: float,
+        x_dot_cost_weight: float,
+        torque_cost_weight: float,
     ) -> float:
-        final_x = xs[-1]
-        final_xdot = x_dots[-1]
-        return final_x**2 + final_xdot**2
+        x_cost = (xs**2).sum()
+        x_dot_cost = (x_dots**2).sum()
+        action_cost = (actions**2).sum()
+        return (
+            x_cost_weight * x_cost
+            + x_dot_cost_weight * x_dot_cost * torque_cost_weight * action_cost
+        )
 
     def render_state(self, state: TrajOptState) -> Image:
         x, _ = state

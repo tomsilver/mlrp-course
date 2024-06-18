@@ -7,7 +7,9 @@ from mlrp_course.trajopt.algorithms.gradient_descent import (
     GradientDescentSolver,
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
-from mlrp_course.trajopt.envs.double_integrator import DoubleIntegratorProblem
+from mlrp_course.trajopt.envs.double_integrator import (
+    UnconstrainedDoubleIntegratorProblem,
+)
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 
@@ -18,7 +20,7 @@ def test_gradient_descent():
     )
     solver = GradientDescentSolver(123, config=config)
     mpc = MPCWrapper(solver)
-    env = DoubleIntegratorProblem(seed=123, horizon=5)
+    env = UnconstrainedDoubleIntegratorProblem(horizon=5)
     mpc.reset(env)
     # Run MPC to solve the problem.
     initial_state = env.initial_state
