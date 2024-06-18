@@ -27,7 +27,7 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     _dt: ClassVar[float] = 0.1
     _x_cost_weight: ClassVar[float] = 1.0
     _x_dot_cost_weight: ClassVar[float] = 0.1
-    _torque_cost_weight: ClassVar[float] = 0.001
+    _torque_cost_weight: ClassVar[float] = 0.01
 
     def __init__(self, horizon: int = 25) -> None:
         self._horizon = horizon
