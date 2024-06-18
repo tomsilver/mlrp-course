@@ -6,11 +6,13 @@ import imageio.v2 as iio
 import numpy as np
 from tqdm import tqdm
 
-from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
+from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptAction, TrajOptState, TrajOptTraj
 
 
-def _policy(state: TrajOptState, env: PendulumTrajOptProblem) -> TrajOptAction:
+def _policy(
+    state: TrajOptState, env: UnconstrainedPendulumTrajOptProblem
+) -> TrajOptAction:
     # Energy-shaping controller from https://underactuated.mit.edu/pend.html
     offset_theta, theta_dot = state
     theta = offset_theta - np.pi
@@ -25,8 +27,8 @@ def _policy(state: TrajOptState, env: PendulumTrajOptProblem) -> TrajOptAction:
     return np.array([u], dtype=np.float32)
 
 
-def _main(seed: int, max_horizon: int, outdir: Path, fps: int) -> None:
-    env = PendulumTrajOptProblem(seed=seed, horizon=max_horizon)
+def _main(max_horizon: int, outdir: Path, fps: int) -> None:
+    env = UnconstrainedPendulumTrajOptProblem(horizon=max_horizon)
     initial_state = env.initial_state
     states = [initial_state]
     state = initial_state
@@ -50,9 +52,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", default=0, type=int)
     parser.add_argument("--max_horizon", default=200, type=int)
     parser.add_argument("--outdir", default=Path("results"), type=Path)
     parser.add_argument("--fps", default=20, type=int)
     args = parser.parse_args()
-    _main(args.seed, args.max_horizon, args.outdir, args.fps)
+    _main(args.max_horizon, args.outdir, args.fps)

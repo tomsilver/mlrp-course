@@ -13,7 +13,7 @@ from mlrp_course.trajopt.trajopt_problem import (
     TrajOptTraj,
 )
 from mlrp_course.trajopt.utils import (
-    sample_spline_from_box_space,
+    sample_standard_normal_spline,
     spline_to_trajopt_trajectory,
 )
 from mlrp_course.utils import Trajectory, point_sequence_to_trajectory
@@ -65,8 +65,9 @@ class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
 
     def _get_initialization(self, horizon: int) -> Trajectory[TrajOptAction]:
         assert self._problem is not None
-        return sample_spline_from_box_space(
-            self._problem.action_space, self._config.num_control_points, horizon
+        assert self._problem.action_space.shape == (1,)
+        return sample_standard_normal_spline(
+            self._rng, self._config.num_control_points, horizon
         )
 
     def _sample_from_nominal(

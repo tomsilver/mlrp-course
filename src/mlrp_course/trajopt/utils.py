@@ -3,7 +3,7 @@
 from typing import List
 
 import jax.numpy as jnp
-from gymnasium.spaces import Box
+import numpy as np
 from numpy.typing import NDArray
 
 from mlrp_course.trajopt.trajopt_problem import (
@@ -35,10 +35,10 @@ def spline_to_trajopt_trajectory(
     return TrajOptTraj(state_arr, action_arr)
 
 
-def sample_spline_from_box_space(
-    box: Box, num_points: int, horizon: int
+def sample_standard_normal_spline(
+    rng: np.random.Generator, num_points: int, horizon: int
 ) -> Trajectory[NDArray[jnp.float32]]:
     """Sample a spline by sampling points and interpolating."""
-    points = [box.sample() for _ in range(num_points)]
+    points = list(rng.standard_normal(size=(num_points, 1)))
     dt = horizon / (len(points) - 1)
     return point_sequence_to_trajectory(points, dt=dt)
