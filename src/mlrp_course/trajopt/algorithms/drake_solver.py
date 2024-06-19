@@ -149,7 +149,6 @@ class DrakeTrajOptSolver(TrajOptSolver):
         for i, c in enumerate(self._problem.create_global_constraints(drake_traj)):
             constraint = program.AddConstraint(c)
             constraint.evaluator().set_description(f"Global constraint {i}")
-            assert program.CheckSatisfiedAtInitialGuess(constraint)
 
         # Create cost.
         cost = self._problem.create_drake_cost(drake_traj)

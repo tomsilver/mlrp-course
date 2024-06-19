@@ -16,7 +16,13 @@ def test_drake_solver_trajopt():
     # restarts in case of failure to drake optimizer in the future.
     seed = 123
     solver = DrakeTrajOptSolver(seed)
-    env_config = PendulumHyperparameters(torque_lb=-2.0, torque_ub=2.0)
+    env_config = PendulumHyperparameters(
+        torque_lb=-2.0,
+        torque_ub=2.0,
+        torque_cost_weight=1.0,
+        theta_cost_weight=0.0,
+        theta_dot_cost_weight=0.0,
+    )
     env = PendulumTrajOptProblem(config=env_config)
     solver_env = DrakePendulumTrajOptProblem(config=env_config)
     solver.reset(solver_env)
