@@ -5,7 +5,13 @@ from typing import Iterator
 
 import numpy as np
 from numpy.typing import NDArray
-from pydrake.all import Expression, Formula, MathematicalProgram, SnoptSolver, eq  # pylint: disable=no-name-in-module
+from pydrake.all import (  # pylint: disable=no-name-in-module
+    Expression,
+    Formula,
+    MathematicalProgram,
+    SnoptSolver,
+    eq,
+)
 
 from mlrp_course.structs import Hyperparameters
 from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
@@ -118,7 +124,7 @@ class DrakeTrajOptSolver(UnconstrainedTrajOptSolver):
         solver = SnoptSolver()
         result = solver.Solve(program)
 
-        assert result.is_success()  # TODO
+        assert result.is_success()
         result_states = result.GetSolution(states)
         result_actions = result.GetSolution(actions)
 
