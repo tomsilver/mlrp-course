@@ -15,7 +15,7 @@ import numpy as np
 from gymnasium.spaces import Box
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
-from pydrake.all import Formula, eq
+from pydrake.all import Formula, eq  # pylint: disable=no-name-in-module
 from tomsgeoms2d.structs import Circle, Rectangle
 
 from mlrp_course.structs import Hyperparameters, Image
@@ -220,8 +220,7 @@ class DrakePendulumTrajOptProblem(PendulumTrajOptProblem, DrakeProblem):
     """Drake version of PendulumTrajOptProblem."""
 
     def create_global_constraints(self, traj: DrakeTrajOptTraj) -> Iterator[Formula]:
-        for c in super().create_global_constraints(traj):
-            yield c
-
+        # Add general constraints.
+        yield from super().create_global_constraints(traj)
         # Add a constraint that the final state is at rest.
         yield eq(traj.states[-1], np.zeros(2))
