@@ -52,6 +52,7 @@ class DoubleIntegratorProblem(TrajOptProblem):
         return Box(
             low=np.array([-np.inf, -np.inf]),
             high=np.array([np.inf, np.inf]),
+            dtype=np.float64,
         )
 
     @cached_property
@@ -60,6 +61,7 @@ class DoubleIntegratorProblem(TrajOptProblem):
         return Box(
             low=np.array([self._config.torque_lb]),
             high=np.array([self._config.torque_ub]),
+            dtype=np.float64,
         )
 
     @property

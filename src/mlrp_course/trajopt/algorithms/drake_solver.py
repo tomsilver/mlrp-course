@@ -137,8 +137,10 @@ class DrakeTrajOptSolver(TrajOptSolver):
         assert program.CheckSatisfiedAtInitialGuess(constraint)
         # Add dynamic constraints.
         for t in range(len(actions)):
-            s_t, a_t, s_t1 = states[t], actions[t], states[t+1]
-            for i, c in enumerate(self._problem.create_drake_transition_constraints(s_t, a_t, s_t1)):
+            s_t, a_t, s_t1 = states[t], actions[t], states[t + 1]
+            for i, c in enumerate(
+                self._problem.create_drake_transition_constraints(s_t, a_t, s_t1)
+            ):
                 constraint = program.AddConstraint(c)
                 name = f"Transition constraint {i} t={t}"
                 constraint.evaluator().set_description(name)

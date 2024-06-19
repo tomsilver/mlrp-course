@@ -60,6 +60,7 @@ class PendulumTrajOptProblem(TrajOptProblem):
         return Box(
             low=np.array([-np.pi, -np.inf]),
             high=np.array([np.pi, np.inf]),
+            dtype=np.float64,
         )
 
     @cached_property
@@ -68,6 +69,7 @@ class PendulumTrajOptProblem(TrajOptProblem):
         return Box(
             low=np.array([self._config.torque_lb]),
             high=np.array([self._config.torque_ub]),
+            dtype=np.float64,
         )
 
     @property
