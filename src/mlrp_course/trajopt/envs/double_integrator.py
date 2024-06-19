@@ -113,10 +113,12 @@ class DoubleIntegratorProblem(TrajOptProblem):
         x_cost = (xs**2).sum()
         x_dot_cost = (x_dots**2).sum()
         action_cost = (actions**2).sum()
-        return (
+        cost = (
             x_cost_weight * x_cost
-            + x_dot_cost_weight * x_dot_cost * torque_cost_weight * action_cost
+            + x_dot_cost_weight * x_dot_cost
+            + torque_cost_weight * action_cost
         )
+        return cost
 
     def render_state(self, state: TrajOptState) -> Image:
         x, _ = state
