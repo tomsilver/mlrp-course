@@ -18,9 +18,9 @@ def _policy(state: TrajOptState, env: PendulumTrajOptProblem) -> TrajOptAction:
     offset_theta, theta_dot = state
     theta = offset_theta - np.pi
     # pylint: disable=protected-access
-    g = env._gravity
-    m = env._mass
-    l = env._length
+    g = env._config.gravity
+    m = env._config.mass
+    l = env._config.length
     desired_energy = m * g * l
     current_energy = 0.5 * m * l**2 * theta_dot**2 - m * g * l * np.cos(theta)
     k = 100.0
