@@ -9,7 +9,7 @@ from pydrake.all import (  # pylint: disable=no-name-in-module
     Expression,
     Formula,
     MathematicalProgram,
-    SnoptSolver,
+    Solve,
     eq,
     ge,
     le,
@@ -56,12 +56,23 @@ class DrakeProblem(TrajOptProblem):
     def create_global_constraints(self, traj: DrakeTrajOptTraj) -> Iterator[Formula]:
         """Create global constraints, e.g., action limits."""
         # Action limits.
-        if self.action_space.bounded_below.item():
+        if self.action_space.bounded_below.any():
             bounds = np.array([self.action_space.low] * len(traj.actions))
-            yield ge(traj.actions, bounds)
-        if self.action_space.bounded_above.item():
+            mask = self.action_space.bounded_below
+            yield ge(traj.actions.T[mask], bounds.T[mask])
+        if self.action_space.bounded_above.any():
             bounds = np.array([self.action_space.high] * len(traj.actions))
-            yield le(traj.actions, bounds)
+            mask = self.action_space.bounded_above
+            yield le(traj.actions.T[mask], bounds.T[mask])
+        # State limits.
+        if self.state_space.bounded_below.any():
+            bounds = np.array([self.state_space.low] * len(traj.states))
+            mask = self.state_space.bounded_below
+            yield ge(traj.states.T[mask], bounds.T[mask])
+        if self.state_space.bounded_above.any():
+            bounds = np.array([self.state_space.high] * len(traj.states))
+            mask = self.state_space.bounded_above
+            yield le(traj.states.T[mask], bounds.T[mask])
 
 
 @dataclass(frozen=True)
@@ -135,8 +146,8 @@ class DrakeTrajOptSolver(TrajOptSolver):
         program.SetInitialGuess(actions, init_traj.actions)
 
         # Solve.
-        solver = SnoptSolver()
-        result = solver.Solve(program)
+        result = Solve(program)
+        assert result.is_success()
         result_states = result.GetSolution(states)
         result_actions = result.GetSolution(actions)
 

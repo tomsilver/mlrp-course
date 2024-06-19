@@ -37,7 +37,7 @@ class PendulumHyperparameters(Hyperparameters):
     length: float = 1.0
     dt: float = 0.05
     theta_cost_weight: float = 1.0
-    theta_dot_cost_weight: float = 0.0
+    theta_dot_cost_weight: float = 0.1
     torque_cost_weight: float = 0.0
     torque_lb: float = -np.inf
     torque_ub: float = np.inf
