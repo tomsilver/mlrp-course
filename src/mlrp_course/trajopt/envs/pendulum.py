@@ -7,6 +7,7 @@ https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/envs/classic_
 
 from dataclasses import dataclass
 from functools import cached_property
+from typing import Iterator
 
 import jax
 import jax.numpy as jnp
@@ -14,10 +15,11 @@ import numpy as np
 from gymnasium.spaces import Box
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
+from pydrake.all import Formula, eq  # pylint: disable=no-name-in-module
 from tomsgeoms2d.structs import Circle, Rectangle
 
 from mlrp_course.structs import Hyperparameters, Image
-from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
+from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem, DrakeTrajOptTraj
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
     TrajOptProblem,
@@ -216,3 +218,9 @@ class JaxPendulumTrajOptProblem(PendulumTrajOptProblem):
 
 class DrakePendulumTrajOptProblem(PendulumTrajOptProblem, DrakeProblem):
     """Drake version of PendulumTrajOptProblem."""
+
+    def create_global_constraints(self, traj: DrakeTrajOptTraj) -> Iterator[Formula]:
+        # Add general constraints.
+        yield from super().create_global_constraints(traj)
+        # Add a constraint that the final state is at rest.
+        yield eq(traj.states[-1], np.zeros(2))
