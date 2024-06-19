@@ -13,6 +13,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
+from pydrake.all import wrap_to  # pylint: disable=no-name-in-module
 from skimage.transform import resize  # pylint: disable=no-name-in-module
 from spatialmath import SE2
 
@@ -114,7 +115,7 @@ def fig2data(fig: plt.Figure) -> Image:
 
 def wrap_angle(angle: float) -> float:
     """Wrap angles between -np.pi and np.pi."""
-    return ((angle + np.pi) % (2 * np.pi)) - np.pi
+    return wrap_to(angle, -np.pi, np.pi)
 
 
 TrajectoryPoint = TypeVar("TrajectoryPoint")

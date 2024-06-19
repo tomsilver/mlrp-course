@@ -17,6 +17,7 @@ from numpy.typing import NDArray
 from tomsgeoms2d.structs import Circle, Rectangle
 
 from mlrp_course.structs import Image
+from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
     TrajOptState,
@@ -94,7 +95,7 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         next_theta = theta + next_theta_dot * dt
         next_theta = wrap_angle(next_theta)
 
-        return np.array([next_theta, next_theta_dot], dtype=np.float32)
+        return np.array([next_theta, next_theta_dot], dtype=state.dtype)
 
     def get_traj_cost(self, traj: TrajOptTraj) -> float:
         thetas, theta_dots = traj.states.T
@@ -199,3 +200,9 @@ class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem
             theta_dot_cost_weight,
             torque_cost_weight,
         )
+
+
+class DrakeUnconstrainedPendulumTrajOptProblem(
+    UnconstrainedPendulumTrajOptProblem, DrakeProblem
+):
+    """Drake version of UnconstrainedPendulumTrajOptProblem."""
