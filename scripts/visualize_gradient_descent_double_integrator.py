@@ -17,6 +17,7 @@ from mlrp_course.trajopt.algorithms.jaxopt_solver import (
 from mlrp_course.trajopt.envs.double_integrator import (
     DoubleIntegratorHyperparameters,
     DoubleIntegratorProblem,
+    JaxDoubleIntegratorProblem,
 )
 from mlrp_course.utils import point_sequence_to_trajectory
 
@@ -29,10 +30,10 @@ def _main(
     num_control_points: int,
 ) -> None:
     # pylint: disable=protected-access
-    config = JaxOptTrajOptSolverHyperparameters(
+    solver_config = JaxOptTrajOptSolverHyperparameters(
         num_control_points=num_control_points,
     )
-    dt = max_horizon / (config.num_control_points - 1)
+    dt = max_horizon / (num_control_points - 1)
     # Monkey patch to record all calls to the solver.
     solver_cls = GradientDescent
 
@@ -60,9 +61,11 @@ def _main(
     # NOTE: we need to turn off jit for update to record as we want.
     solver_kwargs = {"verbose": True, "jit": False}
 
-    solver = JaxOptTrajOptSolver(seed, solver_cls, solver_kwargs, config=config)
-    env = DoubleIntegratorProblem(DoubleIntegratorHyperparameters(horizon=max_horizon))
-    solver.reset(env)
+    solver = JaxOptTrajOptSolver(seed, solver_cls, solver_kwargs, config=solver_config)
+    env_config = DoubleIntegratorHyperparameters(horizon=max_horizon)
+    env = DoubleIntegratorProblem(env_config)
+    solver_env = JaxDoubleIntegratorProblem(config=env_config)
+    solver.reset(solver_env)
     solver.solve()
 
     # Plot history.
