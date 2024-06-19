@@ -50,7 +50,7 @@ class DrakeProblem(UnconstrainedTrajOptProblem):
 
     def create_drake_cost(self, traj: DrakeTrajOptTraj) -> Expression:
         """Create cost functions for the whole trajectory."""
-        return self.get_traj_cost(traj)
+        return self.get_traj_cost(traj)  # type: ignore
 
 
 @dataclass(frozen=True)
@@ -74,7 +74,7 @@ class DrakeTrajOptSolver(UnconstrainedTrajOptSolver):
         self,
         initial_state: TrajOptState,
         horizon: int,
-    ) -> Trajectory[TrajOptAction]:
+    ) -> TrajOptTraj:
         # Warm start by advancing the last solution by one step.
         if self._warm_start and self._last_solution is not None:
             nominal = TrajOptTraj(
