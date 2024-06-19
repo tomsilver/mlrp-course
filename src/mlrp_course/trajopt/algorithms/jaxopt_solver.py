@@ -78,7 +78,7 @@ class JaxOptTrajOptSolver(TrajOptSolver):
         assert self._problem is not None
         _get_traj_cost = self._problem.get_traj_cost
 
-        def _objective(params: NDArray[jnp.float64]) -> float:
+        def _objective(params: NDArray[jnp.float32]) -> float:
             spline = point_sequence_to_trajectory(params, dt=dt)
             traj = self._solution_to_trajectory(spline, initial_state, horizon)
             return _get_traj_cost(traj)
