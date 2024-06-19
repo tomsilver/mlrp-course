@@ -21,7 +21,6 @@ from mlrp_course.trajopt.trajopt_problem import (
     TrajOptTraj,
     UnconstrainedTrajOptProblem,
 )
-from mlrp_course.utils import Trajectory
 
 
 @dataclass
