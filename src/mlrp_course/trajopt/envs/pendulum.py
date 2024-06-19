@@ -37,7 +37,7 @@ class PendulumHyperparameters(Hyperparameters):
     length: float = 1.0
     dt: float = 0.05
     theta_cost_weight: float = 1.0
-    theta_dot_cost_weight: float = 0.1
+    theta_dot_cost_weight: float = 0.0
     torque_cost_weight: float = 0.0
     torque_lb: float = -np.inf
     torque_ub: float = np.inf
@@ -58,8 +58,8 @@ class PendulumTrajOptProblem(TrajOptProblem):
     def state_space(self) -> Box:
         # theta and theta_dot.
         return Box(
-            low=np.array([-np.pi, -np.inf]),
-            high=np.array([np.pi, np.inf]),
+            low=np.array([-np.inf, -np.inf]),
+            high=np.array([np.inf, np.inf]),
             dtype=np.float64,
         )
 
@@ -106,7 +106,6 @@ class PendulumTrajOptProblem(TrajOptProblem):
             theta_dot + (3 * g / (2 * l) * np.sin(theta) + 3.0 / (m * l**2) * u) * dt
         )
         next_theta = theta + next_theta_dot * dt
-        next_theta = wrap_angle(next_theta)
 
         return np.array([next_theta, next_theta_dot], dtype=state.dtype)
 
@@ -192,7 +191,6 @@ class JaxPendulumTrajOptProblem(PendulumTrajOptProblem):
             theta_dot + (3 * g / (2 * l) * jnp.sin(theta) + 3.0 / (m * l**2) * u) * dt
         )
         next_theta = theta + next_theta_dot * dt
-        next_theta = wrap_angle(next_theta)
 
         return jnp.array([next_theta, next_theta_dot], dtype=jnp.float64)
 
