@@ -12,16 +12,16 @@ from numpy.typing import NDArray
 
 from mlrp_course.structs import Image
 
-TrajOptState: TypeAlias = NDArray[np.float32]
-TrajOptAction: TypeAlias = NDArray[np.float32]
+TrajOptState: TypeAlias = NDArray[np.float64]
+TrajOptAction: TypeAlias = NDArray[np.float64]
 
 
 @dataclass
 class TrajOptTraj:
     """A trajectory of states and actions."""
 
-    states: NDArray[np.float32]  # array of TrajOptState
-    actions: NDArray[np.float32]  # array of TrajOptAction
+    states: NDArray[np.float64]  # array of TrajOptState
+    actions: NDArray[np.float64]  # array of TrajOptAction
 
     def __post_init__(self) -> None:
         assert len(self.states) == len(self.actions) + 1

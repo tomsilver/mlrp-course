@@ -60,6 +60,7 @@ class PendulumTrajOptProblem(TrajOptProblem):
         return Box(
             low=np.array([-np.pi, -np.inf]),
             high=np.array([np.pi, np.inf]),
+            dtype=np.float64,
         )
 
     @cached_property
@@ -68,11 +69,12 @@ class PendulumTrajOptProblem(TrajOptProblem):
         return Box(
             low=np.array([self._config.torque_lb]),
             high=np.array([self._config.torque_ub]),
+            dtype=np.float64,
         )
 
     @property
     def initial_state(self) -> TrajOptState:
-        return np.array([np.pi, 1.0], dtype=np.float32)  # down and swinging
+        return np.array([np.pi, 1.0], dtype=np.float64)  # down and swinging
 
     def get_next_state(
         self, state: TrajOptState, action: TrajOptAction
@@ -121,9 +123,9 @@ class PendulumTrajOptProblem(TrajOptProblem):
 
     @staticmethod
     def _get_traj_cost(
-        thetas: NDArray[np.float32],
-        theta_dots: NDArray[np.float32],
-        actions: NDArray[np.float32],
+        thetas: NDArray[np.float64],
+        theta_dots: NDArray[np.float64],
+        actions: NDArray[np.float64],
         theta_cost_weight: float,
         theta_dot_cost_weight: float,
         torque_cost_weight: float,
@@ -169,7 +171,7 @@ class JaxPendulumTrajOptProblem(PendulumTrajOptProblem):
 
     @property
     def initial_state(self) -> TrajOptState:
-        return jnp.array(super().initial_state, dtype=jnp.float32)
+        return jnp.array(super().initial_state, dtype=jnp.float64)
 
     @staticmethod
     @jax.jit
@@ -192,14 +194,14 @@ class JaxPendulumTrajOptProblem(PendulumTrajOptProblem):
         next_theta = theta + next_theta_dot * dt
         next_theta = wrap_angle(next_theta)
 
-        return jnp.array([next_theta, next_theta_dot], dtype=jnp.float32)
+        return jnp.array([next_theta, next_theta_dot], dtype=jnp.float64)
 
     @staticmethod
     @jax.jit
     def _get_traj_cost(
-        thetas: NDArray[jnp.float32],
-        theta_dots: NDArray[jnp.float32],
-        actions: NDArray[jnp.float32],
+        thetas: NDArray[jnp.float64],
+        theta_dots: NDArray[jnp.float64],
+        actions: NDArray[jnp.float64],
         theta_cost_weight: float,
         theta_dot_cost_weight: float,
         torque_cost_weight: float,
