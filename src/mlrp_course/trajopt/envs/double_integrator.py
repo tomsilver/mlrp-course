@@ -1,7 +1,7 @@
 """Extremely simple testing environment."""
 
+from dataclasses import dataclass
 from functools import cached_property
-from typing import ClassVar
 
 import jax
 import jax.numpy as jnp
@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 from tomsgeoms2d.structs import Rectangle
 
-from mlrp_course.structs import Image
+from mlrp_course.structs import Hyperparameters, Image
 from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
@@ -22,21 +22,27 @@ from mlrp_course.trajopt.trajopt_problem import (
 from mlrp_course.utils import fig2data
 
 
+@dataclass(frozen=True)
+class DoubleIntegratorHyperparameters(Hyperparameters):
+    """Hyperparameters for DoubleIntegratorProblem."""
+
+    horizon: int = 25
+    dt: float = 0.1
+    x_cost_weight: float = 1.0
+    x_dot_cost_weight: float = 0.1
+    torque_cost_weight: float = 0.01
+
+
 class DoubleIntegratorProblem(TrajOptProblem):
     """Extremely simple testing environment."""
 
-    _dt: ClassVar[float] = 0.1
-    _x_cost_weight: ClassVar[float] = 1.0
-    _x_dot_cost_weight: ClassVar[float] = 0.1
-    _torque_cost_weight: ClassVar[float] = 0.01
-
-    def __init__(self, horizon: int = 25) -> None:
-        self._horizon = horizon
+    def __init__(self, config: DoubleIntegratorHyperparameters | None = None) -> None:
+        self._config = config or DoubleIntegratorHyperparameters()
         super().__init__()
 
     @property
     def horizon(self) -> int:
-        return self._horizon
+        return self._config.horizon
 
     @cached_property
     def state_space(self) -> Box:
@@ -61,7 +67,7 @@ class DoubleIntegratorProblem(TrajOptProblem):
         return self._get_next_state(
             state,
             action,
-            self._dt,
+            self._config.dt,
         )
 
     @staticmethod
@@ -85,9 +91,9 @@ class DoubleIntegratorProblem(TrajOptProblem):
             xs,
             x_dots,
             traj.actions,
-            self._x_cost_weight,
-            self._x_dot_cost_weight,
-            self._torque_cost_weight,
+            self._config.x_cost_weight,
+            self._config.x_dot_cost_weight,
+            self._config.torque_cost_weight,
         )
 
     @staticmethod

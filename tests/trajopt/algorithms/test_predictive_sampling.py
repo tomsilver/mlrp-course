@@ -7,17 +7,23 @@ from mlrp_course.trajopt.algorithms.predictive_sampling import (
     PredictiveSamplingHyperparameters,
     PredictiveSamplingSolver,
 )
-from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
+from mlrp_course.trajopt.envs.pendulum import (
+    PendulumHyperparameters,
+    PendulumTrajOptProblem,
+)
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 
 def test_predictive_sampling():
     """Tests for predictive_sampling.py."""
     # Use small number of rollouts for faster unit test.
-    config = PredictiveSamplingHyperparameters(num_rollouts=5, num_control_points=3)
-    solver = PredictiveSamplingSolver(123, config=config)
+    solver_config = PredictiveSamplingHyperparameters(
+        num_rollouts=5, num_control_points=3
+    )
+    solver = PredictiveSamplingSolver(123, config=solver_config)
     mpc = MPCWrapper(solver)
-    env = PendulumTrajOptProblem(horizon=10)
+    env_config = PendulumHyperparameters(horizon=10)
+    env = PendulumTrajOptProblem(config=env_config)
     mpc.reset(env)
     # Run MPC to solve the problem.
     initial_state = env.initial_state
