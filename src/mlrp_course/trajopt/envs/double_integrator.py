@@ -12,6 +12,7 @@ from numpy.typing import NDArray
 from tomsgeoms2d.structs import Rectangle
 
 from mlrp_course.structs import Image
+from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
     TrajOptState,
@@ -76,7 +77,7 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         next_x_dot = x_dot + u * dt
         next_x = x + next_x_dot * dt
 
-        return np.array([next_x, next_x_dot], dtype=np.float32)
+        return np.array([next_x, next_x_dot], dtype=state.dtype)
 
     def get_traj_cost(self, traj: TrajOptTraj) -> float:
         xs, x_dots = traj.states.T
@@ -157,3 +158,9 @@ class JaxUnconstrainedDoubleIntegratorProblem(UnconstrainedDoubleIntegratorProbl
         return UnconstrainedDoubleIntegratorProblem._get_traj_cost(
             xs, x_dots, actions, x_cost_weight, x_dot_cost_weight, torque_cost_weight
         )
+
+
+class DrakeUnconstrainedDoubleIntegratorProblem(
+    UnconstrainedDoubleIntegratorProblem, DrakeProblem
+):
+    """Drake version of UnconstrainedDoubleIntegratorProblem."""
