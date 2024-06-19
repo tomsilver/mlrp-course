@@ -6,13 +6,11 @@ import imageio.v2 as iio
 import numpy as np
 from tqdm import tqdm
 
-from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProblem
+from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptAction, TrajOptState, TrajOptTraj
 
 
-def _policy(
-    state: TrajOptState, env: UnconstrainedPendulumTrajOptProblem
-) -> TrajOptAction:
+def _policy(state: TrajOptState, env: PendulumTrajOptProblem) -> TrajOptAction:
     # Energy-shaping controller from https://underactuated.mit.edu/pend.html
     offset_theta, theta_dot = state
     theta = offset_theta - np.pi
@@ -29,7 +27,7 @@ def _policy(
 
 
 def _main(max_horizon: int, outdir: Path, fps: int) -> None:
-    env = UnconstrainedPendulumTrajOptProblem(horizon=max_horizon)
+    env = PendulumTrajOptProblem(horizon=max_horizon)
     initial_state = env.initial_state
     states = [initial_state]
     state = initial_state

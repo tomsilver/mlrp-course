@@ -20,14 +20,14 @@ from mlrp_course.structs import Image
 from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 from mlrp_course.utils import fig2data, wrap_angle
 
 
-class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
+class PendulumTrajOptProblem(TrajOptProblem):
     """Classic pendulum swing-up trajopt problem."""
 
     _gravity: ClassVar[float] = 10
@@ -152,8 +152,8 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         return img
 
 
-class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem):
-    """Jax version of the unconstrained pendulum trajopt problem."""
+class JaxPendulumTrajOptProblem(PendulumTrajOptProblem):
+    """Jax version of the pendulum trajopt problem."""
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -192,7 +192,7 @@ class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem
         theta_dot_cost_weight: float,
         torque_cost_weight: float,
     ) -> float:
-        return UnconstrainedPendulumTrajOptProblem._get_traj_cost(
+        return PendulumTrajOptProblem._get_traj_cost(
             thetas,
             theta_dots,
             actions,
@@ -202,7 +202,5 @@ class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem
         )
 
 
-class DrakeUnconstrainedPendulumTrajOptProblem(
-    UnconstrainedPendulumTrajOptProblem, DrakeProblem
-):
-    """Drake version of UnconstrainedPendulumTrajOptProblem."""
+class DrakePendulumTrajOptProblem(PendulumTrajOptProblem, DrakeProblem):
+    """Drake version of PendulumTrajOptProblem."""

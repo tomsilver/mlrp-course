@@ -1,4 +1,4 @@
-"""A solver that uses drake for unconstrained trajopt problems."""
+"""A solver that uses drake for trajopt problems."""
 
 from dataclasses import dataclass
 from typing import Iterator
@@ -14,12 +14,12 @@ from pydrake.all import (  # pylint: disable=no-name-in-module
 )
 
 from mlrp_course.structs import Hyperparameters
-from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
+from mlrp_course.trajopt.algorithms.trajopt_solver import TrajOptSolver
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 
 
@@ -34,7 +34,7 @@ class DrakeTrajOptTraj:
         assert len(self.states) == len(self.actions) + 1
 
 
-class DrakeProblem(UnconstrainedTrajOptProblem):
+class DrakeProblem(TrajOptProblem):
     """A drake version of a trajopt problem."""
 
     def create_drake_transition_constraints(
@@ -57,7 +57,7 @@ class DrakeTrajOptSolverHyperparameters(Hyperparameters):
     """Hyperparameters for DrakeTrajOptSolver."""
 
 
-class DrakeTrajOptSolver(UnconstrainedTrajOptSolver):
+class DrakeTrajOptSolver(TrajOptSolver):
     """A drake-based solver for trajopt problems."""
 
     def __init__(

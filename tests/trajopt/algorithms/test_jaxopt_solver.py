@@ -9,8 +9,8 @@ from mlrp_course.trajopt.algorithms.jaxopt_solver import (
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.envs.double_integrator import (
-    JaxUnconstrainedDoubleIntegratorProblem,
-    UnconstrainedDoubleIntegratorProblem,
+    DoubleIntegratorProblem,
+    JaxDoubleIntegratorProblem,
 )
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
@@ -26,8 +26,8 @@ def test_jaxopt_solver_trajopt():
     horizon = 5
     solver = JaxOptTrajOptSolver(seed, optimizer_cls, optimizer_kwargs, config=config)
     mpc = MPCWrapper(solver)
-    env = UnconstrainedDoubleIntegratorProblem(horizon=horizon)
-    solver_env = JaxUnconstrainedDoubleIntegratorProblem(horizon=horizon)
+    env = DoubleIntegratorProblem(horizon=horizon)
+    solver_env = JaxDoubleIntegratorProblem(horizon=horizon)
     mpc.reset(solver_env)
     # Run MPC to solve the problem.
     initial_state = env.initial_state

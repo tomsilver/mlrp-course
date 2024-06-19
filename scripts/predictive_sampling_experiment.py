@@ -13,7 +13,7 @@ from mlrp_course.trajopt.algorithms.predictive_sampling import (
     PredictiveSamplingHyperparameters,
     PredictiveSamplingSolver,
 )
-from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProblem
+from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 
@@ -40,7 +40,7 @@ def _run_single(seed: int, num_samples: int) -> float:
     config = PredictiveSamplingHyperparameters(num_rollouts=num_samples)
     solver = PredictiveSamplingSolver(seed, config=config)
     mpc = MPCWrapper(solver)
-    env = UnconstrainedPendulumTrajOptProblem()
+    env = PendulumTrajOptProblem()
     mpc.reset(env)
     initial_state = env.initial_state
     states = [initial_state]

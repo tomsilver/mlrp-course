@@ -2,14 +2,14 @@
 
 import numpy as np
 
-from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProblem
+from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
 from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
 
 
 def test_pendulum():
     """Tests for pendulum.py."""
 
-    env = UnconstrainedPendulumTrajOptProblem()
+    env = PendulumTrajOptProblem()
     initial_state = env.initial_state
     assert env.state_space.contains(initial_state)
     # Create a random trajectory.

@@ -8,15 +8,15 @@ from numpy.typing import NDArray
 
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 from mlrp_course.utils import Trajectory, point_sequence_to_trajectory
 
 
 def spline_to_trajopt_trajectory(
-    problem: UnconstrainedTrajOptProblem,
+    problem: TrajOptProblem,
     solution: Trajectory[TrajOptAction],
     initial_state: TrajOptState,
     horizon: int,

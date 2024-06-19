@@ -31,8 +31,8 @@ class TrajOptTraj:
         return TrajOptTraj(self.states.copy(), self.actions.copy())
 
 
-class UnconstrainedTrajOptProblem(abc.ABC):
-    """An unconstrained discrete-time finite-horizon trajopt problem."""
+class TrajOptProblem(abc.ABC):
+    """A discrete-time finite-horizon trajopt problem."""
 
     @property
     @abc.abstractmethod

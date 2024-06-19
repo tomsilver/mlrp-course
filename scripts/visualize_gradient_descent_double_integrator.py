@@ -15,7 +15,7 @@ from mlrp_course.trajopt.algorithms.jaxopt_solver import (
     JaxOptTrajOptSolverHyperparameters,
 )
 from mlrp_course.trajopt.envs.double_integrator import (
-    UnconstrainedDoubleIntegratorProblem,
+    DoubleIntegratorProblem,
 )
 from mlrp_course.utils import point_sequence_to_trajectory
 
@@ -60,7 +60,7 @@ def _main(
     solver_kwargs = {"verbose": True, "jit": False}
 
     solver = JaxOptTrajOptSolver(seed, solver_cls, solver_kwargs, config=config)
-    env = UnconstrainedDoubleIntegratorProblem(horizon=max_horizon)
+    env = DoubleIntegratorProblem(horizon=max_horizon)
     solver.reset(env)
     solver.solve()
 

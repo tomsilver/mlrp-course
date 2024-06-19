@@ -15,14 +15,14 @@ from mlrp_course.structs import Image
 from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 from mlrp_course.utils import fig2data
 
 
-class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
+class DoubleIntegratorProblem(TrajOptProblem):
     """Extremely simple testing environment."""
 
     _dt: ClassVar[float] = 0.1
@@ -42,8 +42,8 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
     def state_space(self) -> Box:
         # x and x_dot.
         return Box(
-            low=np.array([-np.inf, np.inf]),
-            high=np.array([-np.inf, np.inf]),
+            low=np.array([-np.inf, -np.inf]),
+            high=np.array([np.inf, np.inf]),
         )
 
     @cached_property
@@ -122,8 +122,8 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         return img
 
 
-class JaxUnconstrainedDoubleIntegratorProblem(UnconstrainedDoubleIntegratorProblem):
-    """Jax version of UnconstrainedDoubleIntegratorProblem."""
+class JaxDoubleIntegratorProblem(DoubleIntegratorProblem):
+    """Jax version of DoubleIntegratorProblem."""
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -155,12 +155,10 @@ class JaxUnconstrainedDoubleIntegratorProblem(UnconstrainedDoubleIntegratorProbl
         x_dot_cost_weight: float,
         torque_cost_weight: float,
     ) -> float:
-        return UnconstrainedDoubleIntegratorProblem._get_traj_cost(
+        return DoubleIntegratorProblem._get_traj_cost(
             xs, x_dots, actions, x_cost_weight, x_dot_cost_weight, torque_cost_weight
         )
 
 
-class DrakeUnconstrainedDoubleIntegratorProblem(
-    UnconstrainedDoubleIntegratorProblem, DrakeProblem
-):
-    """Drake version of UnconstrainedDoubleIntegratorProblem."""
+class DrakeDoubleIntegratorProblem(DoubleIntegratorProblem, DrakeProblem):
+    """Drake version of DoubleIntegratorProblem."""
