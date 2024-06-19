@@ -6,7 +6,10 @@ import imageio.v2 as iio
 import numpy as np
 from tqdm import tqdm
 
-from mlrp_course.trajopt.envs.pendulum import PendulumTrajOptProblem
+from mlrp_course.trajopt.envs.pendulum import (
+    PendulumHyperparameters,
+    PendulumTrajOptProblem,
+)
 from mlrp_course.trajopt.trajopt_problem import TrajOptAction, TrajOptState, TrajOptTraj
 
 
@@ -27,7 +30,7 @@ def _policy(state: TrajOptState, env: PendulumTrajOptProblem) -> TrajOptAction:
 
 
 def _main(max_horizon: int, outdir: Path, fps: int) -> None:
-    env = PendulumTrajOptProblem(horizon=max_horizon)
+    env = PendulumTrajOptProblem(PendulumHyperparameters(horizon=max_horizon))
     initial_state = env.initial_state
     states = [initial_state]
     state = initial_state
