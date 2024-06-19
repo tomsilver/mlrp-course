@@ -31,6 +31,8 @@ class DoubleIntegratorHyperparameters(Hyperparameters):
     x_cost_weight: float = 1.0
     x_dot_cost_weight: float = 0.1
     torque_cost_weight: float = 0.01
+    torque_lb: float = -np.inf
+    torque_ub: float = np.inf
 
 
 class DoubleIntegratorProblem(TrajOptProblem):
@@ -55,7 +57,10 @@ class DoubleIntegratorProblem(TrajOptProblem):
     @cached_property
     def action_space(self) -> Box:
         # torque.
-        return Box(low=np.array([-np.inf]), high=np.array([np.inf]))
+        return Box(
+            low=np.array([self._config.torque_lb]),
+            high=np.array([self._config.torque_ub]),
+        )
 
     @property
     def initial_state(self) -> TrajOptState:

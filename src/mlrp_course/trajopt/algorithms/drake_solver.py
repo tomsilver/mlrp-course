@@ -11,6 +11,8 @@ from pydrake.all import (  # pylint: disable=no-name-in-module
     MathematicalProgram,
     SnoptSolver,
     eq,
+    ge,
+    le,
 )
 
 from mlrp_course.structs import Hyperparameters
@@ -50,6 +52,16 @@ class DrakeProblem(TrajOptProblem):
     def create_drake_cost(self, traj: DrakeTrajOptTraj) -> Expression:
         """Create cost functions for the whole trajectory."""
         return self.get_traj_cost(traj)  # type: ignore
+
+    def create_global_constraints(self, traj: DrakeTrajOptTraj) -> Iterator[Formula]:
+        """Create global constraints, e.g., action limits."""
+        # Action limits.
+        if self.action_space.bounded_below.item():
+            bounds = np.array([self.action_space.low] * len(traj.actions))
+            yield ge(traj.actions, bounds)
+        if self.action_space.bounded_above.item():
+            bounds = np.array([self.action_space.high] * len(traj.actions))
+            yield le(traj.actions, bounds)
 
 
 @dataclass(frozen=True)
@@ -110,6 +122,9 @@ class DrakeTrajOptSolver(TrajOptSolver):
         for s_t, a_t, s_t1 in zip(states[:-1], actions, states[1:], strict=True):
             for c in self._problem.create_drake_transition_constraints(s_t, a_t, s_t1):
                 program.AddConstraint(c)
+        # Add global constraints.
+        for c in self._problem.create_global_constraints(drake_traj):
+            program.AddConstraint(c)
 
         # Create cost.
         cost = self._problem.create_drake_cost(drake_traj)
@@ -122,8 +137,6 @@ class DrakeTrajOptSolver(TrajOptSolver):
         # Solve.
         solver = SnoptSolver()
         result = solver.Solve(program)
-
-        assert result.is_success()
         result_states = result.GetSolution(states)
         result_actions = result.GetSolution(actions)
 

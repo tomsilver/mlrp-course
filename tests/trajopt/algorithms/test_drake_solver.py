@@ -7,6 +7,7 @@ from mlrp_course.trajopt.algorithms.drake_solver import (
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.envs.double_integrator import (
+    DoubleIntegratorHyperparameters,
     DoubleIntegratorProblem,
     DrakeDoubleIntegratorProblem,
 )
@@ -18,8 +19,9 @@ def test_drake_solver_trajopt():
     seed = 123
     solver = DrakeTrajOptSolver(seed)
     mpc = MPCWrapper(solver)
-    env = DoubleIntegratorProblem()
-    solver_env = DrakeDoubleIntegratorProblem()
+    env_config = DoubleIntegratorHyperparameters(torque_lb=-1.0, torque_ub=1.0)
+    env = DoubleIntegratorProblem(config=env_config)
+    solver_env = DrakeDoubleIntegratorProblem(config=env_config)
     mpc.reset(solver_env)
     # Run MPC to solve the problem.
     initial_state = env.initial_state
