@@ -1,4 +1,4 @@
-"""A solver that uses a jaxopt optimizer for unconstrained trajopt problems."""
+"""A solver that uses a jaxopt optimizer for trajopt problems."""
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Type
@@ -9,9 +9,10 @@ from jaxopt._src.base import Solver as JaxOptSolver
 from numpy.typing import NDArray
 
 from mlrp_course.structs import Hyperparameters
-from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
+from mlrp_course.trajopt.algorithms.trajopt_solver import TrajOptSolver
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
 )
@@ -29,8 +30,8 @@ class JaxOptTrajOptSolverHyperparameters(Hyperparameters):
     num_control_points: int = 10
 
 
-class JaxOptTrajOptSolver(UnconstrainedTrajOptSolver):
-    """A jaxopt-based solver for unconstrained trajopt problems."""
+class JaxOptTrajOptSolver(TrajOptSolver):
+    """A jaxopt-based solver for trajopt problems."""
 
     def __init__(
         self,
@@ -44,6 +45,14 @@ class JaxOptTrajOptSolver(UnconstrainedTrajOptSolver):
         self._solver_kwargs = solver_kwargs or {}
         self._config = config or JaxOptTrajOptSolverHyperparameters()
         super().__init__(seed, warm_start)
+
+    def reset(
+        self,
+        problem: TrajOptProblem,
+    ) -> None:
+        assert not problem.action_space.is_bounded(), "Constraints not supported"
+        assert not problem.state_space.is_bounded(), "Constraints not supported"
+        return super().reset(problem)
 
     def _solve(
         self,

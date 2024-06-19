@@ -1,22 +1,22 @@
 """Model-predictive controller."""
 
-from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
+from mlrp_course.trajopt.algorithms.trajopt_solver import TrajOptSolver
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
-    UnconstrainedTrajOptProblem,
 )
 
 
 class MPCWrapper:
     """Re-run a given trajectory optimization solver at every timestep."""
 
-    def __init__(self, solver: UnconstrainedTrajOptSolver) -> None:
+    def __init__(self, solver: TrajOptSolver) -> None:
         self._solver = solver
-        self._problem: UnconstrainedTrajOptProblem | None = None
+        self._problem: TrajOptProblem | None = None
         self._timestep = 0
 
-    def reset(self, problem: UnconstrainedTrajOptProblem) -> None:
+    def reset(self, problem: TrajOptProblem) -> None:
         """Reset the timestep to 0."""
         self._timestep = 0
         self._problem = problem

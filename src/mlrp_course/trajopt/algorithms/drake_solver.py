@@ -1,4 +1,4 @@
-"""A solver that uses drake for unconstrained trajopt problems."""
+"""A solver that uses drake for trajopt problems."""
 
 from dataclasses import dataclass
 from typing import Iterator
@@ -9,17 +9,19 @@ from pydrake.all import (  # pylint: disable=no-name-in-module
     Expression,
     Formula,
     MathematicalProgram,
-    SnoptSolver,
+    Solve,
     eq,
+    ge,
+    le,
 )
 
 from mlrp_course.structs import Hyperparameters
-from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
+from mlrp_course.trajopt.algorithms.trajopt_solver import TrajOptSolver
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 
 
@@ -34,7 +36,7 @@ class DrakeTrajOptTraj:
         assert len(self.states) == len(self.actions) + 1
 
 
-class DrakeProblem(UnconstrainedTrajOptProblem):
+class DrakeProblem(TrajOptProblem):
     """A drake version of a trajopt problem."""
 
     def create_drake_transition_constraints(
@@ -51,13 +53,34 @@ class DrakeProblem(UnconstrainedTrajOptProblem):
         """Create cost functions for the whole trajectory."""
         return self.get_traj_cost(traj)  # type: ignore
 
+    def create_global_constraints(self, traj: DrakeTrajOptTraj) -> Iterator[Formula]:
+        """Create global constraints, e.g., action limits."""
+        # Action limits.
+        if self.action_space.bounded_below.any():
+            bounds = np.array([self.action_space.low] * len(traj.actions))
+            mask = self.action_space.bounded_below
+            yield ge(traj.actions.T[mask], bounds.T[mask])
+        if self.action_space.bounded_above.any():
+            bounds = np.array([self.action_space.high] * len(traj.actions))
+            mask = self.action_space.bounded_above
+            yield le(traj.actions.T[mask], bounds.T[mask])
+        # State limits.
+        if self.state_space.bounded_below.any():
+            bounds = np.array([self.state_space.low] * len(traj.states))
+            mask = self.state_space.bounded_below
+            yield ge(traj.states.T[mask], bounds.T[mask])
+        if self.state_space.bounded_above.any():
+            bounds = np.array([self.state_space.high] * len(traj.states))
+            mask = self.state_space.bounded_above
+            yield le(traj.states.T[mask], bounds.T[mask])
+
 
 @dataclass(frozen=True)
 class DrakeTrajOptSolverHyperparameters(Hyperparameters):
     """Hyperparameters for DrakeTrajOptSolver."""
 
 
-class DrakeTrajOptSolver(UnconstrainedTrajOptSolver):
+class DrakeTrajOptSolver(TrajOptSolver):
     """A drake-based solver for trajopt problems."""
 
     def __init__(
@@ -110,6 +133,9 @@ class DrakeTrajOptSolver(UnconstrainedTrajOptSolver):
         for s_t, a_t, s_t1 in zip(states[:-1], actions, states[1:], strict=True):
             for c in self._problem.create_drake_transition_constraints(s_t, a_t, s_t1):
                 program.AddConstraint(c)
+        # Add global constraints.
+        for c in self._problem.create_global_constraints(drake_traj):
+            program.AddConstraint(c)
 
         # Create cost.
         cost = self._problem.create_drake_cost(drake_traj)
@@ -120,9 +146,7 @@ class DrakeTrajOptSolver(UnconstrainedTrajOptSolver):
         program.SetInitialGuess(actions, init_traj.actions)
 
         # Solve.
-        solver = SnoptSolver()
-        result = solver.Solve(program)
-
+        result = Solve(program)
         assert result.is_success()
         result_states = result.GetSolution(states)
         result_actions = result.GetSolution(actions)

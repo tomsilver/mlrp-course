@@ -6,27 +6,27 @@ from typing import Any, TypeAlias
 import numpy as np
 
 from mlrp_course.trajopt.trajopt_problem import (
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 
 _TrajOptSolution: TypeAlias = Any  # intermediate representation of a solution
 
 
-class UnconstrainedTrajOptSolver(abc.ABC):
-    """A solver for an unconstrained trajectory optimization problem."""
+class TrajOptSolver(abc.ABC):
+    """A solver for a trajectory optimization problem."""
 
     def __init__(self, seed: int, warm_start: bool = True) -> None:
         self._seed = seed
         self._rng = np.random.default_rng(seed)
-        self._problem: UnconstrainedTrajOptProblem | None = None
+        self._problem: TrajOptProblem | None = None
         self._warm_start = warm_start
         self._last_solution: TrajOptTraj | None = None
 
     def reset(
         self,
-        problem: UnconstrainedTrajOptProblem,
+        problem: TrajOptProblem,
     ) -> None:
         """Reset the memory."""
         self._problem = problem

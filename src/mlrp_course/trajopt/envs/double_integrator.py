@@ -1,7 +1,7 @@
 """Extremely simple testing environment."""
 
+from dataclasses import dataclass
 from functools import cached_property
-from typing import ClassVar
 
 import jax
 import jax.numpy as jnp
@@ -11,45 +11,56 @@ from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 from tomsgeoms2d.structs import Rectangle
 
-from mlrp_course.structs import Image
+from mlrp_course.structs import Hyperparameters, Image
 from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 from mlrp_course.utils import fig2data
 
 
-class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
+@dataclass(frozen=True)
+class DoubleIntegratorHyperparameters(Hyperparameters):
+    """Hyperparameters for DoubleIntegratorProblem."""
+
+    horizon: int = 25
+    dt: float = 0.1
+    x_cost_weight: float = 1.0
+    x_dot_cost_weight: float = 0.1
+    torque_cost_weight: float = 0.01
+    torque_lb: float = -np.inf
+    torque_ub: float = np.inf
+
+
+class DoubleIntegratorProblem(TrajOptProblem):
     """Extremely simple testing environment."""
 
-    _dt: ClassVar[float] = 0.1
-    _x_cost_weight: ClassVar[float] = 1.0
-    _x_dot_cost_weight: ClassVar[float] = 0.1
-    _torque_cost_weight: ClassVar[float] = 0.01
-
-    def __init__(self, horizon: int = 25) -> None:
-        self._horizon = horizon
+    def __init__(self, config: DoubleIntegratorHyperparameters | None = None) -> None:
+        self._config = config or DoubleIntegratorHyperparameters()
         super().__init__()
 
     @property
     def horizon(self) -> int:
-        return self._horizon
+        return self._config.horizon
 
     @cached_property
     def state_space(self) -> Box:
         # x and x_dot.
         return Box(
-            low=np.array([-np.inf, np.inf]),
-            high=np.array([-np.inf, np.inf]),
+            low=np.array([-np.inf, -np.inf]),
+            high=np.array([np.inf, np.inf]),
         )
 
     @cached_property
     def action_space(self) -> Box:
         # torque.
-        return Box(low=np.array([-np.inf]), high=np.array([np.inf]))
+        return Box(
+            low=np.array([self._config.torque_lb]),
+            high=np.array([self._config.torque_ub]),
+        )
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -61,7 +72,7 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         return self._get_next_state(
             state,
             action,
-            self._dt,
+            self._config.dt,
         )
 
     @staticmethod
@@ -85,9 +96,9 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
             xs,
             x_dots,
             traj.actions,
-            self._x_cost_weight,
-            self._x_dot_cost_weight,
-            self._torque_cost_weight,
+            self._config.x_cost_weight,
+            self._config.x_dot_cost_weight,
+            self._config.torque_cost_weight,
         )
 
     @staticmethod
@@ -102,10 +113,12 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         x_cost = (xs**2).sum()
         x_dot_cost = (x_dots**2).sum()
         action_cost = (actions**2).sum()
-        return (
+        cost = (
             x_cost_weight * x_cost
-            + x_dot_cost_weight * x_dot_cost * torque_cost_weight * action_cost
+            + x_dot_cost_weight * x_dot_cost
+            + torque_cost_weight * action_cost
         )
+        return cost
 
     def render_state(self, state: TrajOptState) -> Image:
         x, _ = state
@@ -122,8 +135,8 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         return img
 
 
-class JaxUnconstrainedDoubleIntegratorProblem(UnconstrainedDoubleIntegratorProblem):
-    """Jax version of UnconstrainedDoubleIntegratorProblem."""
+class JaxDoubleIntegratorProblem(DoubleIntegratorProblem):
+    """Jax version of DoubleIntegratorProblem."""
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -155,12 +168,10 @@ class JaxUnconstrainedDoubleIntegratorProblem(UnconstrainedDoubleIntegratorProbl
         x_dot_cost_weight: float,
         torque_cost_weight: float,
     ) -> float:
-        return UnconstrainedDoubleIntegratorProblem._get_traj_cost(
+        return DoubleIntegratorProblem._get_traj_cost(
             xs, x_dots, actions, x_cost_weight, x_dot_cost_weight, torque_cost_weight
         )
 
 
-class DrakeUnconstrainedDoubleIntegratorProblem(
-    UnconstrainedDoubleIntegratorProblem, DrakeProblem
-):
-    """Drake version of UnconstrainedDoubleIntegratorProblem."""
+class DrakeDoubleIntegratorProblem(DoubleIntegratorProblem, DrakeProblem):
+    """Drake version of DoubleIntegratorProblem."""

@@ -5,8 +5,8 @@ https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/envs/classic_
 # pylint: disable=line-too-long
 """
 
+from dataclasses import dataclass
 from functools import cached_property
-from typing import ClassVar
 
 import jax
 import jax.numpy as jnp
@@ -16,35 +16,43 @@ from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 from tomsgeoms2d.structs import Circle, Rectangle
 
-from mlrp_course.structs import Image
+from mlrp_course.structs import Hyperparameters, Image
 from mlrp_course.trajopt.algorithms.drake_solver import DrakeProblem
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
+    TrajOptProblem,
     TrajOptState,
     TrajOptTraj,
-    UnconstrainedTrajOptProblem,
 )
 from mlrp_course.utils import fig2data, wrap_angle
 
 
-class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
+@dataclass(frozen=True)
+class PendulumHyperparameters(Hyperparameters):
+    """Hyperparameters for PendulumTrajOptProblem."""
+
+    horizon: int = 200
+    gravity: float = 10
+    mass: float = 1.0
+    length: float = 1.0
+    dt: float = 0.05
+    theta_cost_weight: float = 1.0
+    theta_dot_cost_weight: float = 0.1
+    torque_cost_weight: float = 0.0
+    torque_lb: float = -np.inf
+    torque_ub: float = np.inf
+
+
+class PendulumTrajOptProblem(TrajOptProblem):
     """Classic pendulum swing-up trajopt problem."""
 
-    _gravity: ClassVar[float] = 10
-    _mass: ClassVar[float] = 1.0
-    _length: ClassVar[float] = 1.0
-    _dt: ClassVar[float] = 0.05
-    _theta_cost_weight: ClassVar[float] = 1.0
-    _theta_dot_cost_weight: ClassVar[float] = 0.0
-    _torque_cost_weight: ClassVar[float] = 0.0
-
-    def __init__(self, horizon: int = 200) -> None:
-        self._horizon = horizon
+    def __init__(self, config: PendulumHyperparameters | None = None) -> None:
+        self._config = config or PendulumHyperparameters()
         super().__init__()
 
     @property
     def horizon(self) -> int:
-        return self._horizon
+        return self._config.horizon
 
     @cached_property
     def state_space(self) -> Box:
@@ -57,7 +65,10 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     @cached_property
     def action_space(self) -> Box:
         # torque.
-        return Box(low=np.array([-np.inf]), high=np.array([np.inf]))
+        return Box(
+            low=np.array([self._config.torque_lb]),
+            high=np.array([self._config.torque_ub]),
+        )
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -69,10 +80,10 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         return self._get_next_state(
             state,
             action,
-            self._gravity,
-            self._mass,
-            self._length,
-            self._dt,
+            self._config.gravity,
+            self._config.mass,
+            self._config.length,
+            self._config.dt,
         )
 
     @staticmethod
@@ -103,9 +114,9 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
             thetas,
             theta_dots,
             traj.actions,
-            self._theta_cost_weight,
-            self._theta_dot_cost_weight,
-            self._torque_cost_weight,
+            self._config.theta_cost_weight,
+            self._config.theta_dot_cost_weight,
+            self._config.torque_cost_weight,
         )
 
     @staticmethod
@@ -133,15 +144,16 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     def render_state(self, state: TrajOptState) -> Image:
         theta, _ = state
         rot = wrap_angle(theta + np.pi / 2)
-        width = self._length / 8
-        rect = Rectangle(0, 0, self._length, width, 0.0)
+        length = self._config.length
+        width = length / 8
+        rect = Rectangle(0, 0, length, width, 0.0)
         rect = rect.rotate_about_point(0, width / 2, rot)
         circ = Circle(0, width / 2, width / 8)
         figsize = (5, 5)
         fig, ax = plt.subplots(1, 1, figsize=figsize)
         pad_scale = 1.25
-        ax.set_xlim(-pad_scale * self._length, pad_scale * self._length)
-        ax.set_ylim(-pad_scale * self._length, pad_scale * self._length)
+        ax.set_xlim(-pad_scale * length, pad_scale * length)
+        ax.set_ylim(-pad_scale * length, pad_scale * length)
         ax.set_xticks([])
         ax.set_yticks([])
         rect.plot(ax, fc="gray", ec="black")
@@ -152,8 +164,8 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         return img
 
 
-class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem):
-    """Jax version of the unconstrained pendulum trajopt problem."""
+class JaxPendulumTrajOptProblem(PendulumTrajOptProblem):
+    """Jax version of the pendulum trajopt problem."""
 
     @property
     def initial_state(self) -> TrajOptState:
@@ -192,7 +204,7 @@ class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem
         theta_dot_cost_weight: float,
         torque_cost_weight: float,
     ) -> float:
-        return UnconstrainedPendulumTrajOptProblem._get_traj_cost(
+        return PendulumTrajOptProblem._get_traj_cost(
             thetas,
             theta_dots,
             actions,
@@ -202,7 +214,5 @@ class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem
         )
 
 
-class DrakeUnconstrainedPendulumTrajOptProblem(
-    UnconstrainedPendulumTrajOptProblem, DrakeProblem
-):
-    """Drake version of UnconstrainedPendulumTrajOptProblem."""
+class DrakePendulumTrajOptProblem(PendulumTrajOptProblem, DrakeProblem):
+    """Drake version of PendulumTrajOptProblem."""

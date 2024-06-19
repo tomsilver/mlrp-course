@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 
 from mlrp_course.structs import Hyperparameters
-from mlrp_course.trajopt.algorithms.trajopt_solver import UnconstrainedTrajOptSolver
+from mlrp_course.trajopt.algorithms.trajopt_solver import TrajOptSolver
 from mlrp_course.trajopt.trajopt_problem import (
     TrajOptAction,
     TrajOptState,
@@ -28,7 +28,7 @@ class PredictiveSamplingHyperparameters(Hyperparameters):
     num_control_points: int = 10
 
 
-class PredictiveSamplingSolver(UnconstrainedTrajOptSolver):
+class PredictiveSamplingSolver(TrajOptSolver):
     """The simple method described in https://arxiv.org/abs/2212.00541"""
 
     def __init__(
