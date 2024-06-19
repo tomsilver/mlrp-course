@@ -119,34 +119,47 @@ class DrakeTrajOptSolver(TrajOptSolver):
         program = MathematicalProgram()
         state_shape = initial_state.shape
         assert len(state_shape) == 1
-        states = program.NewContinuousVariables(horizon + 1, state_shape[0])
+        states = program.NewContinuousVariables(horizon + 1, state_shape[0], "x")
         action_shape = self._problem.action_space.shape
         assert len(action_shape) == 1
-        actions = program.NewContinuousVariables(horizon, action_shape[0])
+        actions = program.NewContinuousVariables(horizon, action_shape[0], "u")
         drake_traj = DrakeTrajOptTraj(states, actions)
-
-        # Create constraints.
-        # Add initial state constraint.
-        initial_state_constraint = eq(states[0], initial_state)
-        program.AddConstraint(initial_state_constraint)
-        # Add dynamic constraints.
-        for s_t, a_t, s_t1 in zip(states[:-1], actions, states[1:], strict=True):
-            for c in self._problem.create_drake_transition_constraints(s_t, a_t, s_t1):
-                program.AddConstraint(c)
-        # Add global constraints.
-        for c in self._problem.create_global_constraints(drake_traj):
-            program.AddConstraint(c)
-
-        # Create cost.
-        cost = self._problem.create_drake_cost(drake_traj)
-        program.AddCost(cost)
 
         # Set initialization.
         program.SetInitialGuess(states, init_traj.states)
         program.SetInitialGuess(actions, init_traj.actions)
 
+        # Create constraints.
+        # Add initial state constraint.
+        initial_state_constraint = eq(states[0], initial_state)
+        constraint = program.AddConstraint(initial_state_constraint)
+        constraint.evaluator().set_description("Initial state")
+        assert program.CheckSatisfiedAtInitialGuess(constraint)
+        # Add dynamic constraints.
+        for t in range(len(actions)):
+            s_t, a_t, s_t1 = states[t], actions[t], states[t+1]
+            for i, c in enumerate(self._problem.create_drake_transition_constraints(s_t, a_t, s_t1)):
+                constraint = program.AddConstraint(c)
+                name = f"Transition constraint {i} t={t}"
+                constraint.evaluator().set_description(name)
+                assert program.CheckSatisfiedAtInitialGuess(constraint)
+        # Add global constraints.
+        for i, c in enumerate(self._problem.create_global_constraints(drake_traj)):
+            constraint = program.AddConstraint(c)
+            constraint.evaluator().set_description(f"Global constraint {i}")
+            assert program.CheckSatisfiedAtInitialGuess(constraint)
+
+        # Create cost.
+        cost = self._problem.create_drake_cost(drake_traj)
+        program.AddCost(cost)
+
         # Solve.
         result = Solve(program)
+        # Uncomment to debug.
+        # infeasible_constraints = result.GetInfeasibleConstraints(program)
+        # for c in infeasible_constraints:
+        #     print(f"infeasible constraint: {c}")
+
         assert result.is_success()
         result_states = result.GetSolution(states)
         result_actions = result.GetSolution(actions)
@@ -155,7 +168,7 @@ class DrakeTrajOptSolver(TrajOptSolver):
             result_actions = result_actions.reshape((-1, 1))
 
         return TrajOptTraj(
-            result_states.astype(np.float32), result_actions.astype(np.float32)
+            result_states.astype(np.float64), result_actions.astype(np.float64)
         )
 
     def _get_initialization(
@@ -164,11 +177,14 @@ class DrakeTrajOptSolver(TrajOptSolver):
         assert self._problem is not None
         assert self._problem.action_space.shape == (1,)
         actions = self._rng.standard_normal(size=(horizon, 1))
+        low = self._problem.action_space.low
+        high = self._problem.action_space.high
+        actions = np.clip(actions, low, high)
         states = [initial_state]
         for action in actions:
             states.append(self._problem.get_next_state(states[-1], action))
         return TrajOptTraj(
-            np.array(states, dtype=np.float32), np.array(actions, dtype=np.float32)
+            np.array(states, dtype=np.float64), np.array(actions, dtype=np.float64)
         )
 
     def _solution_to_trajectory(

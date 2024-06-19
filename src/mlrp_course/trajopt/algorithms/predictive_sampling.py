@@ -96,7 +96,7 @@ class PredictiveSamplingSolver(TrajOptSolver):
         low = self._problem.action_space.low
         high = self._problem.action_space.high
         clipped_control_points = [
-            [np.clip(a, low, high).astype(np.float32) for a in actions]
+            [np.clip(a, low, high).astype(np.float64) for a in actions]
             for actions in new_control_points
         ]
         # Convert to trajectories.

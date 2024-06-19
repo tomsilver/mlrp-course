@@ -30,14 +30,14 @@ def spline_to_trajopt_trajectory(
         action_list.append(action)
         state = problem.get_next_state(state, action)
         state_list.append(state)
-    state_arr = jnp.array(state_list, dtype=jnp.float32)
-    action_arr = jnp.array(action_list, dtype=jnp.float32)
+    state_arr = jnp.array(state_list, dtype=jnp.float64)
+    action_arr = jnp.array(action_list, dtype=jnp.float64)
     return TrajOptTraj(state_arr, action_arr)
 
 
 def sample_standard_normal_spline(
     rng: np.random.Generator, num_points: int, horizon: int
-) -> Trajectory[NDArray[jnp.float32]]:
+) -> Trajectory[NDArray[jnp.float64]]:
     """Sample a spline by sampling points and interpolating."""
     points = list(rng.standard_normal(size=(num_points, 1)))
     dt = horizon / (len(points) - 1)
