@@ -124,9 +124,10 @@ class GradientDescentTrajOptSolver(JaxOptTrajOptSolver):
         seed: int,
         maxiter: int = 500,
         jit: bool = True,
+        verbose: bool = False,
         config: JaxOptTrajOptSolverHyperparameters | None = None,
         warm_start: bool = True,
     ) -> None:
         solver_cls = GradientDescent
-        solver_kwargs = {"maxiter": maxiter, "jit": jit}
+        solver_kwargs = {"maxiter": maxiter, "jit": jit, "verbose": verbose}
         super().__init__(seed, solver_cls, solver_kwargs, config, warm_start)

@@ -52,7 +52,7 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
 
     @property
     def initial_state(self) -> TrajOptState:
-        return jnp.array([-1.0, 0.0], dtype=jnp.float32)
+        return np.array([-1.0, 0.0], dtype=np.float32)
 
     def get_next_state(
         self, state: TrajOptState, action: TrajOptAction
@@ -64,7 +64,6 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         )
 
     @staticmethod
-    @jax.jit
     def _get_next_state(
         state: TrajOptState,
         action: TrajOptAction,
@@ -77,7 +76,7 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         next_x_dot = x_dot + u * dt
         next_x = x + next_x_dot * dt
 
-        return jnp.array([next_x, next_x_dot], dtype=jnp.float32)
+        return np.array([next_x, next_x_dot], dtype=np.float32)
 
     def get_traj_cost(self, traj: TrajOptTraj) -> float:
         xs, x_dots = traj.states.T
@@ -91,11 +90,10 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         )
 
     @staticmethod
-    @jax.jit
     def _get_traj_cost(
-        xs: NDArray[jnp.float32],
-        x_dots: NDArray[jnp.float32],
-        actions: NDArray[jnp.float32],
+        xs: NDArray[np.float32],
+        x_dots: NDArray[np.float32],
+        actions: NDArray[np.float32],
         x_cost_weight: float,
         x_dot_cost_weight: float,
         torque_cost_weight: float,
@@ -121,3 +119,41 @@ class UnconstrainedDoubleIntegratorProblem(UnconstrainedTrajOptProblem):
         img = fig2data(fig)
         plt.close()
         return img
+
+
+class JaxUnconstrainedDoubleIntegratorProblem(UnconstrainedDoubleIntegratorProblem):
+    """Jax version of UnconstrainedDoubleIntegratorProblem."""
+
+    @property
+    def initial_state(self) -> TrajOptState:
+        return jnp.array(super().initial_state, dtype=jnp.float32)
+
+    @staticmethod
+    @jax.jit
+    def _get_next_state(
+        state: TrajOptState,
+        action: TrajOptAction,
+        dt: float,
+    ) -> TrajOptState:
+
+        x, x_dot = state
+        u = action[0]
+
+        next_x_dot = x_dot + u * dt
+        next_x = x + next_x_dot * dt
+
+        return jnp.array([next_x, next_x_dot], dtype=jnp.float32)
+
+    @staticmethod
+    @jax.jit
+    def _get_traj_cost(
+        xs: NDArray[jnp.float32],
+        x_dots: NDArray[jnp.float32],
+        actions: NDArray[jnp.float32],
+        x_cost_weight: float,
+        x_dot_cost_weight: float,
+        torque_cost_weight: float,
+    ) -> float:
+        return UnconstrainedDoubleIntegratorProblem._get_traj_cost(
+            xs, x_dots, actions, x_cost_weight, x_dot_cost_weight, torque_cost_weight
+        )

@@ -11,13 +11,17 @@ from tqdm import tqdm
 
 from mlrp_course.trajopt.algorithms.jaxopt_solver import (
     GradientDescentTrajOptSolver,
+    JaxOptTrajOptSolver,
 )
 from mlrp_course.trajopt.algorithms.mpc_wrapper import MPCWrapper
 from mlrp_course.trajopt.algorithms.predictive_sampling import (
     PredictiveSamplingSolver,
 )
-from mlrp_course.trajopt.envs.pendulum import UnconstrainedPendulumTrajOptProblem
-from mlrp_course.trajopt.trajopt_problem import TrajOptTraj
+from mlrp_course.trajopt.envs.pendulum import (
+    JaxUnconstrainedPendulumTrajOptProblem,
+    UnconstrainedPendulumTrajOptProblem,
+)
+from mlrp_course.trajopt.trajopt_problem import TrajOptTraj, UnconstrainedTrajOptProblem
 
 _SOLVERS = {
     "Gradient Descent": GradientDescentTrajOptSolver,
@@ -47,8 +51,14 @@ def _main(start_seed: int, num_seeds: int, outdir: Path, load: bool) -> None:
 def _run_single(seed: int, solver_name: str) -> float:
     solver = _SOLVERS[solver_name](seed)
     mpc = MPCWrapper(solver)
+    if isinstance(solver, JaxOptTrajOptSolver):
+        solver_env: UnconstrainedTrajOptProblem = (
+            JaxUnconstrainedPendulumTrajOptProblem()
+        )
+    else:
+        solver_env = UnconstrainedPendulumTrajOptProblem()
     env = UnconstrainedPendulumTrajOptProblem()
-    mpc.reset(env)
+    mpc.reset(solver_env)
     initial_state = env.initial_state
     states = [initial_state]
     state = initial_state

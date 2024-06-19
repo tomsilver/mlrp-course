@@ -34,8 +34,8 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
     _length: ClassVar[float] = 1.0
     _dt: ClassVar[float] = 0.05
     _theta_cost_weight: ClassVar[float] = 1.0
-    _theta_dot_cost_weight: ClassVar[float] = 0.1
-    _torque_cost_weight: ClassVar[float] = 0.001
+    _theta_dot_cost_weight: ClassVar[float] = 0.0
+    _torque_cost_weight: ClassVar[float] = 0.0
 
     def __init__(self, horizon: int = 200) -> None:
         self._horizon = horizon
@@ -60,7 +60,7 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
 
     @property
     def initial_state(self) -> TrajOptState:
-        return jnp.array([np.pi, 1.0], dtype=jnp.float32)  # down and swinging
+        return np.array([np.pi, 1.0], dtype=np.float32)  # down and swinging
 
     def get_next_state(
         self, state: TrajOptState, action: TrajOptAction
@@ -75,7 +75,6 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         )
 
     @staticmethod
-    @jax.jit
     def _get_next_state(
         state: TrajOptState,
         action: TrajOptAction,
@@ -90,12 +89,12 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         u = action[0]
 
         next_theta_dot = (
-            theta_dot + (3 * g / (2 * l) * jnp.sin(theta) + 3.0 / (m * l**2) * u) * dt
+            theta_dot + (3 * g / (2 * l) * np.sin(theta) + 3.0 / (m * l**2) * u) * dt
         )
         next_theta = theta + next_theta_dot * dt
         next_theta = wrap_angle(next_theta)
 
-        return jnp.array([next_theta, next_theta_dot], dtype=jnp.float32)
+        return np.array([next_theta, next_theta_dot], dtype=np.float32)
 
     def get_traj_cost(self, traj: TrajOptTraj) -> float:
         thetas, theta_dots = traj.states.T
@@ -109,18 +108,16 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         )
 
     @staticmethod
-    @jax.jit
     def _get_traj_cost(
-        thetas: NDArray[jnp.float32],
-        theta_dots: NDArray[jnp.float32],
-        actions: NDArray[jnp.float32],
+        thetas: NDArray[np.float32],
+        theta_dots: NDArray[np.float32],
+        actions: NDArray[np.float32],
         theta_cost_weight: float,
         theta_dot_cost_weight: float,
         torque_cost_weight: float,
     ) -> float:
         # Get states costs.
-        norm_thetas = jnp.vectorize(wrap_angle)(thetas)
-        theta_cost = (norm_thetas**2).sum()
+        theta_cost = (thetas**2).sum()
         theta_dot_cost = (theta_dots**2).sum()
         # Get action costs.
         torque_cost = (actions**2).sum()
@@ -152,3 +149,53 @@ class UnconstrainedPendulumTrajOptProblem(UnconstrainedTrajOptProblem):
         img = fig2data(fig)
         plt.close()
         return img
+
+
+class JaxUnconstrainedPendulumTrajOptProblem(UnconstrainedPendulumTrajOptProblem):
+    """Jax version of the unconstrained pendulum trajopt problem."""
+
+    @property
+    def initial_state(self) -> TrajOptState:
+        return jnp.array(super().initial_state, dtype=jnp.float32)
+
+    @staticmethod
+    @jax.jit
+    def _get_next_state(
+        state: TrajOptState,
+        action: TrajOptAction,
+        g: float,
+        m: float,
+        l: float,
+        dt: float,
+    ) -> TrajOptState:
+
+        theta, theta_dot = state
+
+        u = action[0]
+
+        next_theta_dot = (
+            theta_dot + (3 * g / (2 * l) * jnp.sin(theta) + 3.0 / (m * l**2) * u) * dt
+        )
+        next_theta = theta + next_theta_dot * dt
+        next_theta = wrap_angle(next_theta)
+
+        return jnp.array([next_theta, next_theta_dot], dtype=jnp.float32)
+
+    @staticmethod
+    @jax.jit
+    def _get_traj_cost(
+        thetas: NDArray[jnp.float32],
+        theta_dots: NDArray[jnp.float32],
+        actions: NDArray[jnp.float32],
+        theta_cost_weight: float,
+        theta_dot_cost_weight: float,
+        torque_cost_weight: float,
+    ) -> float:
+        return UnconstrainedPendulumTrajOptProblem._get_traj_cost(
+            thetas,
+            theta_dots,
+            actions,
+            theta_cost_weight,
+            theta_dot_cost_weight,
+            torque_cost_weight,
+        )
