@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import List, Tuple
 
 import matplotlib
-import numpy as np
 import pandas as pd
 from jaxopt import GradientDescent
+from matplotlib import pyplot as plt
 
 from mlrp_course.trajopt.algorithms.jaxopt_solver import (
     JaxOptTrajOptSolver,
@@ -72,9 +72,31 @@ def _df_to_plot(df: pd.DataFrame, outdir: Path) -> None:
     matplotlib.rcParams.update({"font.size": 20})
     fig_file = outdir / "num_control_points_experiment.png"
 
-    import ipdb
+    _, axes = plt.subplots(1, 2, figsize=(15, 6))
 
-    ipdb.set_trace()
+    for i, (name, label) in enumerate(
+        [("Cost", "Final Trajectory Cost"), ("Solve Time", "Solve Time (s)")]
+    ):
+        ax = axes.flat[i]
+        grouped = df.groupby(["Num Control Points"]).agg({name: ["mean", "sem"]})
+        grouped.columns = grouped.columns.droplevel(0)
+        grouped = grouped.rename(columns={"mean": f"{name}_mean", "sem": f"{name}_sem"})
+        grouped = grouped.reset_index()
+        ax.plot(grouped["Num Control Points"], grouped[f"{name}_mean"], marker="o")
+        ax.fill_between(
+            grouped["Num Control Points"],
+            grouped[f"{name}_mean"] - grouped[f"{name}_sem"],
+            grouped[f"{name}_mean"] + grouped[f"{name}_sem"],
+            alpha=0.2,
+        )
+        ax.set_xlabel("Num Control Points")
+        ax.set_ylabel(label)
+        ax.grid(True)
+
+    plt.suptitle("Double Integrator + Gradient Descent")
+    plt.tight_layout()
+    plt.savefig(fig_file, dpi=150)
+    print(f"Wrote out to {fig_file}")
 
 
 if __name__ == "__main__":
